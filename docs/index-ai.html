@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wild Dynasty - Expense Claim System with AI Assistant</title>
+    <style>
+        /* CSS Variables from Design System - Compact Variant */
+        :root {
+            --color-black: #000000;
+            --color-white: #ffffff;
+            --color-gray-50: #f5f5f5;
+            --color-gray-100: #e6e6e6;
+            --color-gray-200: #cccccc;
+            --color-gray-300: #b3b3b3;
+            --color-gray-400: #999999;
+            --color-gray-500: #808080;
+            --color-gray-600: #666666;
+            --color-gray-700: #4d4d4d;
+            --color-gray-800: #333333;
+            --color-gray-900: #1a1a1a;
+            --color-ai-blue: #0066cc;
+            --color-ai-light: #e6f2ff;
+            
+            /* Reduced spacing by 25% for compact layout */
+            --spacing-xs: 3px;
+            --spacing-sm: 6px;
+            --spacing-md: 9px;
+            --spacing-lg: 12px;
+            --spacing-xl: 18px;
+            --spacing-2xl: 24px;
+            --spacing-3xl: 36px;
+            
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            --font-size-xs: 10px;
+            --font-size-sm: 11px;
+            --font-size-md: 13px;
+            --font-size-lg: 15px;
+            --font-size-xl: 18px;
+            --font-size-2xl: 20px;
+            --font-size-3xl: 24px;
+            
+            --border-width-thin: 1px;
+            --border-width-medium: 2px;
+            --border-width-thick: 3px;
+            
+            --radius-sm: 2px;
+            --radius-md: 4px;
+            --radius-lg: 8px;
+            
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.15);
+            
+            --transition-fast: 0.15s ease;
+        }
+
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            font-size: var(--font-size-md);
+            line-height: 1.4;
+            color: var(--color-black);
+            background: var(--color-white);
+        }
+
+        /* Page Navigation */
+        .page {
+            display: none;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Header - Compact */
+        .header {
+            text-align: center;
+            border: var(--border-width-medium) solid var(--color-black);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .header h1 {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .header h2 {
+            font-size: var(--font-size-md);
+            font-weight: 400;
+        }
+
+        /* Buttons - Smaller */
+        .btn {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-md);
+            font-size: var(--font-size-sm);
+            border: var(--border-width-thin) solid var(--color-black);
+            background: var(--color-white);
+            color: var(--color-black);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            text-decoration: none;
+            margin: var(--spacing-xs);
+        }
+
+        .btn:hover {
+            background: var(--color-gray-50);
+        }
+
+        .btn-primary {
+            background: var(--color-black);
+            color: var(--color-white);
+        }
+
+        .btn-primary:hover {
+            background: var(--color-gray-800);
+        }
+
+        .btn-ai {
+            background: var(--color-ai-blue);
+            color: var(--color-white);
+            border-color: var(--color-ai-blue);
+        }
+
+        .btn-ai:hover {
+            background: #0052a3;
+        }
+
+        .btn-large {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            font-size: var(--font-size-md);
+        }
+
+        /* Forms - Compact */
+        .form-section {
+            border: var(--border-width-thin) solid var(--color-gray-300);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-section h3 {
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-xs);
+            border-bottom: var(--border-width-thin) solid var(--color-gray-200);
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-row {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-col {
+            flex: 1;
+        }
+
+        .form-col-auto {
+            flex: 0 0 auto;
+        }
+
+        .form-col-small {
+            flex: 0 0 80px;
+        }
+
+        label {
+            display: block;
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            font-size: var(--font-size-sm);
+            border: var(--border-width-thin) solid var(--color-gray-300);
+            background: var(--color-white);
+            transition: var(--transition-fast);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--color-black);
+        }
+
+        input:disabled, select:disabled {
+            background: var(--color-gray-50);
+            color: var(--color-gray-500);
+            cursor: not-allowed;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 50px;
+        }
+
+        /* Tables - Dense */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: var(--spacing-md);
+            font-size: var(--font-size-xs);
+        }
+
+        .table th {
+            background: var(--color-gray-50);
+            border: var(--border-width-thin) solid var(--color-gray-200);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .table td {
+            border: var(--border-width-thin) solid var(--color-gray-200);
+            padding: var(--spacing-xs) var(--spacing-sm);
+        }
+
+        .table tr:hover {
+            background: var(--color-gray-50);
+        }
+
+        /* Cards - Compact */
+        .card {
+            background: var(--color-white);
+            border: var(--border-width-thin) solid var(--color-gray-200);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .card-bordered {
+            border: var(--border-width-thin) solid var(--color-black);
+        }
+
+        /* AI Assistant Styles */
+        .ai-assistant {
+            background: var(--color-ai-light);
+            border: var(--border-width-medium) solid var(--color-ai-blue);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .ai-assistant h3 {
+            color: var(--color-ai-blue);
+            font-size: var(--font-size-lg);
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .ai-assistant h3::before {
+            content: "🤖";
+            font-size: var(--font-size-xl);
+        }
+
+        .ai-input-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .ai-method {
+            background: var(--color-white);
+            border: var(--border-width-thin) solid var(--color-gray-300);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .ai-method:hover {
+            border-color: var(--color-ai-blue);
+            background: #f8fbff;
+        }
+
+        .ai-method.active {
+            border-color: var(--color-ai-blue);
+            background: var(--color-ai-blue);
+            color: var(--color-white);
+        }
+
+        .ai-method-icon {
+            font-size: var(--font-size-2xl);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .ai-method-label {
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+        }
+
+        .ai-input-area {
+            display: none;
+            background: var(--color-white);
+            border: var(--border-width-thin) solid var(--color-gray-300);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-top: var(--spacing-md);
+        }
+
+        .ai-input-area.active {
+            display: block;
+        }
+
+        .ai-text-input {
+            width: 100%;
+            min-height: 100px;
+            padding: var(--spacing-sm);
+            border: var(--border-width-thin) solid var(--color-gray-300);
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .voice-recorder {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--color-gray-50);
+            border-radius: var(--radius-md);
+        }
+
+        .voice-recorder button {
+            padding: var(--spacing-md);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: var(--font-size-xl);
+            border: var(--border-width-medium) solid var(--color-gray-300);
+            background: var(--color-white);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .voice-recorder button:hover {
+            background: var(--color-gray-100);
+        }
+
+        .voice-recorder button.recording {
+            background: #ff4444;
+            color: var(--color-white);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(255, 68, 68, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+            }
+        }
+
+        .voice-status {
+            flex: 1;
+            font-size: var(--font-size-sm);
+            color: var(--color-gray-600);
+        }
+
+        .image-upload-zone {
+            border: 2px dashed var(--color-ai-blue);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-xl);
+            text-align: center;
+            background: #f8fbff;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .image-upload-zone:hover {
+            background: var(--color-ai-light);
+        }
+
+        .image-upload-zone.dragover {
+            background: var(--color-ai-light);
+            border-color: var(--color-ai-blue);
+        }
+
+        .ai-preview {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--color-gray-50);
+            border: var(--border-width-thin) solid var(--color-gray-300);
+            border-radius: var(--radius-md);
+        }
+
+        .ai-preview h4 {
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-sm);
+            color: var(--color-ai-blue);
+        }
+
+        .ai-extracted-item {
+            padding: var(--spacing-sm);
+            background: var(--color-white);
+            border: var(--border-width-thin) solid var(--color-gray-200);
+            margin-bottom: var(--spacing-sm);
+            border-radius: var(--radius-sm);
+        }
+
+        .ai-processing {
+            display: none;
+            text-align: center;
+            padding: var(--spacing-xl);
+        }
+
+        .ai-processing.active {
+            display: block;
+        }
+
+        .ai-processing-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--color-gray-300);
+            border-top-color: var(--color-ai-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: var(--spacing-md);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .ai-suggestions {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: #fffbf0;
+            border: var(--border-width-thin) solid #ffa500;
+            border-radius: var(--radius-md);
+        }
+
+        .ai-suggestions h4 {
+            font-size: var(--font-size-sm);
+            color: #ff8c00;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .ai-suggestion-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-xs);
+            margin-bottom: var(--spacing-xs);
+            background: var(--color-white);
+            border-radius: var(--radius-sm);
+        }
+
+        /* Feature List */
+        .feature-list {
+            border: var(--border-width-thin) solid var(--color-gray-300);
+            padding: var(--spacing-md);
+            margin: var(--spacing-lg) 0;
+        }
+
+        .feature-list h3 {
+            font-size: var(--font-size-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .feature-list ul {
+            list-style: none;
+        }
+
+        .feature-list li {
+            margin-bottom: var(--spacing-xs);
+            font-size: var(--font-size-sm);
+        }
+
+        .feature-list li:before {
+            content: "•";
+            margin-right: var(--spacing-xs);
+            font-weight: bold;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: var(--spacing-xl);
+            font-size: var(--font-size-xs);
+            color: var(--color-gray-600);
+        }
+
+        /* Page-specific styles */
+        .login-container {
+            text-align: center;
+            padding: var(--spacing-xl);
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: var(--spacing-2xl);
+        }
+
+        .google-signin {
+            display: inline-block;
+            background: var(--color-black);
+            color: var(--color-white);
+            padding: var(--spacing-lg) var(--spacing-2xl);
+            font-size: var(--font-size-lg);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .google-signin:hover {
+            background: var(--color-gray-800);
+        }
+
+        .profile-info {
+            background: var(--color-gray-50);
+            border: var(--border-width-thin) solid var(--color-gray-300);
+            padding: var(--spacing-md);
+            margin: var(--spacing-md) 0;
+        }
+
+        .profile-info h4 {
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .current-items {
+            max-height: 250px;
+            overflow-y: auto;
+            border: var(--border-width-thin) solid var(--color-gray-300);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .total-row {
+            background: var(--color-gray-50);
+            font-weight: 600;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: var(--border-width-thin) solid var(--color-gray-200);
+            font-size: var(--font-size-sm);
+        }
+
+        .actions {
+            text-align: center;
+            margin: var(--spacing-md) 0;
+        }
+
+        .btn-small {
+            padding: 2px var(--spacing-xs);
+            font-size: var(--font-size-xs);
+        }
+
+        /* Compact specific styles */
+        .inline-form {
+            display: flex;
+            align-items: end;
+            gap: var(--spacing-sm);
+        }
+
+        .inline-form .form-col {
+            margin-bottom: 0;
+        }
+
+        .date-input {
+            display: flex;
+            gap: var(--spacing-xs);
+            align-items: center;
+        }
+
+        .date-input input {
+            width: 45px;
+            text-align: center;
+        }
+
+        .currency-amount {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        /* File upload styles */
+        .file-upload-area {
+            border: 2px dashed var(--color-gray-300);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            text-align: center;
+            transition: var(--transition-fast);
+            margin: var(--spacing-md) 0;
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--color-gray-500);
+            background: var(--color-gray-50);
+        }
+
+        .file-upload-area.dragover {
+            border-color: var(--color-black);
+            background: var(--color-gray-100);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-upload-button {
+            background: var(--color-white);
+            border: var(--border-width-thin) solid var(--color-black);
+            padding: var(--spacing-sm) var(--spacing-md);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .file-upload-button:hover {
+            background: var(--color-gray-50);
+        }
+
+        .attached-files {
+            margin-top: var(--spacing-md);
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border: var(--border-width-thin) solid var(--color-gray-300);
+            margin-bottom: var(--spacing-xs);
+            font-size: var(--font-size-sm);
+        }
+
+        .file-item:hover {
+            background: var(--color-gray-50);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .file-icon {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+        }
+
+        .file-name {
+            font-weight: 500;
+        }
+
+        .file-size {
+            color: var(--color-gray-600);
+            font-size: var(--font-size-xs);
+        }
+
+        .file-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="page-login" class="page active">
+        <div class="login-container">
+            <div class="header">
+                <h1>Wild Dynasty Pte Ltd</h1>
+                <h2>Expense Claim System with AI Assistant</h2>
+            </div>
+            
+            <button class="google-signin" onclick="mockGoogleLogin()">
+                Sign in with Google
+            </button>
+            
+            <div class="feature-list">
+                <h3>System Features</h3>
+                <ul>
+                    <li>Submit expense claims online</li>
+                    <li>AI-powered expense entry assistance</li>
+                    <li>Voice input for quick expense recording</li>
+                    <li>Image recognition for receipts</li>
+                    <li>Track claim history and status</li>
+                    <li>Export to CSV for accounting</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Binding Page -->
+    <div id="page-binding" class="page">
+        <div class="header">
+            <h1>Wild Dynasty Pte Ltd</h1>
+            <h2>Employee Profile Binding</h2>
+        </div>
+        
+        <div class="form-section">
+            <h3>Select Your Employee Profile</h3>
+            
+            <div class="form-group">
+                <label for="employeeSelect">Choose Employee</label>
+                <select id="employeeSelect" onchange="updateEmployeeProfile()">
+                    <option value="">-- Select Employee --</option>
+                    <option value="EMP001">EMP001 - Andy Zhang</option>
+                    <option value="EMP002">EMP002 - Lucas Zhao</option>
+                    <option value="EMP003">EMP003 - Celine Chiong</option>
+                    <option value="EMP004">EMP004 - Eve Li</option>
+                </select>
+            </div>
+            
+            <div class="profile-info">
+                <h4>Profile Details</h4>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Employee Code</label>
+                        <input type="text" id="employeeCode" disabled>
+                    </div>
+                    <div class="form-col">
+                        <label>Staff Name</label>
+                        <input type="text" id="staffName" disabled>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Department</label>
+                        <input type="text" id="department" disabled>
+                    </div>
+                    <div class="form-col">
+                        <label>Email</label>
+                        <input type="email" id="email" disabled>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button class="btn btn-primary btn-large" onclick="confirmEmployeeBinding()">Confirm Binding</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Form Page -->
+    <div id="page-form" class="page">
+        <div class="header">
+            <h1>Wild Dynasty Pte Ltd</h1>
+            <h2>New Expense Claim</h2>
+        </div>
+
+        <div class="status-bar">
+            <span>Employee: <strong id="currentEmployee">-</strong></span>
+            <span>Posting Date: <strong id="currentDate"></strong></span>
+        </div>
+
+        <!-- AI Assistant Section -->
+        <div class="ai-assistant">
+            <h3>AI Expense Assistant</h3>
+            
+            <div class="ai-input-methods">
+                <div class="ai-method" onclick="selectAIMethod('text')">
+                    <div class="ai-method-icon">💬</div>
+                    <div class="ai-method-label">Text Description</div>
+                </div>
+                <div class="ai-method" onclick="selectAIMethod('voice')">
+                    <div class="ai-method-icon">🎤</div>
+                    <div class="ai-method-label">Voice Input</div>
+                </div>
+                <div class="ai-method" onclick="selectAIMethod('image')">
+                    <div class="ai-method-icon">📷</div>
+                    <div class="ai-method-label">Receipt Image</div>
+                </div>
+            </div>
+
+            <!-- Text Input Area -->
+            <div id="textInputArea" class="ai-input-area">
+                <textarea 
+                    class="ai-text-input" 
+                    placeholder="Describe your expense in natural language. For example: 'Taxi from office to client meeting at Marina Bay, cost $25 on November 15'"
+                    id="aiTextInput"
+                ></textarea>
+                <button class="btn btn-ai" onclick="processTextInput()">Process with AI</button>
+            </div>
+
+            <!-- Voice Input Area -->
+            <div id="voiceInputArea" class="ai-input-area">
+                <div class="voice-recorder">
+                    <button id="recordButton" onclick="toggleRecording()">🎤</button>
+                    <div class="voice-status" id="voiceStatus">Click to start recording</div>
+                </div>
+                <div id="voiceTranscript" style="display: none; margin-top: var(--spacing-md);">
+                    <h4 style="font-size: var(--font-size-sm);">Transcript:</h4>
+                    <div id="transcriptText" style="padding: var(--spacing-sm); background: var(--color-white); border: 1px solid var(--color-gray-300); border-radius: var(--radius-sm);"></div>
+                    <button class="btn btn-ai" onclick="processVoiceTranscript()" style="margin-top: var(--spacing-sm);">Process Transcript</button>
+                </div>
+            </div>
+
+            <!-- Image Upload Area -->
+            <div id="imageInputArea" class="ai-input-area">
+                <div 
+                    class="image-upload-zone" 
+                    id="imageUploadZone"
+                    onclick="document.getElementById('receiptImage').click()"
+                    ondrop="handleReceiptDrop(event)"
+                    ondragover="handleReceiptDragOver(event)"
+                    ondragleave="handleReceiptDragLeave(event)"
+                >
+                    <input type="file" id="receiptImage" class="file-input" accept="image/*" onchange="handleReceiptSelect(event)">
+                    <div class="ai-method-icon">📸</div>
+                    <p>Click to upload or drag & drop receipt image</p>
+                    <p style="font-size: var(--font-size-xs); color: var(--color-gray-600);">Supports JPG, PNG (Max 10MB)</p>
+                </div>
+                <div id="imagePreview" style="display: none; margin-top: var(--spacing-md);"></div>
+            </div>
+
+            <!-- AI Processing Indicator -->
+            <div id="aiProcessing" class="ai-processing">
+                <div class="ai-processing-spinner"></div>
+                <p>AI is processing your input...</p>
+            </div>
+
+            <!-- AI Preview/Results -->
+            <div id="aiPreview" class="ai-preview" style="display: none;">
+                <h4>AI Extracted Information:</h4>
+                <div id="aiExtractedItems"></div>
+                <div style="margin-top: var(--spacing-md); text-align: center;">
+                    <button class="btn btn-ai" onclick="applyAIExtraction()">Apply to Form</button>
+                    <button class="btn" onclick="clearAIPreview()">Clear</button>
+                </div>
+            </div>
+
+            <!-- AI Suggestions -->
+            <div id="aiSuggestions" class="ai-suggestions" style="display: none;">
+                <h4>💡 AI Suggestions:</h4>
+                <div id="suggestionsList"></div>
+            </div>
+        </div>
+
+        <!-- Manual Form Section -->
+        <div class="form-section">
+            <h3>Expense Details</h3>
+            
+            <div class="inline-form">
+                <div class="form-col">
+                    <label>Date</label>
+                    <div class="date-input">
+                        <input type="text" id="expenseMonth" placeholder="MM" maxlength="2">
+                        <span>/</span>
+                        <input type="text" id="expenseDay" placeholder="DD" maxlength="2">
+                    </div>
+                </div>
+                
+                <div class="form-col">
+                    <label>Item No</label>
+                    <select id="itemNo" onchange="updateGLAccount()">
+                        <option value="">Select</option>
+                        <option value="A1">A1 - Entertainment</option>
+                        <option value="A2">A2 - IT Services</option>
+                        <option value="A3">A3 - Medical</option>
+                        <option value="B1">B1 - Office</option>
+                        <option value="B2">B2 - Printing</option>
+                        <option value="B3">B3 - Courier</option>
+                        <option value="C1">C1 - Telephone</option>
+                        <option value="C2">C2 - Transportation</option>
+                        <option value="C3">C3 - Travel Intl</option>
+                        <option value="C4">C4 - Training</option>
+                    </select>
+                </div>
+                
+                <div class="form-col-small">
+                    <label>GL Acct</label>
+                    <input type="text" id="glAccount" disabled>
+                </div>
+                
+                <div class="form-col">
+                    <label>Item / Note</label>
+                    <input type="text" id="itemNote" placeholder="Brief description">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Details/Reason (Please Indicate Restaurant name or Supplier Name)</label>
+                <textarea id="detailsReason" placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Currency</label>
+                    <select id="currency" onchange="updateForexRate()">
+                        <option value="SGD">SGD</option>
+                        <option value="THB">THB</option>
+                        <option value="PHP">PHP</option>
+                        <option value="VND">VND</option>
+                        <option value="CNY">CNY</option>
+                        <option value="INR">INR</option>
+                        <option value="IDR">IDR</option>
+                        <option value="USD">USD</option>
+                        <option value="MYR">MYR</option>
+                    </select>
+                </div>
+                
+                <div class="form-col">
+                    <label>Amount</label>
+                    <input type="number" id="amount" step="0.01" onchange="calculateSGD()">
+                </div>
+                
+                <div class="form-col">
+                    <label>Forex Rate</label>
+                    <input type="text" id="forexRate" value="1.0000" disabled>
+                </div>
+                
+                <div class="form-col">
+                    <label>SGD Amount</label>
+                    <input type="text" id="sgdAmount" disabled>
+                </div>
+                
+                <div class="form-col-small">
+                    <label>Evidence</label>
+                    <input type="text" id="evidenceNo" placeholder="No.">
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button class="btn btn-primary" onclick="addExpenseItem()">+ Add Item</button>
+            </div>
+        </div>
+
+        <!-- Current Items Table -->
+        <div class="form-section">
+            <h3>Current Items</h3>
+            
+            <div class="current-items">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Item No</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>SGD</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenseTableBody">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="total-row" style="padding: var(--spacing-sm); text-align: right;">
+                <strong>Total SGD: <span id="totalSGD">0.00</span></strong>
+            </div>
+        </div>
+
+        <!-- File Attachments -->
+        <div class="form-section">
+            <h3>Supporting Documents</h3>
+            
+            <div 
+                class="file-upload-area" 
+                id="fileUploadArea"
+                ondrop="handleDrop(event)"
+                ondragover="handleDragOver(event)"
+                ondragleave="handleDragLeave(event)"
+            >
+                <input type="file" id="fileInput" class="file-input" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(event)">
+                <button class="file-upload-button" onclick="document.getElementById('fileInput').click()">
+                    Choose Files
+                </button>
+                <p style="margin-top: var(--spacing-sm); font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                    or drag and drop files here
+                </p>
+                <p style="font-size: var(--font-size-xs); color: var(--color-gray-400);">
+                    Accepted formats: JPG, PNG, PDF, DOC, XLS (Max 10MB)
+                </p>
+            </div>
+            
+            <div class="attached-files" id="attachedFiles">
+                <div id="fileList"></div>
+            </div>
+        </div>
+
+        <!-- Submit Section -->
+        <div class="actions">
+            <button class="btn" onclick="showPage('page-history')">Cancel</button>
+            <button class="btn btn-primary btn-large" onclick="submitExpenseClaim()">Submit Claim</button>
+        </div>
+    </div>
+
+    <!-- History Page -->
+    <div id="page-history" class="page">
+        <div class="header">
+            <h1>Wild Dynasty Pte Ltd</h1>
+            <h2>Expense Claim History</h2>
+        </div>
+        
+        <div class="status-bar">
+            <span>Employee: <strong id="historyEmployee">-</strong></span>
+            <button class="btn" onclick="showPage('page-login')">Logout</button>
+        </div>
+        
+        <div class="form-section">
+            <h3>Your Claims</h3>
+            
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Claim ID</th>
+                        <th>Date</th>
+                        <th>Amount (SGD)</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>CL-2024-0012</td>
+                        <td>2024-11-15</td>
+                        <td>125.50</td>
+                        <td style="color: green;">Approved</td>
+                        <td>
+                            <button class="btn btn-small" onclick="alert('View details')">View</button>
+                            <button class="btn btn-small" onclick="alert('Download CSV')">CSV</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>CL-2024-0011</td>
+                        <td>2024-11-10</td>
+                        <td>89.00</td>
+                        <td style="color: orange;">Pending</td>
+                        <td>
+                            <button class="btn btn-small" onclick="alert('Edit claim')">Edit</button>
+                            <button class="btn btn-small" onclick="alert('Download CSV')">CSV</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>CL-2024-0010</td>
+                        <td>2024-11-05</td>
+                        <td>256.30</td>
+                        <td style="color: green;">Approved</td>
+                        <td>
+                            <button class="btn btn-small" onclick="alert('View details')">View</button>
+                            <button class="btn btn-small" onclick="alert('Download CSV')">CSV</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="form-row" style="margin-top: var(--spacing-lg);">
+                <div class="form-col">
+                    <strong>Total Approved: SGD 381.80</strong>
+                </div>
+                <div class="form-col" style="font-size: var(--font-size-sm);">
+                    <strong>Pending: 1</strong>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="btn btn-primary btn-large" onclick="showPage('page-form')">+ New Claim</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock data
+        const employees = {
+            'EMP001': { name: 'Andy Zhang', department: 'Finance & Accounting', email: 'andy.zhang@wilddynasty.com' },
+            'EMP002': { name: 'Lucas Zhao', department: 'Human Resources', email: 'lucas.zhao@wilddynasty.com' },
+            'EMP003': { name: 'Celine Chiong', department: 'IT Department', email: 'celine.chiong@wilddynasty.com' },
+            'EMP004': { name: 'Eve Li', department: 'Marketing', email: 'eve.li@wilddynasty.com' }
+        };
+
+        const glAccounts = {
+            'A1': '420', 'A2': '439', 'A3': '449', 'B1': '453', 'B2': '461', 'B3': '463',
+            'C1': '489', 'C2': '493', 'C3': '494', 'C4': '495', 'D1': '400', 'E1': '404',
+            'F1': '408', 'G1': '710', 'G2': '720', 'G3': '730', 'H1': '422', 'I1': '425',
+            'K1': '429', 'L1': '433', 'M1': '441', 'N1': '469', 'O1': '470', 'P1': '473',
+            'Q1': '480', 'R1': '485', 'R2': '620', 'R3': '615'
+        };
+
+        const forexRates = {
+            'SGD': 1.0000, 'THB': 0.0270, 'PHP': 0.0240, 'VND': 0.000041, 'CNY': 0.1950,
+            'INR': 0.0120, 'IDR': 0.000067, 'USD': 1.3400, 'MYR': 0.2950
+        };
+
+        let currentUser = null;
+        let expenseItems = [];
+        let attachedFiles = [];
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let currentAIMethod = null;
+        let aiExtractedData = null;
+
+        // Initialize date
+        document.getElementById('currentDate') = new Date().toLocaleDateString();
+
+        // Navigation functions
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // Login functions
+        function mockGoogleLogin() {
+            showPage('page-binding');
+        }
+
+        // Employee binding functions
+        function updateEmployeeProfile() {
+            const empCode = document.getElementById('employeeSelect').value;
+            if (empCode && employees[empCode]) {
+                const emp = employees[empCode];
+                document.getElementById('staffName').value = emp.name;
+                document.getElementById('department').value = emp.department;
+                document.getElementById('employeeCode').value = empCode;
+                document.getElementById('email').value = emp.email;
+            } else {
+                document.getElementById('staffName').value = '';
+                document.getElementById('department').value = '';
+                document.getElementById('employeeCode').value = '';
+                document.getElementById('email').value = '';
+            }
+        }
+
+        function confirmEmployeeBinding() {
+            const empCode = document.getElementById('employeeSelect').value;
+            if (empCode && employees[empCode]) {
+                currentUser = {
+                    code: empCode,
+                    ...employees[empCode]
+                };
+                document.getElementById('currentEmployee').textContent = `${currentUser.name} (${currentUser.code})`;
+                document.getElementById('historyEmployee').textContent = `${currentUser.name} (${currentUser.code})`;
+                showPage('page-history');
+            } else {
+                alert('Please select an employee profile.');
+            }
+        }
+
+        // AI Assistant Functions
+        function selectAIMethod(method) {
+            currentAIMethod = method;
+            
+            // Update UI
+            document.querySelectorAll('.ai-method').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.ai-input-area').forEach(el => el.classList.remove('active'));
+            
+            event.target.closest('.ai-method').classList.add('active');
+            
+            if (method === 'text') {
+                document.getElementById('textInputArea').classList.add('active');
+            } else if (method === 'voice') {
+                document.getElementById('voiceInputArea').classList.add('active');
+            } else if (method === 'image') {
+                document.getElementById('imageInputArea').classList.add('active');
+            }
+        }
+
+        // Text Input Processing
+        function processTextInput() {
+            const text = document.getElementById('aiTextInput').value;
+            if (!text.trim()) {
+                alert('Please enter a description of your expense.');
+                return;
+            }
+            
+            showAIProcessing();
+            
+            // Simulate AI processing
+            setTimeout(() => {
+                const extracted = mockAITextExtraction(text);
+                displayAIExtraction(extracted);
+                hideAIProcessing();
+            }, 2000);
+        }
+
+        function mockAITextExtraction(text) {
+            // Mock AI extraction logic
+            const lowerText = text.toLowerCase();
+            const data = {
+                items: []
+            };
+            
+            // Extract date
+            const dateMatch = text.match(/(\d{1,2})[\/\-](\d{1,2})|november (\d{1,2})|(\d{1,2}) november/i);
+            if (dateMatch) {
+                data.date = { month: '11', day: dateMatch[3] || dateMatch[4] || dateMatch[2] };
+            }
+            
+            // Extract amount
+            const amountMatch = text.match(/\$?([\d,]+\.?\d*)/);
+            if (amountMatch) {
+                data.amount = parseFloat(amountMatch[1].replace(',', ''));
+            }
+            
+            // Detect expense type
+            let itemNo = 'K1'; // Default to general expenses
+            if (lowerText.includes('taxi') || lowerText.includes('grab') || lowerText.includes('transport')) {
+                itemNo = 'C2';
+            } else if (lowerText.includes('lunch') || lowerText.includes('dinner') || lowerText.includes('meal')) {
+                itemNo = 'A1';
+            } else if (lowerText.includes('hotel') || lowerText.includes('flight')) {
+                itemNo = 'C3';
+            }
+            
+            data.items.push({
+                itemNo: itemNo,
+                description: text.substring(0, 50),
+                details: text,
+                currency: 'SGD',
+                amount: data.amount || 0
+            });
+            
+            return data;
+        }
+
+        // Voice Recording Functions
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    processAudioRecording(audioBlob);
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                
+                document.getElementById('recordButton').classList.add('recording');
+                document.getElementById('voiceStatus').textContent = 'Recording... Click to stop';
+            } catch (error) {
+                alert('Unable to access microphone. Please ensure you have granted permission.');
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                
+                document.getElementById('recordButton').classList.remove('recording');
+                document.getElementById('voiceStatus').textContent = 'Processing audio...';
+            }
+        }
+
+        function processAudioRecording(audioBlob) {
+            // Simulate transcription
+            showAIProcessing();
+            
+            setTimeout(() => {
+                const mockTranscript = "I took a taxi from the office to meet with KPMG at Marina Bay Financial Centre. The fare was 25 dollars including ERP charges.";
+                
+                document.getElementById('transcriptText').textContent = mockTranscript;
+                document.getElementById('voiceTranscript').style.display = 'block';
+                document.getElementById('voiceStatus').textContent = 'Transcription complete';
+                
+                hideAIProcessing();
+            }, 2000);
+        }
+
+        function processVoiceTranscript() {
+            const transcript = document.getElementById('transcriptText').textContent;
+            
+            showAIProcessing();
+            
+            setTimeout(() => {
+                const extracted = mockAITextExtraction(transcript);
+                displayAIExtraction(extracted);
+                hideAIProcessing();
+            }, 1500);
+        }
+
+        // Image Processing Functions
+        function handleReceiptSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processReceiptImage(file);
+            }
+        }
+
+        function handleReceiptDrop(event) {
+            event.preventDefault();
+            document.getElementById('imageUploadZone').classList.remove('dragover');
+            
+            const file = event.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                processReceiptImage(file);
+            }
+        }
+
+        function handleReceiptDragOver(event) {
+            event.preventDefault();
+            document.getElementById('imageUploadZone').classList.add('dragover');
+        }
+
+        function handleReceiptDragLeave(event) {
+            event.preventDefault();
+            document.getElementById('imageUploadZone').classList.remove('dragover');
+        }
+
+        function processReceiptImage(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                // Display preview
+                document.getElementById('imagePreview').innerHTML = `
+                    <img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-md);">
+                `;
+                document.getElementById('imagePreview').style.display = 'block';
+                
+                // Process with AI
+                showAIProcessing();
+                
+                setTimeout(() => {
+                    const extracted = mockOCRExtraction();
+                    displayAIExtraction(extracted);
+                    hideAIProcessing();
+                    
+                    // Show suggestions
+                    showAISuggestions();
+                }, 3000);
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function mockOCRExtraction() {
+            // Mock OCR extraction
+            return {
+                items: [
+                    {
+                        itemNo: 'A1',
+                        description: 'Business Lunch - Raffles Place',
+                        details: 'Client meeting at PS.Cafe, Raffles Place. Attendees: John Smith (KPMG), Sarah Lee (PWC)',
+                        currency: 'SGD',
+                        amount: 85.50,
+                        date: { month: '11', day: '15' }
+                    }
+                ]
+            };
+        }
+
+        // AI Display Functions
+        function displayAIExtraction(data) {
+            aiExtractedData = data;
+            
+            let html = '';
+            data.items.forEach((item, index) => {
+                html += `
+                    <div class="ai-extracted-item">
+                        <strong>Item ${index + 1}:</strong><br>
+                        Date: ${item.date ? `${item.date.month}/${item.date.day}` : 'Not detected'}<br>
+                        Category: ${getItemDescription(item.itemNo)}<br>
+                        Amount: ${item.currency} ${item.amount.toFixed(2)}<br>
+                        Description: ${item.description}
+                    </div>
+                `;
+            });
+            
+            document.getElementById('aiExtractedItems').innerHTML = html;
+            document.getElementById('aiPreview').style.display = 'block';
+        }
+
+        function applyAIExtraction() {
+            if (!aiExtractedData || !aiExtractedData.items.length) return;
+            
+            const item = aiExtractedData.items[0]; // Apply first item
+            
+            if (item.date) {
+                document.getElementById('expenseMonth').value = item.date.month;
+                document.getElementById('expenseDay').value = item.date.day;
+            }
+            
+            document.getElementById('itemNo').value = item.itemNo;
+            updateGLAccount();
+            
+            document.getElementById('itemNote').value = item.description;
+            document.getElementById('detailsReason').value = item.details;
+            document.getElementById('currency').value = item.currency;
+            updateForexRate();
+            
+            document.getElementById('amount').value = item.amount;
+            calculateSGD();
+            
+            clearAIPreview();
+            
+            // Show success message
+            alert('AI extraction applied to form successfully!');
+        }
+
+        function clearAIPreview() {
+            document.getElementById('aiPreview').style.display = 'none';
+            document.getElementById('aiExtractedItems').innerHTML = '';
+            aiExtractedData = null;
+        }
+
+        function showAISuggestions() {
+            const suggestions = [
+                { text: 'Remember to attach the original receipt', action: 'reminder' },
+                { text: 'This expense might be tax deductible', action: 'info' },
+                { text: 'Similar claims were filed on 11/10 and 11/05', action: 'history' }
+            ];
+            
+            let html = '';
+            suggestions.forEach(suggestion => {
+                html += `
+                    <div class="ai-suggestion-item">
+                        <span>${suggestion.text}</span>
+                        <button class="btn btn-small" onclick="handleSuggestion('${suggestion.action}')">ℹ</button>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('suggestionsList').innerHTML = html;
+            document.getElementById('aiSuggestions').style.display = 'block';
+        }
+
+        function handleSuggestion(action) {
+            alert(`AI Suggestion: ${action}`);
+        }
+
+        function showAIProcessing() {
+            document.getElementById('aiProcessing').classList.add('active');
+        }
+
+        function hideAIProcessing() {
+            document.getElementById('aiProcessing').classList.remove('active');
+        }
+
+        function getItemDescription(itemNo) {
+            const descriptions = {
+                'A1': 'Entertainment',
+                'A2': 'IT Services',
+                'A3': 'Medical',
+                'B1': 'Office',
+                'B2': 'Printing',
+                'B3': 'Courier',
+                'C1': 'Telephone',
+                'C2': 'Transportation',
+                'C3': 'Travel International',
+                'C4': 'Training',
+                'K1': 'General Expenses'
+            };
+            return descriptions[itemNo] || 'General';
+        }
+
+        // Form functions
+        function updateGLAccount() {
+            const itemNo = document.getElementById('itemNo').value;
+            document.getElementById('glAccount').value = glAccounts[itemNo] || '';
+        }
+
+        function updateForexRate() {
+            const currency = document.getElementById('currency').value;
+            document.getElementById('forexRate').value = forexRates[currency] || '1.0000';
+            calculateSGD();
+        }
+
+        function calculateSGD() {
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const rate = parseFloat(document.getElementById('forexRate').value) || 1;
+            document.getElementById('sgdAmount').value = (amount * rate).toFixed(2);
+        }
+
+        function addExpenseItem() {
+            const month = document.getElementById('expenseMonth').value;
+            const day = document.getElementById('expenseDay').value;
+            const itemNo = document.getElementById('itemNo').value;
+            const itemNote = document.getElementById('itemNote').value;
+            const detailsReason = document.getElementById('detailsReason').value;
+            const currency = document.getElementById('currency').value;
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const sgdAmount = parseFloat(document.getElementById('sgdAmount').value) || 0;
+            const evidenceNo = document.getElementById('evidenceNo').value;
+
+            if (!month || !day || !itemNo || !itemNote || !amount) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            const item = {
+                id: Date.now(),
+                date: `${month}/${day}`,
+                itemNo: itemNo,
+                description: itemNote,
+                details: detailsReason,
+                currency: currency,
+                amount: amount,
+                sgdAmount: sgdAmount,
+                evidenceNo: evidenceNo
+            };
+
+            expenseItems.push(item);
+            renderExpenseTable();
+            clearForm();
+        }
+
+        function removeExpenseItem(id) {
+            expenseItems = expenseItems.filter(item => item.id !== id);
+            renderExpenseTable();
+        }
+
+        function renderExpenseTable() {
+            const tbody = document.getElementById('expenseTableBody');
+            tbody.innerHTML = '';
+            
+            let total = 0;
+            expenseItems.forEach(item => {
+                total += parseFloat(item.sgdAmount) || 0;
+                const row = `
+                    <tr>
+                        <td>${item.date}</td>
+                        <td>${item.itemNo}</td>
+                        <td style="font-size: var(--font-size-xs);">${item.description}</td>
+                        <td>${item.currency} ${item.amount.toFixed(2)}</td>
+                        <td>${item.sgdAmount.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-small" onclick="removeExpenseItem(${item.id})">×</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+            
+            updateTotalSGD(total);
+        }
+
+        function updateTotalSGD(total = null) {
+            if (total === null) {
+                total = expenseItems.reduce((sum, item) => sum + (parseFloat(item.sgdAmount) || 0), 0);
+            }
+            document.getElementById('totalSGD').textContent = total.toFixed(2);
+        }
+
+        function clearForm() {
+            document.getElementById('expenseMonth').value = '';
+            document.getElementById('expenseDay').value = '';
+            document.getElementById('itemNo').value = '';
+            document.getElementById('glAccount').value = '';
+            document.getElementById('itemNote').value = '';
+            document.getElementById('detailsReason').value = '';
+            document.getElementById('currency').value = 'SGD';
+            document.getElementById('amount').value = '';
+            document.getElementById('forexRate').value = '1.0000';
+            document.getElementById('sgdAmount').value = '';
+            document.getElementById('evidenceNo').value = '';
+            
+            // Clear AI inputs
+            document.getElementById('aiTextInput').value = '';
+            document.getElementById('voiceTranscript').style.display = 'none';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('aiSuggestions').style.display = 'none';
+            clearAIPreview();
+        }
+
+        function submitExpenseClaim() {
+            if (expenseItems.length === 0) {
+                alert('Please add at least one expense item.');
+                return;
+            }
+            
+            // Generate CSV and download
+            downloadExpenseCSV();
+            
+            // Clear the form and go to history
+            expenseItems = [];
+            renderExpenseTable();
+            clearForm();
+            showPage('page-history');
+            
+            alert('Expense claim submitted successfully! CSV file has been downloaded.');
+        }
+
+        function downloadExpenseCSV() {
+            let csv = 'M,D,Item No,GL Acct,Item / Note,Details/Reason,Foreign Currency,Total Foreign Amount,Forex,SGD Amounts,Evidence No\n';
+            
+            expenseItems.forEach(item => {
+                const dateParts = item.date.split('/');
+                const details = item.details.replace(/"/g, '""');
+                csv += `${dateParts[0]},${dateParts[1]},${item.itemNo},${glAccounts[item.itemNo]},"${item.description}","${details}",${item.currency},${item.amount.toFixed(2)},${forexRates[item.currency].toFixed(4)},${item.sgdAmount.toFixed(2)},${item.evidenceNo}\n`;
+            });
+            
+            const total = expenseItems.reduce((sum, item) => sum + (parseFloat(item.sgdAmount) || 0), 0);
+            csv += `,,,,**TOTAL SGD**,,,,,**${total.toFixed(2)}**,\n`;
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `expense_claim_${currentUser.code}_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // File management functions
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            for (let file of files) {
+                if (validateFile(file)) {
+                    addFileToList(file);
+                }
+            }
+            event.target.value = '';
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            document.getElementById('fileUploadArea').classList.remove('dragover');
+            
+            const files = event.dataTransfer.files;
+            for (let file of files) {
+                if (validateFile(file)) {
+                    addFileToList(file);
+                }
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            document.getElementById('fileUploadArea').classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            document.getElementById('fileUploadArea').classList.remove('dragover');
+        }
+
+        function validateFile(file) {
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            const allowedTypes = [
+                'image/jpeg', 'image/png', 'image/jpg',
+                'application/pdf',
+                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ];
+
+            if (file.size > maxSize) {
+                alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
+                return false;
+            }
+
+            if (!allowedTypes.includes(file.type)) {
+                alert(`File "${file.name}" has unsupported format.`);
+                return false;
+            }
+
+            return true;
+        }
+
+        function addFileToList(file) {
+            const fileObj = {
+                id: Date.now() + Math.random(),
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                file: file
+            };
+
+            attachedFiles.push(fileObj);
+            renderFileList();
+        }
+
+        function renderFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            attachedFiles.forEach(fileObj => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">${fileObj.name}</span>
+                        <span class="file-size">(${formatFileSize(fileObj.size)})</span>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-small" onclick="removeFile(${fileObj.id})">Remove</button>
+                    </div>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function removeFile(id) {
+            attachedFiles = attachedFiles.filter(file => file.id !== id);
+            renderFileList();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
