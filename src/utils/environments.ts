@@ -10,7 +10,7 @@ export function getUrl() {
 
     // 只在开发环境使用 localhost
     if (process.env.NODE_ENV === 'development') {
-        return "http://localhost:3000";
+        return "http://localhost:3002";
     }
 
     // 生产环境应该抛出错误或使用 window.location.origin

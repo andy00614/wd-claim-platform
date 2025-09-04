@@ -39,7 +39,13 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const redirectTo = new URL("/auth/callback", getUrl());
+    const baseUrl = getUrl();
+    console.log('Base URL from getUrl():', baseUrl);
+    console.log('window.location.origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('NEXT_PUBLIC_URL:', process.env.NEXT_PUBLIC_URL);
+    
+    const redirectTo = new URL("/auth/callback", baseUrl);
 
     console.log('redirectTo',redirectTo)
 
