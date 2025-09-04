@@ -1,0 +1,129 @@
+.formSection {
+  border: 1px solid #cccccc;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.formSection h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 18px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.formGroup {
+  margin-bottom: 18px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.formGroup select {
+  width: 100%;
+  padding: 6px 9px;
+  font-size: 11px;
+  border: 1px solid #cccccc;
+  background: #ffffff;
+  font-family: inherit;
+}
+
+.profileInfo {
+  background: #f5f5f5;
+  border: 1px solid #cccccc;
+  padding: 18px;
+  margin: 18px 0;
+}
+
+.profileInfo h4 {
+  font-size: 11px;
+  margin-bottom: 18px;
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.profileGrid label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.profileGrid input {
+  width: 100%;
+  padding: 6px 9px;
+  font-size: 11px;
+  border: 1px solid #cccccc;
+  background: #f5f5f5;
+  color: #808080;
+  font-family: inherit;
+}
+
+.actions {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 11px;
+  border: 1px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.btn:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.btnPrimary {
+  background: #000000;
+  color: #ffffff;
+  padding: 12px 24px;
+  font-size: 13px;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: #333333;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnPrimary.loading {
+  background: #666666;
+  cursor: wait;
+  position: relative;
+  overflow: hidden;
+}
+
+.btnPrimary.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
