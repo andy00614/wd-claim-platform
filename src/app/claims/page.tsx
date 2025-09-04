@@ -80,7 +80,7 @@ export default async function ClaimsPage() {
                         <TableCell>
                           {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-center font-mono text-lg font-bold">
                           {parseFloat(claim.totalAmount).toFixed(2)}
                         </TableCell>
                         <TableCell>

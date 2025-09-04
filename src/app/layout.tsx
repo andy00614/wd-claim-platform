@@ -66,7 +66,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50`}>
-        <div className="max-w-5xl mx-auto p-6">
+        <div className="max-w-6xl mx-auto p-6">
           {/* 全局 Header */}
           <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-200">
             <DynamicTitle />
