@@ -56,9 +56,6 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       evidenceNo: formData.evidenceNo
     }
 
-
-    console.log(item)
-
     onAddItem(item)
     
     // 清空表单

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, serial, pgTable, varchar, timestamp, pgEnum, uuid, numeric } from "drizzle-orm/pg-core";
+import { integer, serial, pgTable, varchar, timestamp, pgEnum, uuid, numeric, text } from "drizzle-orm/pg-core";
 
 export const departmentEnum = pgEnum('department', [
   'Director',
@@ -10,12 +10,15 @@ export const departmentEnum = pgEnum('department', [
   'Knowledge Management'
 ]);
 
+export const employeeRoleEnum = pgEnum('employee_role', ['employee', 'admin']);
+
 
 export const employees = pgTable('employees', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 60 }).notNull(),
   employeeCode: integer('employee_code').notNull().unique(),
   departmentEnum: departmentEnum('department').notNull(),
+  role: employeeRoleEnum('role').notNull().default('employee'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date())
 })
@@ -52,6 +55,7 @@ export const claims = pgTable('claims', {
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()),
   status: claimStatusEnum('status').notNull().default('draft'),
   totalAmount: numeric('total_amount').notNull(),
+  adminNotes: text('admin_notes'),
 })
 
 export const claimItems = pgTable('claim_items', {

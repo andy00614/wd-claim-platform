@@ -4,9 +4,10 @@ import { useFormStatus } from 'react-dom'
 
 interface SubmitButtonProps {
   hasItems: boolean
+  buttonText?: string
 }
 
-export default function SubmitButton({ hasItems }: SubmitButtonProps) {
+export default function SubmitButton({ hasItems, buttonText = 'Submit Claim' }: SubmitButtonProps) {
   const { pending } = useFormStatus()
 
   return (
@@ -34,7 +35,7 @@ export default function SubmitButton({ hasItems }: SubmitButtonProps) {
             Submitting...
           </span>
         ) : (
-          'Submit Claim'
+          buttonText
         )}
       </button>
     </div>

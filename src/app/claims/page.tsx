@@ -1,8 +1,13 @@
-import { getUserClaims } from '@/lib/actions'
+import { getUserClaims, checkIsAdmin } from '@/lib/actions'
 import Link from 'next/link'
+import ActionButtons from './components/ActionButtons'
+import { logoutAction } from '../binding/actions'
 
 export default async function ClaimsPage() {
-  const claimsData = await getUserClaims()
+  const [claimsData, adminCheck] = await Promise.all([
+    getUserClaims(),
+    checkIsAdmin()
+  ])
 
   if (!claimsData.success || !claimsData.data) {
     return (
@@ -29,12 +34,22 @@ export default async function ClaimsPage() {
           <h2 className="text-sm">Expense Claim History</h2>
         </div>
 
-        {/* 用户信息和登出 */}
+        {/* 用户信息和导航 */}
         <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-200 text-sm">
           <span>Employee: <strong>{employee.name} (EMP{employee.employeeCode.toString().padStart(3, '0')})</strong></span>
-          <button className="px-4 py-2 border border-gray-300 hover:bg-gray-50">
-            Logout
-          </button>
+          <div className="flex gap-4 items-center">
+            {adminCheck.success && adminCheck.data?.isAdmin && (
+              <Link 
+                href="/admin"
+                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Admin Dashboard
+              </Link>
+            )}
+            <button className="px-4 py-2 border border-gray-300 hover:bg-gray-50" onClick={logoutAction}>
+              Logout
+            </button>
+          </div>
         </div>
 
         {/* 申请表格 */}
@@ -51,6 +66,7 @@ export default async function ClaimsPage() {
                     <th className="text-left p-3 font-semibold">Date</th>
                     <th className="text-left p-3 font-semibold">Amount (SGD)</th>
                     <th className="text-left p-3 font-semibold">Status</th>
+                    <th className="text-left p-3 font-semibold">Admin Notes</th>
                     <th className="text-left p-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -74,20 +90,9 @@ export default async function ClaimsPage() {
                              claim.status}
                           </span>
                         </td>
+                        <td className="p-3">{claim.adminNotes || '-'}</td>
                         <td className="p-3">
-                          <div className="flex gap-2">
-                            <button className="px-3 py-1 border border-gray-300 hover:bg-gray-50 text-sm">
-                              View
-                            </button>
-                            <button className="px-3 py-1 border border-gray-300 hover:bg-gray-50 text-sm">
-                              CSV
-                            </button>
-                            {claim.status === 'submitted' && (
-                              <button className="px-3 py-1 border border-gray-300 hover:bg-gray-50 text-sm">
-                                Edit
-                              </button>
-                            )}
-                          </div>
+                          <ActionButtons claim={claim} />
                         </td>
                       </tr>
                     ))
