@@ -1,5 +1,6 @@
 import { getClaimDetails } from '@/lib/actions'
 import Link from 'next/link'
+import BackButton from './components/BackButton'
 
 interface ClaimDetailPageProps {
   params: Promise<{ id: string }>
@@ -38,12 +39,9 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
 
         {/* 返回按钮 */}
         <div className="mb-6">
-          <Link 
-            href="/claims"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 hover:bg-gray-50"
-          >
-            ← Back to Claims
-          </Link>
+          <BackButton className="inline-flex items-center px-4 py-2 border border-gray-300 hover:bg-gray-50">
+            ← Back
+          </BackButton>
         </div>
 
         {/* 申请信息 */}
@@ -192,23 +190,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
         )}
 
         {/* 操作按钮 */}
-        <div className="flex gap-4">
-          <Link 
-            href="/claims"
-            className="px-4 py-2 border border-gray-300 hover:bg-gray-50"
-          >
-            Back to Claims
-          </Link>
-          
-          {claim.status === 'submitted' && (
-            <Link 
-              href={`/claims/${claim.id}/edit`}
-              className="px-4 py-2 bg-black text-white hover:bg-gray-800"
-            >
-              Edit Claim
-            </Link>
-          )}
-        </div>
+        
       </div>
     </div>
   )

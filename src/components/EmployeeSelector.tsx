@@ -30,7 +30,6 @@ export function EmployeeSelector({ employees, currentBindingId, onSubmit }: Empl
 
   const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId)
 
-  console.log({employees,selectedEmployee})
   return (
     <div className={styles.formSection}>
       <h3>{currentBindingId ? 'Change Employee Profile' : 'Select Your Employee Profile'}</h3>

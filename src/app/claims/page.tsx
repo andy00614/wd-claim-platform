@@ -38,6 +38,12 @@ export default async function ClaimsPage() {
         <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-200 text-sm">
           <span>Employee: <strong>{employee.name} (EMP{employee.employeeCode.toString().padStart(3, '0')})</strong></span>
           <div className="flex gap-4 items-center">
+            <Link 
+              href="/claims/new"
+              className="px-4 py-2 bg-green-600 text-white hover:bg-green-700"
+            >
+              + New Claim
+            </Link>
             {adminCheck.success && adminCheck.data?.isAdmin && (
               <Link 
                 href="/admin"
@@ -83,10 +89,16 @@ export default async function ClaimsPage() {
                               ? 'text-green-700 bg-green-100' 
                               : claim.status === 'submitted'
                               ? 'text-orange-700 bg-orange-100'
+                              : claim.status === 'draft'
+                              ? 'text-blue-700 bg-blue-100'
+                              : claim.status === 'rejected'
+                              ? 'text-red-700 bg-red-100'
                               : 'text-gray-700 bg-gray-100'
                           }`}>
                             {claim.status === 'approved' ? 'Approved' : 
                              claim.status === 'submitted' ? 'Pending' : 
+                             claim.status === 'draft' ? 'Draft' :
+                             claim.status === 'rejected' ? 'Rejected' :
                              claim.status}
                           </span>
                         </td>

@@ -4,7 +4,92 @@ import { db } from '@/lib/db/drizzle'
 import { claims, claimItems, itemType, currency, employees, userEmployeeBind, attachment } from '@/lib/db/schema'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, and } from 'drizzle-orm'
+
+// 保存草稿
+export async function saveDraft(prevState: any, formData: FormData) {
+  try {
+    const employeeId = parseInt(formData.get('employeeId') as string)
+    const expenseItemsJson = formData.get('expenseItems') as string
+    const expenseItems = JSON.parse(expenseItemsJson)
+
+    if (!employeeId) {
+      return { success: false, error: '缺少员工信息' }
+    }
+
+    // 计算总金额
+    const totalAmount = expenseItems.reduce((sum: number, item: any) => sum + item.sgdAmount, 0)
+
+    // 在数据库事务中处理
+    const result = await db.transaction(async (tx) => {
+      // 1. 创建草稿申请记录
+      const [newClaim] = await tx.insert(claims).values({
+        employeeId,
+        totalAmount: totalAmount.toString(),
+        status: 'draft' // 保存为草稿状态
+      }).returning({ id: claims.id })
+
+      // 2. 如果有expense items，保存它们
+      if (expenseItems.length > 0) {
+        const itemTypes = await tx.select().from(itemType)
+        const currencies = await tx.select().from(currency)
+        
+        const itemTypeMap = Object.fromEntries(itemTypes.map(it => [it.no, it.id]))
+        const currencyMap = Object.fromEntries(currencies.map(c => [c.code, c.id]))
+
+        const claimItemsData = expenseItems.map((item: any) => {
+          const [month, day] = item.date.split('/')
+          const currentYear = new Date().getFullYear()
+          const itemDate = new Date(currentYear, parseInt(month) - 1, parseInt(day))
+
+          return {
+            claimId: newClaim.id,
+            employeeId,
+            date: itemDate,
+            type: itemTypeMap[item.itemNo],
+            note: item.note,
+            details: item.details,
+            evidenceNo: item.evidenceNo,
+            currencyId: currencyMap[item.currency],
+            amount: item.amount.toString(),
+            rate: item.rate.toString(),
+            sgdAmount: item.sgdAmount.toString(),
+          }
+        })
+
+        const insertedItems = await tx.insert(claimItems).values(claimItemsData).returning()
+
+        return {
+          claimId: newClaim.id,
+          itemsCount: insertedItems.length,
+          totalAmount,
+          insertedItems
+        }
+      } else {
+        return {
+          claimId: newClaim.id,
+          itemsCount: 0,
+          totalAmount,
+          insertedItems: []
+        }
+      }
+    })
+
+    return {
+      success: true,
+      message: '草稿保存成功',
+      data: result
+    }
+
+  } catch (error) {
+    console.error('保存草稿失败:', error)
+    return {
+      success: false,
+      error: '保存草稿失败',
+      details: error instanceof Error ? error.message : '未知错误'
+    }
+  }
+}
 
 // 提交费用申请
 export async function submitClaim(prevState: any, formData: FormData) {
@@ -81,6 +166,93 @@ export async function submitClaim(prevState: any, formData: FormData) {
       error: '提交费用申请失败',
       details: error instanceof Error ? error.message : '未知错误'
     }
+  }
+}
+
+// 获取用户的草稿申请列表
+export async function getUserDrafts() {
+  try {
+    const currentEmployee = await getCurrentEmployee()
+    
+    if (!currentEmployee.success || !currentEmployee.data) {
+      return { success: false, error: '用户未登录或未绑定员工' }
+    }
+
+    const employeeId = currentEmployee.data.employee.employeeId
+
+    const drafts = await db
+      .select({
+        id: claims.id,
+        totalAmount: claims.totalAmount,
+        createdAt: claims.createdAt,
+        updatedAt: claims.updatedAt,
+      })
+      .from(claims)
+      .where(and(eq(claims.employeeId, employeeId), eq(claims.status, 'draft')))
+      .orderBy(claims.updatedAt)
+
+    return {
+      success: true,
+      data: drafts
+    }
+  } catch (error) {
+    console.error('获取草稿失败:', error)
+    return { success: false, error: '获取草稿失败' }
+  }
+}
+
+// 根据ID加载草稿详情
+export async function loadDraft(draftId: number) {
+  try {
+    const currentEmployee = await getCurrentEmployee()
+    
+    if (!currentEmployee.success || !currentEmployee.data) {
+      return { success: false, error: '用户未登录或未绑定员工' }
+    }
+
+    const employeeId = currentEmployee.data.employee.employeeId
+
+    // 查询草稿基本信息
+    const [draft] = await db
+      .select()
+      .from(claims)
+      .where(and(eq(claims.id, draftId), eq(claims.employeeId, employeeId), eq(claims.status, 'draft')))
+      .limit(1)
+
+    if (!draft) {
+      return { success: false, error: '草稿不存在或无权访问' }
+    }
+
+    // 查询草稿项目详情
+    const draftItems = await db
+      .select({
+        id: claimItems.id,
+        date: claimItems.date,
+        note: claimItems.note,
+        details: claimItems.details,
+        evidenceNo: claimItems.evidenceNo,
+        amount: claimItems.amount,
+        rate: claimItems.rate,
+        sgdAmount: claimItems.sgdAmount,
+        itemTypeNo: itemType.no,
+        currencyCode: currency.code
+      })
+      .from(claimItems)
+      .innerJoin(itemType, eq(claimItems.type, itemType.id))
+      .innerJoin(currency, eq(claimItems.currencyId, currency.id))
+      .where(eq(claimItems.claimId, draftId))
+      .orderBy(claimItems.date)
+
+    return {
+      success: true,
+      data: {
+        draft,
+        items: draftItems
+      }
+    }
+  } catch (error) {
+    console.error('加载草稿失败:', error)
+    return { success: false, error: '加载草稿失败' }
   }
 }
 
@@ -210,9 +382,11 @@ export async function getUserClaims() {
     // 计算统计信息
     const approved = userClaims.filter(claim => claim.status === 'approved')
     const pending = userClaims.filter(claim => claim.status === 'submitted')
+    const drafts = userClaims.filter(claim => claim.status === 'draft')
     
     const totalApproved = approved.reduce((sum, claim) => sum + parseFloat(claim.totalAmount), 0)
     const pendingCount = pending.length
+    const draftCount = drafts.length
 
     return {
       success: true,
@@ -221,7 +395,8 @@ export async function getUserClaims() {
         employee: currentEmployee.data.employee,
         stats: {
           totalApproved,
-          pendingCount
+          pendingCount,
+          draftCount
         }
       }
     }
@@ -510,51 +685,6 @@ export async function getAllClaims() {
   }
 }
 
-// 更新申请状态（管理员功能）  
-export async function updateClaimStatus(claimId: number, status: string, adminNotes?: string) {
-  try {
-    const adminCheck = await checkIsAdmin()
-    
-    if (!adminCheck.success || !adminCheck.data?.isAdmin) {
-      return { success: false, error: "权限不足：仅管理员可操作" }
-    }
-
-    // 验证状态值
-    const validStatuses = ["submitted", "approved", "rejected"]
-    if (!validStatuses.includes(status)) {
-      return { success: false, error: "无效的状态值" }
-    }
-
-    // 更新申请状态
-    const [updatedClaim] = await db
-      .update(claims)
-      .set({
-        status: status as any,
-        adminNotes: adminNotes || null,
-        updatedAt: new Date()
-      })
-      .where(eq(claims.id, claimId))
-      .returning({
-        id: claims.id,
-        status: claims.status,
-        adminNotes: claims.adminNotes
-      })
-
-    if (!updatedClaim) {
-      return { success: false, error: "申请不存在" }
-    }
-
-    return {
-      success: true,
-      message: `申请状态已更新为 ${status}`,
-      data: updatedClaim
-    }
-  } catch (error) {
-    console.error("Failed to update claim status:", error)
-    return { success: false, error: "更新申请状态失败" }
-  }
-}
-
 // 上传文件到Supabase Storage
 export async function uploadClaimFiles(claimId: number, files: File[]) {
   try {
@@ -691,6 +821,85 @@ export async function getClaimAttachments(claimId: number) {
   } catch (error) {
     console.error("Get attachments error:", error)
     return { success: false, error: "获取附件失败" }
+  }
+}
+
+// 更新申请状态（合并版本，支持管理员和用户操作）
+export async function updateClaimStatus(claimId: number, newStatus: 'draft' | 'submitted' | 'approved' | 'rejected', adminNotes?: string) {
+  try {
+    const currentEmployee = await getCurrentEmployee()
+    
+    if (!currentEmployee.success || !currentEmployee.data) {
+      return { success: false, error: '用户未登录或未绑定员工' }
+    }
+
+    const employeeId = currentEmployee.data.employee.employeeId
+    const isAdmin = currentEmployee.data.employee.role === 'admin'
+
+    // 验证申请存在
+    const [existingClaim] = await db
+      .select({ employeeId: claims.employeeId, status: claims.status })
+      .from(claims)
+      .where(eq(claims.id, claimId))
+      .limit(1)
+
+    if (!existingClaim) {
+      return { success: false, error: '申请不存在' }
+    }
+
+    // 权限验证
+    const isOwner = existingClaim.employeeId === employeeId
+    
+    if (!isOwner && !isAdmin) {
+      return { success: false, error: '无权修改此申请' }
+    }
+
+    // 状态变更规则验证
+    if (!isAdmin) {
+      // 非管理员只能将draft状态改为submitted
+      if (existingClaim.status !== 'draft' || newStatus !== 'submitted') {
+        return { success: false, error: '只能提交草稿状态的申请' }
+      }
+    } else {
+      // 管理员可以设置为approved/rejected，但需要验证状态值
+      const validStatuses: Array<'draft' | 'submitted' | 'approved' | 'rejected'> = ['draft', 'submitted', 'approved', 'rejected']
+      if (!validStatuses.includes(newStatus)) {
+        return { success: false, error: '无效的状态值' }
+      }
+    }
+
+    // 更新状态
+    const [updatedClaim] = await db
+      .update(claims)
+      .set({
+        status: newStatus,
+        adminNotes: isAdmin ? adminNotes || null : undefined,
+        updatedAt: new Date()
+      })
+      .where(eq(claims.id, claimId))
+      .returning({
+        id: claims.id,
+        status: claims.status,
+        adminNotes: claims.adminNotes
+      })
+
+    if (!updatedClaim) {
+      return { success: false, error: '更新失败' }
+    }
+
+    return {
+      success: true,
+      message: '状态更新成功',
+      data: updatedClaim
+    }
+
+  } catch (error) {
+    console.error('更新申请状态失败:', error)
+    return {
+      success: false,
+      error: '更新申请状态失败',
+      details: error instanceof Error ? error.message : '未知错误'
+    }
   }
 }
 

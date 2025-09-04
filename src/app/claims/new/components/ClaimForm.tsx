@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useActionState } from 'react'
 import { ExpenseItem } from '../page'
-import { submitClaim, uploadClaimFiles, uploadItemAttachments } from '@/lib/actions'
+import { submitClaim, uploadClaimFiles, uploadItemAttachments, saveDraft } from '@/lib/actions'
 import ExpenseForm from './ExpenseForm'
 import CurrentItems from './CurrentItems'
-import FileUpload from './FileUpload'
-import SubmitButton from './SubmitButton'
+import { useRouter } from 'next/navigation'
 
 interface ItemType {
   id: number
@@ -31,7 +30,10 @@ interface ClaimFormProps {
 export default function ClaimForm({ itemTypes, currencies, exchangeRates, employeeId }: ClaimFormProps) {
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([])
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
-  const [state, formAction] = useActionState(submitClaim, { success: false, error: '' })
+  const [actionType, setActionType] = useState<'submit' | 'draft' | null>(null)
+  const [submitState, submitFormAction] = useActionState(submitClaim, { success: false, error: '' })
+  const [draftState, draftFormAction] = useActionState(saveDraft, { success: false, error: '' })
+  const router = useRouter()
 
   const addExpenseItem = (item: Omit<ExpenseItem, 'id'>) => {
     const newItem = {
@@ -45,21 +47,23 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
     setExpenseItems(prev => prev.filter(item => item.id !== id))
   }
 
-  // 处理提交成功后的清空逻辑和文件上传
+  // 处理提交成功后的逻辑
   useEffect(() => {
-    if (state.success && state.data?.claimId && state.data?.insertedItems) {
+    const currentState = actionType === 'submit' ? submitState : draftState
+    
+    if (currentState.success && currentState.data?.claimId && currentState.data?.insertedItems) {
       const handleFileUpload = async () => {
         try {
           // 1. 上传claim级别的附件（如果有）
           if (attachedFiles.length > 0) {
-            const uploadResult = await uploadClaimFiles(state.data.claimId, attachedFiles)
+            const uploadResult = await uploadClaimFiles(currentState.data.claimId, attachedFiles)
             if (!uploadResult.success) {
               alert(`申请文件上传失败: ${uploadResult.error}`)
             }
           }
 
           // 2. 上传item级别的附件
-          const itemsWithAttachments = state.data.insertedItems.map((insertedItem: any, index: number) => ({
+          const itemsWithAttachments = currentState.data.insertedItems.map((insertedItem: any, index: number) => ({
             id: insertedItem.id,
             attachments: expenseItems[index]?.attachments || []
           })).filter(item => item.attachments.length > 0)
@@ -74,7 +78,17 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
           // 清空表单
           setExpenseItems([])
           setAttachedFiles([])
-          // alert(`费用申请提交成功！申请ID: ${state.data?.claimId}`)
+          
+          // 根据操作类型显示不同的成功消息
+          if (actionType === 'submit') {
+            alert(`费用申请提交成功！申请ID: ${currentState.data?.claimId}`)
+            // 可以重定向到claims页面
+            window.location.href = '/claims'
+          } else if (actionType === 'draft') {
+            alert(`草稿保存成功！草稿ID: ${currentState.data?.claimId}`)
+          }
+          
+          setActionType(null)
         } catch (error) {
           console.error('File upload error:', error)
           alert('文件上传失败')
@@ -83,31 +97,69 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
 
       handleFileUpload()
     }
-  }, [state.success, state.data?.claimId, state.data?.insertedItems, attachedFiles, expenseItems])
+  }, [submitState.success, draftState.success, submitState.data, draftState.data, attachedFiles, expenseItems, actionType])
 
   const totalSGD = expenseItems.reduce((sum, item) => sum + item.sgdAmount, 0)
 
+  // 处理提交申请
+  const handleSubmit = (formData: FormData) => {
+    setActionType('submit')
+    submitFormAction(formData)
+  }
+
+  // 处理保存草稿
+  const handleSaveDraft = (formData: FormData) => {
+    setActionType('draft')
+    draftFormAction(formData)
+  }
+
+  const currentError = submitState.error || draftState.error
+
   return (
-    <form action={formAction}>
-      {/* 隐藏字段 */}
-      <input type="hidden" name="employeeId" value={employeeId} />
-      <input 
-        type="hidden" 
-        name="expenseItems" 
-        value={JSON.stringify(
-          expenseItems.map(item => ({
-            date: item.date,
-            itemNo: item.itemNo,
-            note: item.note,
-            details: item.details,
-            currency: item.currency,
-            amount: item.amount,
-            rate: item.rate,
-            sgdAmount: item.sgdAmount,
-            evidenceNo: item.evidenceNo,
-          }))
-        )} 
-      />
+    <div>
+      <form id="submit-form" action={handleSubmit}>
+        {/* 隐藏字段 */}
+        <input type="hidden" name="employeeId" value={employeeId} />
+        <input 
+          type="hidden" 
+          name="expenseItems" 
+          value={JSON.stringify(
+            expenseItems.map(item => ({
+              date: item.date,
+              itemNo: item.itemNo,
+              note: item.note,
+              details: item.details,
+              currency: item.currency,
+              amount: item.amount,
+              rate: item.rate,
+              sgdAmount: item.sgdAmount,
+              evidenceNo: item.evidenceNo,
+            }))
+          )} 
+        />
+      </form>
+
+      <form id="draft-form" action={handleSaveDraft}>
+        {/* 隐藏字段 */}
+        <input type="hidden" name="employeeId" value={employeeId} />
+        <input 
+          type="hidden" 
+          name="expenseItems" 
+          value={JSON.stringify(
+            expenseItems.map(item => ({
+              date: item.date,
+              itemNo: item.itemNo,
+              note: item.note,
+              details: item.details,
+              currency: item.currency,
+              amount: item.amount,
+              rate: item.rate,
+              sgdAmount: item.sgdAmount,
+              evidenceNo: item.evidenceNo,
+            }))
+          )} 
+        />
+      </form>
 
       {/* 费用详情表单 */}
       <ExpenseForm 
@@ -124,21 +176,48 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
         totalSGD={totalSGD}
       />
 
-      {/* 文件上传区域 */}
-      {/* <FileUpload 
-        files={attachedFiles}
-        onFilesChange={setAttachedFiles}
-      /> */}
-
       {/* 错误提示 */}
-      {state.error && (
+      {currentError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {state.error}
+          {currentError}
         </div>
       )}
 
-      {/* 提交按钮 */}
-      <SubmitButton hasItems={expenseItems.length > 0} />
-    </form>
+      {/* 操作按钮 */}
+      <div className="text-center mt-6 space-x-4">
+        <button 
+          type="button"
+          onClick={() => {
+            router.refresh()
+            router.back()
+          }}
+          className="px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        
+        <button 
+          type="button"
+          onClick={() => (document.getElementById('draft-form') as HTMLFormElement)?.requestSubmit()}
+          className="px-4 py-2 border border-gray-400 bg-gray-100 hover:bg-gray-200"
+          disabled={expenseItems.length === 0}
+        >
+          Save as Draft
+        </button>
+        
+        <button 
+          type="button"
+          onClick={() => (document.getElementById('submit-form') as HTMLFormElement)?.requestSubmit()}
+          disabled={expenseItems.length === 0}
+          className={`px-6 py-2 text-white ${
+            expenseItems.length === 0
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-black hover:bg-gray-800'
+          }`}
+        >
+          Submit Claim
+        </button>
+      </div>
+    </div>
   )
 }

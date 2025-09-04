@@ -1,74 +1,48 @@
-'use client'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { getCurrentEmployee } from '@/lib/actions'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
+export default async function HomePage() {
+  const supabase = await createClient()
+  let redirectPath: string | null = null
 
-export default function HomePage() {
-  const router = useRouter()
-  const supabase = createClient()
-
-  useEffect(() => {
-    const checkAuthAndRedirect = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+  // Check if user is logged in
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    // Not logged in, go to login
+    redirectPath = '/login'
+  } else {
+    // Check if employee is bound
+    try {
+      const employeeResult = await getCurrentEmployee()
+      console.log('employeeResult', employeeResult)
       
-      if (!user) {
-        // Not logged in, go to login
-        router.push('/login')
-        return
-      }
-
-      // Check if employee is bound
-      const employeeData = localStorage.getItem('currentEmployee')
-      if (!employeeData) {
+      if (!employeeResult.success || !employeeResult.data) {
         // Logged in but no employee bound, go to binding
-        router.push('/binding')
-        return
+        console.log('No employee bound, redirecting to binding')
+        redirectPath = '/binding'
+      } else {
+        // User is logged in and has employee bound, go to claims
+        redirectPath = '/claims'
       }
-
-      // All good, go to dashboard
-      router.push('/dashboard')
+    } catch (error) {
+      console.log('Error getting employee info', error)
+      // Error getting employee info, go to binding
+      redirectPath = '/binding'
+    } finally {
+      // Clear resources if needed
+      if (redirectPath) {
+        redirect(redirectPath)
+      }
     }
+  }
 
-    checkAuthAndRedirect()
-  }, [router, supabase])
+  // Handle the case where user is not logged in
+  if (redirectPath) {
+    redirect(redirectPath)
+  }
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif'
-    }}>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '12px'
-      }}>
-        <div style={{
-          width: '24px',
-          height: '24px',
-          border: '2px solid #cccccc',
-          borderTop: '2px solid #000000',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
-        <p style={{
-          color: '#666666',
-          fontSize: '13px'
-        }}>Redirecting...</p>
-        <Button>Test Button</Button>
-      </div>
-      
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-    </div>
-  )
+  // This should never be reached
+  return null
 }

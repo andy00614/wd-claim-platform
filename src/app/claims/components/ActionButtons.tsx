@@ -53,12 +53,20 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
       >
         CSV
       </button>
-      {claim.status === 'submitted' && (
+      {(claim.status === 'submitted' || claim.status === 'draft') && (
         <Link 
           href={`/claims/${claim.id}/edit`}
           className="px-3 py-1 border border-gray-300 hover:bg-gray-50 text-sm"
         >
           Edit
+        </Link>
+      )}
+      {claim.status === 'draft' && (
+        <Link 
+          href={`/claims/${claim.id}/submit`}
+          className="px-3 py-1 bg-blue-600 text-white hover:bg-blue-700 text-sm"
+        >
+          Submit
         </Link>
       )}
     </div>

@@ -40,8 +40,9 @@ export async function bindEmployee(prevState: any, formData: FormData) {
       throw new Error('绑定员工失败: ' + insertError.message)
     }
     
-    // 重新验证页面数据
+    // 重新验证页面数据和重定向
     revalidatePath('/binding')
+    redirect('/claims')
     
   } catch (error) {
     console.error('绑定过程出错:', error)
