@@ -11,6 +11,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
 import { User, Plus, FileText, Settings, LogOut } from 'lucide-react'
+import DynamicTitle from '@/components/DynamicTitle'
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,19 +29,13 @@ export const metadata: Metadata = {
   description: "Employee expense claim management system",
 };
 
-function getPageTitle(pathname: string) {
-  if (pathname.startsWith('/claims/new')) return 'New Expense Claim - Wild Dynasty'
-  if (pathname.startsWith('/claims')) return 'Expense Claim History - Wild Dynasty'
-  if (pathname.startsWith('/admin')) return 'Admin Dashboard - Wild Dynasty'
-  return 'Wild Dynasty'
-}
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 获取当前路径
+  // 获取当前路径 (仅用于服务端渲染的用户信息获取)
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') || ''
   
@@ -74,9 +69,7 @@ export default async function RootLayout({
         <div className="max-w-5xl mx-auto p-6">
           {/* 全局 Header */}
           <div className="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
-            <h1 className="text-lg font-semibold">
-              {getPageTitle(pathname)}
-            </h1>
+            <DynamicTitle />
             <div className="flex items-center gap-1">
               {/* 导航按钮组 */}
               <div className="flex items-center gap-0.5 mr-2">
