@@ -14,7 +14,7 @@ export default function DynamicTitle() {
   const title = getPageTitle(pathname)
 
   return (
-    <h1 className="text-lg font-semibold">
+    <h1 className="text-lg font-bold">
       {title}
     </h1>
   )

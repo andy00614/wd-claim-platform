@@ -113,7 +113,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         {/* 第一行：日期、项目类型、备注 */}
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-3">
-            <Label className="text-sm font-medium">Date</Label>
+            <Label className="text-sm font-semibold mb-1">Date</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -139,7 +139,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           </div>
 
           <div className="col-span-4">
-            <Label className="text-sm font-medium">Item No</Label>
+            <Label className="text-sm font-semibold mb-1">Item No</Label>
             <Select value={formData.itemNo} onValueChange={(value) => setFormData({ ...formData, itemNo: value })}>
               <SelectTrigger className="h-10">
                 <SelectValue placeholder="Select item type" />
@@ -155,7 +155,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           </div>
 
           <div className="col-span-5">
-            <Label className="text-sm font-medium">Item / Note</Label>
+            <Label className="text-sm font-semibold mb-1">Item / Note</Label>
             <Input
               type="text"
               placeholder="Brief description"
@@ -167,7 +167,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
 
         {/* 详细说明 */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium">
+          <Label className="text-sm font-semibold mb-1">
             Details/Reason (Please Indicate Restaurant name or Supplier Name)
           </Label>
           <Textarea
@@ -181,7 +181,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         {/* 金额行 */}
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-2">
-            <Label className="text-sm font-medium">Currency</Label>
+            <Label className="text-sm font-semibold mb-1">Currency</Label>
             <Select value={formData.currency} onValueChange={handleCurrencyChange}>
               <SelectTrigger>
                 <SelectValue />
@@ -197,7 +197,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           </div>
 
           <div className="col-span-3">
-            <Label className="text-sm font-medium">Amount</Label>
+            <Label className="text-sm font-semibold mb-1">Amount</Label>
             <Input
               type="number"
               step="0.01"
@@ -207,7 +207,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           </div>
 
           <div className="col-span-2">
-            <Label className="text-sm font-medium">Forex Rate</Label>
+            <Label className="text-sm font-semibold mb-1">Forex Rate</Label>
             <Input
               type="text"
               disabled
@@ -216,7 +216,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           </div>
 
           <div className="col-span-3">
-            <Label className="text-sm font-medium">SGD Amount</Label>
+            <Label className="text-sm font-semibold mb-1">SGD Amount</Label>
             <Input
               type="number"
               step="0.01"
@@ -226,7 +226,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           </div>
 
           <div className="col-span-2">
-            <Label className="text-sm font-medium">Evidence</Label>
+            <Label className="text-sm font-semibold mb-1">Evidence</Label>
             <Input
               type="text"
               placeholder="No."
