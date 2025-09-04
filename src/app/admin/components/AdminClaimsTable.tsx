@@ -3,6 +3,13 @@
 import { useState } from 'react'
 import { updateClaimStatus } from '@/lib/actions'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { toast } from 'sonner'
+import { Loader2, Eye, Edit, Check, X } from 'lucide-react'
 
 interface Claim {
   id: number
@@ -42,161 +49,164 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
     try {
       const result = await updateClaimStatus(claimId, newStatus, newNotes)
       if (result.success) {
-        alert('申请状态更新成功！')
+        toast.success('申请状态更新成功！')
         // 刷新页面显示最新数据
         window.location.reload()
       } else {
-        alert(`更新失败：${result.error}`)
+        toast.error(`更新失败：${result.error || 'Unknown error'}`)
       }
     } catch (error) {
-      alert('更新失败：网络错误')
+      toast.error('更新失败：网络错误')
     } finally {
       setLoading(false)
       setEditingClaim(null)
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'text-green-700 bg-green-100'
-      case 'rejected':
-        return 'text-red-700 bg-red-100'
-      case 'submitted':
-        return 'text-orange-700 bg-orange-100'
-      default:
-        return 'text-gray-700 bg-gray-100'
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      approved: { variant: 'default' as const, label: 'Approved' },
+      submitted: { variant: 'secondary' as const, label: 'Pending' },
+      draft: { variant: 'outline' as const, label: 'Draft' },
+      rejected: { variant: 'destructive' as const, label: 'Rejected' }
     }
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || { variant: 'outline' as const, label: status }
+    
+    return (
+      <Badge variant={config.variant}>
+        {config.label}
+      </Badge>
+    )
   }
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'Approved'
-      case 'rejected':
-        return 'Rejected'
-      case 'submitted':
-        return 'Pending'
-      default:
-        return status
-    }
-  }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-gray-300">
-            <th className="text-left p-3 font-semibold">Claim ID</th>
-            <th className="text-left p-3 font-semibold">Employee</th>
-            <th className="text-left p-3 font-semibold">Department</th>
-            <th className="text-left p-3 font-semibold">Date</th>
-            <th className="text-left p-3 font-semibold">Amount (SGD)</th>
-            <th className="text-left p-3 font-semibold">Status</th>
-            <th className="text-left p-3 font-semibold">Admin Notes</th>
-            <th className="text-left p-3 font-semibold">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Claim ID</TableHead>
+            <TableHead>Employee</TableHead>
+            <TableHead>Department</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead className="text-right">Amount (SGD)</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Admin Notes</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {claims.length > 0 ? (
             claims.map((claim) => (
-              <tr key={claim.id} className="border-b border-gray-200 hover:bg-gray-50">
-                <td className="p-3">
+              <TableRow key={claim.id}>
+                <TableCell className="font-medium">
                   <Link 
                     href={`/claims/${claim.id}`}
                     className="text-blue-600 hover:underline"
                   >
                     CL-2024-{claim.id.toString().padStart(4, '0')}
                   </Link>
-                </td>
-                <td className="p-3">
-                  {claim.employeeName}
-                  <div className="text-xs text-gray-500">
-                    EMP{claim.employeeCode.toString().padStart(3, '0')}
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div className="font-medium">{claim.employeeName}</div>
+                    <div className="text-xs text-muted-foreground">
+                      EMP{claim.employeeCode.toString().padStart(3, '0')}
+                    </div>
                   </div>
-                </td>
-                <td className="p-3">{claim.department}</td>
-                <td className="p-3">
+                </TableCell>
+                <TableCell>{claim.department}</TableCell>
+                <TableCell>
                   {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
-                </td>
-                <td className="p-3">{parseFloat(claim.totalAmount).toFixed(2)}</td>
-                <td className="p-3">
+                </TableCell>
+                <TableCell className="text-right font-mono">
+                  {parseFloat(claim.totalAmount).toFixed(2)}
+                </TableCell>
+                <TableCell>
                   {editingClaim === claim.id ? (
-                    <select
-                      value={newStatus}
-                      onChange={(e) => setNewStatus(e.target.value)}
-                      className="px-2 py-1 border border-gray-300 rounded text-xs"
-                    >
-                      <option value="submitted">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
+                    <Select value={newStatus} onValueChange={setNewStatus}>
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="submitted">Pending</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
                   ) : (
-                    <span className={`px-2 py-1 rounded text-xs ${getStatusColor(claim.status)}`}>
-                      {getStatusText(claim.status)}
-                    </span>
+                    getStatusBadge(claim.status)
                   )}
-                </td>
-                <td className="p-3 max-w-xs">
+                </TableCell>
+                <TableCell className="max-w-xs">
                   {editingClaim === claim.id ? (
-                    <textarea
+                    <Textarea
                       value={newNotes}
                       onChange={(e) => setNewNotes(e.target.value)}
                       placeholder="Add admin notes..."
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-xs resize-y min-h-[60px]"
+                      className="min-h-[60px] text-xs"
                     />
                   ) : (
-                    <div className="text-xs text-gray-600 truncate" title={claim.adminNotes || ''}>
+                    <div className="text-xs text-muted-foreground truncate" title={claim.adminNotes || ''}>
                       {claim.adminNotes || 'No notes'}
                     </div>
                   )}
-                </td>
-                <td className="p-3">
+                </TableCell>
+                <TableCell>
                   {editingClaim === claim.id ? (
-                    <div className="flex gap-2">
-                      <button
+                    <div className="flex items-center gap-1">
+                      <Button
                         onClick={() => handleSave(claim.id)}
                         disabled={loading}
-                        className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
+                        size="sm"
+                        className="h-7 px-2"
                       >
-                        {loading ? 'Saving...' : 'Save'}
-                      </button>
-                      <button
+                        {loading ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Check className="h-3 w-3" />
+                        )}
+                      </Button>
+                      <Button
                         onClick={handleCancel}
                         disabled={loading}
-                        className="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2"
                       >
-                        Cancel
-                      </button>
+                        <X className="h-3 w-3" />
+                      </Button>
                     </div>
                   ) : (
-                    <div className="flex gap-2">
-                      <Link
-                        href={`/claims/${claim.id}`}
-                        className="px-2 py-1 border border-gray-300 hover:bg-gray-50 text-xs rounded"
-                      >
-                        View
-                      </Link>
-                      <button
+                    <div className="flex items-center gap-1">
+                      <Button asChild variant="outline" size="sm" className="h-7 px-2">
+                        <Link href={`/claims/${claim.id}`}>
+                          <Eye className="h-3 w-3" />
+                        </Link>
+                      </Button>
+                      <Button
                         onClick={() => handleEdit(claim)}
-                        className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                        variant="default"
+                        size="sm"
+                        className="h-7 px-2"
                       >
-                        Edit
-                      </button>
+                        <Edit className="h-3 w-3" />
+                      </Button>
                     </div>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))
           ) : (
-            <tr>
-              <td colSpan={8} className="text-center p-8 text-gray-500">
+            <TableRow>
+              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                 No claims found
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }
