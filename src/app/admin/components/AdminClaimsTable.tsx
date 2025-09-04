@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
-import { Loader2, Eye, Edit, Check, X } from 'lucide-react'
+import { Eye, Pencil, Check, X } from 'lucide-react'
 
 interface Claim {
   id: number
@@ -47,7 +47,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
   const handleSave = async (claimId: number) => {
     setLoading(true)
     try {
-      const result = await updateClaimStatus(claimId, newStatus, newNotes)
+      const result = await updateClaimStatus(claimId, newStatus as "draft" | "submitted" | "approved" | "rejected", newNotes)
       if (result.success) {
         toast.success('申请状态更新成功！')
         // 刷新页面显示最新数据
@@ -64,20 +64,18 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
   }
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      approved: { variant: 'default' as const, label: 'Approved' },
-      submitted: { variant: 'secondary' as const, label: 'Pending' },
-      draft: { variant: 'outline' as const, label: 'Draft' },
-      rejected: { variant: 'destructive' as const, label: 'Rejected' }
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-600 hover:bg-green-100">Approved</Badge>
+      case 'submitted':
+        return <Badge className="bg-orange-100 text-orange-600 hover:bg-orange-100">Pending</Badge>
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-600 hover:bg-red-100">Rejected</Badge>
+      case 'draft':
+        return <Badge variant="outline">Draft</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
     }
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || { variant: 'outline' as const, label: status }
-    
-    return (
-      <Badge variant={config.variant}>
-        {config.label}
-      </Badge>
-    )
   }
 
 
@@ -120,8 +118,10 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                 <TableCell>
                   {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
                 </TableCell>
-                <TableCell className="text-right font-mono">
-                  {parseFloat(claim.totalAmount).toFixed(2)}
+                <TableCell className="text-right">
+                  <div className="font-mono font-bold text-lg">
+                    {parseFloat(claim.totalAmount).toFixed(2)}
+                  </div>
                 </TableCell>
                 <TableCell>
                   {editingClaim === claim.id ? (
@@ -155,44 +155,40 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                 </TableCell>
                 <TableCell>
                   {editingClaim === claim.id ? (
-                    <div className="flex items-center gap-1">
-                      <Button
+                    <div className="flex items-center gap-2">
+                      <button
                         onClick={() => handleSave(claim.id)}
                         disabled={loading}
-                        size="sm"
-                        className="h-7 px-2"
+                        className="p-1 text-green-500 hover:text-green-600 hover:bg-green-100 rounded disabled:opacity-50"
+                        title="Save"
                       >
-                        {loading ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Check className="h-3 w-3" />
-                        )}
-                      </Button>
-                      <Button
+                        <Check className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={handleCancel}
                         disabled={loading}
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2"
+                        className="p-1 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded"
+                        title="Cancel"
                       >
-                        <X className="h-3 w-3" />
-                      </Button>
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1">
-                      <Button asChild variant="outline" size="sm" className="h-7 px-2">
-                        <Link href={`/claims/${claim.id}`}>
-                          <Eye className="h-3 w-3" />
-                        </Link>
-                      </Button>
-                      <Button
-                        onClick={() => handleEdit(claim)}
-                        variant="default"
-                        size="sm"
-                        className="h-7 px-2"
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/claims/${claim.id}`}
+                        className="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-100 rounded"
+                        title="View details"
                       >
-                        <Edit className="h-3 w-3" />
-                      </Button>
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                      <button
+                        onClick={() => handleEdit(claim)}
+                        className="p-1 text-orange-500 hover:text-orange-600 hover:bg-orange-100 rounded"
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
                     </div>
                   )}
                 </TableCell>
