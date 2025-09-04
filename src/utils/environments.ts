@@ -1,23 +1,12 @@
 export function getUrl() {
-    // 优先使用 window.location.origin（客户端）
-    if (typeof window !== 'undefined') {
-        return window.location.origin;
-    }
+    let url =
+        process?.env?.NEXT_PUBLIC_SITE_URL ?? // 设置在 Vercel 中的生产环境 URL
+        process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Vercel 自动设置（适用于 preview deployments）
+        'http://localhost:3000/' // 本地开发环境
     
-    // 服务端：使用环境变量
-    if (process.env.NEXT_PUBLIC_URL) {
-        return process.env.NEXT_PUBLIC_URL;
-    }
-
-    // Vercel 自动设置的环境变量
-    if (process.env.VERCEL_URL) {
-        return `https://${process.env.VERCEL_URL}`;
-    }
-
-    // 开发环境默认值
-    if (process.env.NODE_ENV === 'development') {
-        return "http://localhost:3002";
-    }
-
-    throw new Error('Please set NEXT_PUBLIC_URL environment variable');
+    // 确保 URL 格式正确
+    url = url.startsWith('http') ? url : `https://${url}`
+    url = url.endsWith('/') ? url : `${url}/`
+    
+    return url
 }

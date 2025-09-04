@@ -39,24 +39,16 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    // 使用 window.location.origin 确保总是使用当前域名
-    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : getUrl();
-    const redirectUrl = new URL("/auth/callback", currentOrigin);
-    
-    // 添加查询参数
-    redirectUrl.searchParams.append("provider", "google");
-    redirectUrl.searchParams.append("client", "desktop");
-
-    console.log('Redirect URL:', redirectUrl.toString());
+    // 使用 getUrl() 获取动态 URL（支持 production、preview、local）
+    const redirectTo = `${getUrl()}auth/callback`
     
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl.toString(),
+          redirectTo: redirectTo,
           queryParams: {
             prompt: "select_account",
-            client: "desktop",
           },
         },
       })

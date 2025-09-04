@@ -13,6 +13,7 @@ import {
 import { User, Plus, FileText, Settings, LogOut } from 'lucide-react'
 import DynamicTitle from '@/components/DynamicTitle'
 import "./globals.css";
+import { logoutAction } from "./binding/actions";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -135,7 +136,7 @@ export default async function RootLayout({
                         </p>
                       </div>
                       <div className="border-t pt-3">
-                        <Button variant="outline" size="sm" className="w-full hover:bg-red-50 hover:border-red-200">
+                        <Button onClick={logoutAction} variant="outline" size="sm" className="w-full hover:bg-red-50 hover:border-red-200">
                           <LogOut className="h-4 w-4 mr-2" />
                           Logout
                         </Button>
