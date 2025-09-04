@@ -15,8 +15,8 @@ interface ClaimData {
     date: Date | null
     itemTypeNo: string
     itemTypeName: string
-    note: string
-    details: string
+    note: string | null
+    details: string | null
     currencyCode: string
     amount: string
     rate: string
@@ -36,7 +36,11 @@ interface ClaimData {
     url: string
     fileType: string
     fileSize: string
-  }>
+    claimId?: number | null
+    claimItemId?: number | null
+    createdAt?: Date | null
+    updatedAt?: Date | null
+  }> | undefined
   employee: {
     name: string
     employeeCode: number
@@ -235,7 +239,7 @@ export default function BatchReport({ claims }: BatchReportProps) {
                       <tr key={item.id}>
                         <td className="border border-gray-300 p-2 text-sm">{item.date ? new Date(item.date).toLocaleDateString('en-SG') : 'N/A'}</td>
                         <td className="border border-gray-300 p-2 text-sm">{item.itemTypeNo}</td>
-                        <td className="border border-gray-300 p-2 text-sm">{item.note}</td>
+                        <td className="border border-gray-300 p-2 text-sm">{item.note || 'N/A'}</td>
                         <td className="border border-gray-300 p-2 text-sm">{item.currencyCode}</td>
                         <td className="border border-gray-300 p-2 text-sm text-right">{parseFloat(item.amount).toFixed(2)}</td>
                         <td className="border border-gray-300 p-2 text-sm text-right font-medium">{parseFloat(item.sgdAmount).toFixed(2)}</td>
@@ -245,13 +249,13 @@ export default function BatchReport({ claims }: BatchReportProps) {
                 </table>
 
                 {/* 支持文档（仅显示图片，节省空间） */}
-                {(claimData.attachments.some(att => isImageFile(att.fileType, att.fileName)) ||
+                {((claimData.attachments && claimData.attachments.some(att => isImageFile(att.fileType, att.fileName))) ||
                   claimData.items.some(item => item.attachments && item.attachments.some(att => isImageFile(att.fileType, att.fileName)))) && (
                   <div className="mb-4">
                     <h5 className="font-bold mb-3 text-sm">Supporting Images:</h5>
                     <div className="grid grid-cols-3 gap-2">
                       {/* Claim级别的图片 */}
-                      {claimData.attachments
+                      {(claimData.attachments || [])
                         .filter(att => isImageFile(att.fileType, att.fileName))
                         .map((attachment) => (
                           <div key={attachment.id} className="text-center">

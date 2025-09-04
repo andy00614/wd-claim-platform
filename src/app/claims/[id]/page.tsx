@@ -181,8 +181,8 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
                       </div>
                     </TableCell>
                     <TableCell className="max-w-xs">
-                      <div className="truncate" title={item.note}>
-                        {item.note}
+                      <div className="truncate" title={item.note || ''}>
+                        {item.note || '-'}
                       </div>
                     </TableCell>
                     <TableCell className="max-w-xs">

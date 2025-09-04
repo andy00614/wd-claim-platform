@@ -422,7 +422,8 @@ export async function getClaimDetails(claimId: number) {
         status: claims.status,
         totalAmount: claims.totalAmount,
         createdAt: claims.createdAt,
-        employeeId: claims.employeeId
+        employeeId: claims.employeeId,
+        adminNotes: claims.adminNotes
       })
       .from(claims)
       .where(eq(claims.id, claimId))
@@ -652,6 +653,7 @@ export async function getAllClaims() {
         totalAmount: claims.totalAmount,
         createdAt: claims.createdAt,
         adminNotes: claims.adminNotes,
+        employeeId: claims.employeeId,
         employeeName: employees.name,
         employeeCode: employees.employeeCode,
         department: employees.departmentEnum

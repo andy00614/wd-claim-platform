@@ -69,7 +69,7 @@ export function useEmployeeBinding(userId: string | null) {
         throw error;
       }
 
-      setCurrentBinding(data);
+      setCurrentBinding(data as unknown as UserBinding | null);
     } catch (err) {
       console.error("检查绑定状态失败:", err);
       setError("检查绑定状态失败");
@@ -113,7 +113,7 @@ export function useEmployeeBinding(userId: string | null) {
         .single();
 
       if (error) throw error;
-      setCurrentBinding(data);
+      setCurrentBinding(data as unknown as UserBinding | null);
       return data;
     } catch (err) {
       console.error("绑定员工失败:", err);

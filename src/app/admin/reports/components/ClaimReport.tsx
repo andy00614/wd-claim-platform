@@ -15,8 +15,8 @@ interface ClaimReportProps {
     date: Date | null
     itemTypeNo: string
     itemTypeName: string
-    note: string
-    details: string
+    note: string | null
+    details: string | null
     currencyCode: string
     amount: string
     rate: string
@@ -36,7 +36,11 @@ interface ClaimReportProps {
     url: string
     fileType: string
     fileSize: string
-  }>
+    claimId?: number | null
+    claimItemId?: number | null
+    createdAt?: Date | null
+    updatedAt?: Date | null
+  }> | undefined
   employee: {
     name: string
     employeeCode: number
@@ -199,8 +203,8 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
                 <tr key={item.id}>
                   <td className="border border-black p-3">{item.date ? new Date(item.date).toLocaleDateString('en-SG') : 'N/A'}</td>
                   <td className="border border-black p-3">{item.itemTypeNo} - {item.itemTypeName}</td>
-                  <td className="border border-black p-3">{item.note}</td>
-                  <td className="border border-black p-3 text-sm">{item.details}</td>
+                  <td className="border border-black p-3">{item.note || 'N/A'}</td>
+                  <td className="border border-black p-3 text-sm">{item.details || 'N/A'}</td>
                   <td className="border border-black p-3">{item.currencyCode}</td>
                   <td className="border border-black p-3 text-right">{parseFloat(item.amount).toFixed(2)}</td>
                   <td className="border border-black p-3 text-right">{parseFloat(item.rate).toFixed(4)}</td>
@@ -220,12 +224,12 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
         </div>
 
         {/* 支持文档 */}
-        {(attachments.length > 0 || items.some(item => item.attachments && item.attachments.length > 0)) && (
+        {((attachments && attachments.length > 0) || items.some(item => item.attachments && item.attachments.length > 0)) && (
           <div className="mb-8">
             <h3 className="text-lg font-bold mb-4 border-b border-black pb-2">Supporting Documents</h3>
             
             {/* Claim级别的附件 */}
-            {attachments.length > 0 && (
+            {attachments && attachments.length > 0 && (
               <div className="mb-6">
                 <h4 className="font-medium mb-3">General Attachments:</h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -269,7 +273,7 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
                   item.attachments && item.attachments.length > 0 && (
                     <div key={item.id} className="mb-6 border-l-4 border-blue-500 pl-4">
                       <h5 className="font-medium mb-2">
-                        Item #{itemIndex + 1}: {item.note} (SGD {parseFloat(item.sgdAmount).toFixed(2)})
+                        Item #{itemIndex + 1}: {item.note || 'N/A'} (SGD {parseFloat(item.sgdAmount).toFixed(2)})
                       </h5>
                       <div className="grid grid-cols-2 gap-4">
                         {item.attachments.map((attachment) => (

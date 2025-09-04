@@ -24,7 +24,7 @@ interface Currency {
 interface ExistingItem {
   id: number
   date: Date | null
-  note: string
+  note: string | null
   details: string | null
   evidenceNo: string | null
   amount: string
@@ -74,7 +74,7 @@ export default function EditClaimForm({
       id: Date.now() + index, // 使用临时ID
       date: `${(itemDate.getMonth() + 1).toString().padStart(2, '0')}/${itemDate.getDate().toString().padStart(2, '0')}`,
       itemNo: item.itemTypeNo,
-      note: item.note,
+      note: item.note || '',
       details: item.details || '',
       currency: item.currencyCode,
       amount: parseFloat(item.amount),
