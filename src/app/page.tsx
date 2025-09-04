@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
 
 export default function HomePage() {
   const router = useRouter()
@@ -59,6 +60,7 @@ export default function HomePage() {
           color: '#666666',
           fontSize: '13px'
         }}>Redirecting...</p>
+        <Button>Test Button</Button>
       </div>
       
       <style jsx>{`
