@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useActionState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { ExpenseItem } from '../page'
 import { submitClaim, uploadClaimFiles, uploadItemAttachments, saveDraft } from '@/lib/actions'
 import ExpenseForm from './ExpenseForm'
 import CurrentItems from './CurrentItems'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { toast } from "sonner"
 
 interface ItemType {
   id: number
@@ -31,6 +35,7 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([])
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [actionType, setActionType] = useState<'submit' | 'draft' | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const [submitState, submitFormAction] = useActionState(submitClaim, { success: false, error: '' })
   const [draftState, draftFormAction] = useActionState(saveDraft, { success: false, error: '' })
   const router = useRouter()
@@ -58,7 +63,7 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
           if (attachedFiles.length > 0) {
             const uploadResult = await uploadClaimFiles(currentState.data.claimId, attachedFiles)
             if (!uploadResult.success) {
-              alert(`申请文件上传失败: ${uploadResult.error}`)
+              toast.error(`申请文件上传失败: ${uploadResult.error}`)
             }
           }
 
@@ -71,7 +76,7 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
           if (itemsWithAttachments.length > 0) {
             const itemUploadResult = await uploadItemAttachments(itemsWithAttachments)
             if (!itemUploadResult.success) {
-              alert(`项目附件上传失败: ${itemUploadResult.error}`)
+              toast.error(`项目附件上传失败: ${itemUploadResult.error}`)
             }
           }
 
@@ -81,17 +86,21 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
           
           // 根据操作类型显示不同的成功消息
           if (actionType === 'submit') {
-            alert(`费用申请提交成功！申请ID: ${currentState.data?.claimId}`)
+            toast.success(`费用申请提交成功！申请ID: ${currentState.data?.claimId}`)
             // 可以重定向到claims页面
-            window.location.href = '/claims'
+            setTimeout(() => {
+              window.location.href = '/claims'
+            }, 1000)
           } else if (actionType === 'draft') {
-            alert(`草稿保存成功！草稿ID: ${currentState.data?.claimId}`)
+            toast.success(`草稿保存成功！草稿ID: ${currentState.data?.claimId}`)
           }
           
           setActionType(null)
+          setIsLoading(false)
         } catch (error) {
           console.error('File upload error:', error)
-          alert('文件上传失败')
+          toast.error('文件上传失败')
+          setIsLoading(false)
         }
       }
 
@@ -102,23 +111,36 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
   const totalSGD = expenseItems.reduce((sum, item) => sum + item.sgdAmount, 0)
 
   // 处理提交申请
-  const handleSubmit = (formData: FormData) => {
+  const handleSubmit = async (formData: FormData) => {
     setActionType('submit')
+    setIsLoading(true)
     submitFormAction(formData)
   }
 
   // 处理保存草稿
-  const handleSaveDraft = (formData: FormData) => {
+  const handleSaveDraft = async (formData: FormData) => {
     setActionType('draft')
+    setIsLoading(true)
     draftFormAction(formData)
+  }
+
+  // 处理按钮点击
+  const handleSubmitClick = () => {
+    setIsLoading(true);
+    (document.getElementById('submit-form') as HTMLFormElement)?.requestSubmit()
+  }
+
+  const handleDraftClick = () => {
+    setIsLoading(true);
+    (document.getElementById('draft-form') as HTMLFormElement)?.requestSubmit()
   }
 
   const currentError = submitState.error || draftState.error
 
   return (
     <div>
-      <form id="submit-form" action={handleSubmit}>
-        {/* 隐藏字段 */}
+      {/* Hidden forms for server actions */}
+      <form id="submit-form" action={handleSubmit} className="hidden">
         <input type="hidden" name="employeeId" value={employeeId} />
         <input 
           type="hidden" 
@@ -139,8 +161,7 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
         />
       </form>
 
-      <form id="draft-form" action={handleSaveDraft}>
-        {/* 隐藏字段 */}
+      <form id="draft-form" action={handleSaveDraft} className="hidden">
         <input type="hidden" name="employeeId" value={employeeId} />
         <input 
           type="hidden" 
@@ -178,45 +199,49 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
 
       {/* 错误提示 */}
       {currentError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {currentError}
-        </div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>
+            {currentError}
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* 操作按钮 */}
-      <div className="text-center mt-6 space-x-4">
-        <button 
+      <div className="flex justify-center gap-4 pt-6">
+        <Button 
           type="button"
+          variant="outline"
+          size="lg"
           onClick={() => {
             router.refresh()
             router.back()
           }}
-          className="px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50"
+          disabled={isLoading}
         >
           Cancel
-        </button>
+        </Button>
         
-        <button 
+        <Button 
           type="button"
-          onClick={() => (document.getElementById('draft-form') as HTMLFormElement)?.requestSubmit()}
-          className="px-4 py-2 border border-gray-400 bg-gray-100 hover:bg-gray-200"
-          disabled={expenseItems.length === 0}
+          variant="secondary"
+          size="lg"
+          onClick={handleDraftClick}
+          disabled={expenseItems.length === 0 || isLoading}
         >
-          Save as Draft
-        </button>
+          {isLoading && actionType === 'draft' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isLoading && actionType === 'draft' ? 'Saving...' : 'Save as Draft'}
+        </Button>
         
-        <button 
+        <Button 
           type="button"
-          onClick={() => (document.getElementById('submit-form') as HTMLFormElement)?.requestSubmit()}
-          disabled={expenseItems.length === 0}
-          className={`px-6 py-2 text-white ${
-            expenseItems.length === 0
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-black hover:bg-gray-800'
-          }`}
+          size="lg"
+          onClick={handleSubmitClick}
+          disabled={expenseItems.length === 0 || isLoading}
+          className="bg-black text-white hover:bg-gray-800"
         >
-          Submit Claim
-        </button>
+          {isLoading && actionType === 'submit' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isLoading && actionType === 'submit' ? 'Submitting...' : 'Submit Claim'}
+        </Button>
       </div>
     </div>
   )

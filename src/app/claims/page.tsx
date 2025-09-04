@@ -2,6 +2,28 @@ import { getUserClaims, checkIsAdmin } from '@/lib/actions'
 import Link from 'next/link'
 import ActionButtons from './components/ActionButtons'
 import { logoutAction } from '../binding/actions'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Plus, Settings, LogOut } from 'lucide-react'
+
+function getStatusBadge(status: string) {
+  const statusConfig = {
+    approved: { variant: 'default' as const, label: 'Approved' },
+    submitted: { variant: 'secondary' as const, label: 'Pending' },
+    draft: { variant: 'outline' as const, label: 'Draft' },
+    rejected: { variant: 'destructive' as const, label: 'Rejected' }
+  }
+  
+  const config = statusConfig[status as keyof typeof statusConfig] || { variant: 'outline' as const, label: status }
+  
+  return (
+    <Badge variant={config.variant}>
+      {config.label}
+    </Badge>
+  )
+}
 
 export default async function ClaimsPage() {
   const [claimsData, adminCheck] = await Promise.all([
@@ -12,13 +34,19 @@ export default async function ClaimsPage() {
   if (!claimsData.success || !claimsData.data) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-xl font-bold text-red-600 mb-4">数据加载失败</h1>
-          <p className="text-gray-600">{claimsData.error}</p>
-          <Link href="/login" className="text-blue-600 hover:underline mt-2 block">
-            请先登录
-          </Link>
-        </div>
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl text-destructive">数据加载失败</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">{claimsData.error}</p>
+            <Button asChild>
+              <Link href="/login">
+                请先登录
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -27,118 +55,117 @@ export default async function ClaimsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
         {/* 页面头部 */}
-        <div className="bg-white border-2 border-black p-4 mb-6 text-center">
-          <h1 className="text-xl font-bold">Wild Dynasty Pte Ltd</h1>
-          <h2 className="text-sm">Expense Claim History</h2>
-        </div>
+        <Card className="border-2 border-black">
+          <CardContent className="p-6 text-center">
+            <h1 className="text-xl font-bold">Wild Dynasty Pte Ltd</h1>
+            <h2 className="text-sm text-muted-foreground">Expense Claim History</h2>
+          </CardContent>
+        </Card>
 
         {/* 用户信息和导航 */}
-        <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-200 text-sm">
-          <span>Employee: <strong>{employee.name} (EMP{employee.employeeCode.toString().padStart(3, '0')})</strong></span>
-          <div className="flex gap-4 items-center">
-            <Link 
-              href="/claims/new"
-              className="px-4 py-2 bg-green-600 text-white hover:bg-green-700"
-            >
-              + New Claim
-            </Link>
-            {adminCheck.success && adminCheck.data?.isAdmin && (
-              <Link 
-                href="/admin"
-                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Admin Dashboard
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-4 border-b">
+          <div className="text-sm">
+            Employee: <strong>{employee.name} (EMP{employee.employeeCode.toString().padStart(3, '0')})</strong>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href="/claims/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Claim
               </Link>
+            </Button>
+            {adminCheck.success && adminCheck.data?.isAdmin && (
+              <Button asChild variant="secondary">
+                <Link href="/admin">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Admin Dashboard
+                </Link>
+              </Button>
             )}
-            <button className="px-4 py-2 border border-gray-300 hover:bg-gray-50" onClick={logoutAction}>
+            <Button variant="outline" onClick={logoutAction}>
+              <LogOut className="mr-2 h-4 w-4" />
               Logout
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* 申请表格 */}
-        <div className="bg-white border border-gray-300 mb-6">
-          <div className="p-4">
-            <h3 className="text-lg font-semibold mb-4">Your Claims</h3>
-            
-            {/* 表格 */}
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-300">
-                    <th className="text-left p-3 font-semibold">Claim ID</th>
-                    <th className="text-left p-3 font-semibold">Date</th>
-                    <th className="text-left p-3 font-semibold">Amount (SGD)</th>
-                    <th className="text-left p-3 font-semibold">Status</th>
-                    <th className="text-left p-3 font-semibold">Admin Notes</th>
-                    <th className="text-left p-3 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Claims</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Claim ID</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount (SGD)</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Admin Notes</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {claims.length > 0 ? (
                     claims.map((claim) => (
-                      <tr key={claim.id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="p-3">CL-2024-{claim.id.toString().padStart(4, '0')}</td>
-                        <td className="p-3">{claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}</td>
-                        <td className="p-3">{parseFloat(claim.totalAmount).toFixed(2)}</td>
-                        <td className="p-3">
-                          <span className={`px-2 py-1 rounded text-sm ${
-                            claim.status === 'approved' 
-                              ? 'text-green-700 bg-green-100' 
-                              : claim.status === 'submitted'
-                              ? 'text-orange-700 bg-orange-100'
-                              : claim.status === 'draft'
-                              ? 'text-blue-700 bg-blue-100'
-                              : claim.status === 'rejected'
-                              ? 'text-red-700 bg-red-100'
-                              : 'text-gray-700 bg-gray-100'
-                          }`}>
-                            {claim.status === 'approved' ? 'Approved' : 
-                             claim.status === 'submitted' ? 'Pending' : 
-                             claim.status === 'draft' ? 'Draft' :
-                             claim.status === 'rejected' ? 'Rejected' :
-                             claim.status}
-                          </span>
-                        </td>
-                        <td className="p-3">{claim.adminNotes || '-'}</td>
-                        <td className="p-3">
+                      <TableRow key={claim.id}>
+                        <TableCell className="font-medium">
+                          CL-2024-{claim.id.toString().padStart(4, '0')}
+                        </TableCell>
+                        <TableCell>
+                          {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {parseFloat(claim.totalAmount).toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(claim.status)}
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          <div className="truncate" title={claim.adminNotes || ''}>
+                            {claim.adminNotes || '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           <ActionButtons claim={claim} />
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   ) : (
-                    <tr>
-                      <td colSpan={5} className="text-center p-8 text-gray-500">
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                         No claims found
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {/* 统计信息 */}
-            <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-              <div className="text-sm">
-                <strong>Total Approved: SGD {stats.totalApproved.toFixed(2)}</strong>
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-4 mt-6 pt-4 border-t">
+              <div className="text-sm font-semibold">
+                Total Approved: <span className="text-green-600">SGD {stats.totalApproved.toFixed(2)}</span>
               </div>
-              <div className="text-sm">
-                <strong>Pending: {stats.pendingCount}</strong>
+              <div className="text-sm font-semibold">
+                Pending: <span className="text-orange-600">{stats.pendingCount}</span>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* 新建申请按钮 */}
         <div className="text-center">
-          <Link 
-            href="/claims/new"
-            className="inline-block px-6 py-3 bg-black text-white hover:bg-gray-800"
-          >
-            + New Claim
-          </Link>
+          <Button asChild size="lg" className="bg-black text-white hover:bg-gray-800">
+            <Link href="/claims/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Claim
+            </Link>
+          </Button>
         </div>
       </div>
     </div>

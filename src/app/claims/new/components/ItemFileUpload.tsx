@@ -1,6 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
+import { Upload, X, FileText } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 
 interface ItemFileUploadProps {
   files: File[]
@@ -9,17 +14,41 @@ interface ItemFileUploadProps {
 
 export default function ItemFileUpload({ files, onFilesChange }: ItemFileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
   
+  const handleFiles = useCallback((newFiles: FileList | File[]) => {
+    const filesArray = Array.from(newFiles)
+    onFilesChange([...files, ...filesArray])
+    // 清空input，允许再次选择同样的文件
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }, [files, onFilesChange])
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files)
-      onFilesChange([...files, ...newFiles])
-      // 清空input，允许再次选择同样的文件
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+      handleFiles(e.target.files)
     }
   }
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+    
+    if (e.dataTransfer.files) {
+      handleFiles(e.dataTransfer.files)
+    }
+  }, [handleFiles])
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }, [])
 
   const removeFile = (index: number) => {
     const updatedFiles = files.filter((_, i) => i !== index)
@@ -35,11 +64,22 @@ export default function ItemFileUpload({ files, onFilesChange }: ItemFileUploadP
   }
 
   return (
-    <div>
-      <label className="block text-xs font-semibold mb-1">Supporting Documents</label>
+    <div className="space-y-4">
+      <Label className="text-sm font-medium">Supporting Documents</Label>
       
-      {/* 文件选择按钮 */}
-      <div className="mb-2">
+      {/* 拖拽上传区域 */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        className={cn(
+          "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+          isDragging 
+            ? "border-primary bg-primary/10" 
+            : "border-gray-300 hover:border-gray-400"
+        )}
+        onClick={() => fileInputRef.current?.click()}
+      >
         <input
           ref={fileInputRef}
           type="file"
@@ -47,42 +87,46 @@ export default function ItemFileUpload({ files, onFilesChange }: ItemFileUploadP
           accept="image/*,.pdf,.doc,.docx"
           onChange={handleFileSelect}
           className="hidden"
-          id="item-file-upload"
         />
-        <label
-          htmlFor="item-file-upload"
-          className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 text-sm bg-white hover:bg-gray-50"
-        >
-          <span className="mr-1">📎</span>
-          Add Files
-        </label>
+        
+        <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+        <p className="text-sm text-gray-600 mb-1">
+          Drag and drop files here, or click to select
+        </p>
+        <p className="text-xs text-gray-500">
+          Support: Images, PDF, DOC, DOCX
+        </p>
       </div>
 
       {/* 已选择的文件列表 */}
       {files.length > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-2">
           {files.map((file, index) => (
-            <div key={index} className="flex items-center justify-between text-xs bg-gray-50 p-2 border">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span>📄</span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium" title={file.name}>
-                    {file.name}
-                  </div>
-                  <div className="text-gray-500">
-                    {formatFileSize(file.size)}
+            <Card key={index} className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium text-sm" title={file.name}>
+                      {file.name}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {formatFileSize(file.size)}
+                    </div>
                   </div>
                 </div>
+                <Button
+                  type="button"
+                  onClick={() => removeFile(index)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:text-red-800 hover:bg-red-50 flex-shrink-0"
+                  title="Remove file"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <button
-                type="button"
-                onClick={() => removeFile(index)}
-                className="ml-2 text-red-600 hover:text-red-800 flex-shrink-0"
-                title="Remove file"
-              >
-                ✕
-              </button>
-            </div>
+            </Card>
           ))}
         </div>
       )}

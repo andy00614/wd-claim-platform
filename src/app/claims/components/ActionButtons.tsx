@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Download, Eye, Edit, Send } from 'lucide-react'
 
 interface Claim {
   id: number
@@ -40,34 +42,39 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
   }
 
   return (
-    <div className="flex gap-2">
-      <Link 
-        href={`/claims/${claim.id}`}
-        className="px-3 py-1 border border-gray-300 hover:bg-gray-50 text-sm"
-      >
-        View
-      </Link>
-      <button 
+    <div className="flex gap-1">
+      <Button asChild variant="outline" size="sm">
+        <Link href={`/claims/${claim.id}`}>
+          <Eye className="h-3 w-3 mr-1" />
+          View
+        </Link>
+      </Button>
+      
+      <Button 
         onClick={() => downloadClaimCSV(claim)}
-        className="px-3 py-1 border border-gray-300 hover:bg-gray-50 text-sm"
+        variant="outline" 
+        size="sm"
       >
+        <Download className="h-3 w-3 mr-1" />
         CSV
-      </button>
+      </Button>
+      
       {(claim.status === 'submitted' || claim.status === 'draft') && (
-        <Link 
-          href={`/claims/${claim.id}/edit`}
-          className="px-3 py-1 border border-gray-300 hover:bg-gray-50 text-sm"
-        >
-          Edit
-        </Link>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/claims/${claim.id}/edit`}>
+            <Edit className="h-3 w-3 mr-1" />
+            Edit
+          </Link>
+        </Button>
       )}
+      
       {claim.status === 'draft' && (
-        <Link 
-          href={`/claims/${claim.id}/submit`}
-          className="px-3 py-1 bg-blue-600 text-white hover:bg-blue-700 text-sm"
-        >
-          Submit
-        </Link>
+        <Button asChild size="sm">
+          <Link href={`/claims/${claim.id}/submit`}>
+            <Send className="h-3 w-3 mr-1" />
+            Submit
+          </Link>
+        </Button>
       )}
     </div>
   )

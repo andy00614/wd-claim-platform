@@ -1,8 +1,20 @@
 'use client'
 
 import { useState } from 'react'
+import { format } from 'date-fns'
+import { CalendarIcon } from 'lucide-react'
 import { ExpenseItem } from '../page'
 import ItemFileUpload from './ItemFileUpload'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
+import { toast } from "sonner"
 
 interface ItemType {
   id: number
@@ -24,38 +36,53 @@ interface ExpenseFormProps {
 }
 
 export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAddItem }: ExpenseFormProps) {
+  const [date, setDate] = useState<Date>(new Date(2024, 11, 25)) // 默认日期
   const [formData, setFormData] = useState({
-    month: '12',
-    day: '25',
     itemNo: 'C2',
     note: 'Business meeting lunch',
     details: 'Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)',
     currency: 'SGD',
     amount: '45.80',
+    sgdAmount: '45.80',
     evidenceNo: '001'
   })
   
   const [attachments, setAttachments] = useState<File[]>([])
 
   const forexRate = exchangeRates[formData.currency] || 1.0000
-  const sgdAmount = (parseFloat(formData.amount) || 0) * forexRate
+  // 当汇率或金额改变时，自动计算 SGD 金额
+  const handleAmountChange = (amount: string) => {
+    setFormData(prev => ({
+      ...prev,
+      amount,
+      sgdAmount: ((parseFloat(amount) || 0) * forexRate).toFixed(2)
+    }))
+  }
+  
+  const handleCurrencyChange = (currency: string) => {
+    const newRate = exchangeRates[currency] || 1.0000
+    setFormData(prev => ({
+      ...prev,
+      currency,
+      sgdAmount: ((parseFloat(prev.amount) || 0) * newRate).toFixed(2)
+    }))
+  }
 
   const handleAddItem = () => {
-    
-    if (!formData.month || !formData.day || !formData.itemNo || !formData.note || !formData.amount) {
-      alert('请填写所有必填字段')
+    if (!date || !formData.itemNo || !formData.note || !formData.amount) {
+      toast.error('请填写所有必填字段')
       return
     }
 
     const item = {
-      date: `${formData.month.padStart(2, '0')}/${formData.day.padStart(2, '0')}`,
+      date: format(date, 'MM/dd'),
       itemNo: formData.itemNo,
       note: formData.note,
       details: formData.details,
       currency: formData.currency,
       amount: parseFloat(formData.amount),
       rate: forexRate,
-      sgdAmount: sgdAmount,
+      sgdAmount: parseFloat(formData.sgdAmount),
       evidenceNo: formData.evidenceNo,
       attachments: [...attachments]
     }
@@ -63,14 +90,14 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     onAddItem(item)
     
     // 清空表单
+    setDate(new Date())
     setFormData({
-      month: '',
-      day: '',
       itemNo: '',
       note: '',
       details: '',
       currency: 'SGD',
       amount: '',
+      sgdAmount: '',
       evidenceNo: ''
     })
     setAttachments([])
@@ -78,69 +105,60 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
 
 
   return (
-    <div className="bg-white border border-gray-300 p-4 mb-6">
-      <h3 className="text-md font-semibold mb-4 pb-2 border-b border-gray-200">
-        Expense Details
-      </h3>
-
-      <div>
-        {/* 第一行：日期、项目类型、GL账户、备注 */}
-        <div className="flex gap-3 mb-4">
-          <div className="flex-1">
-            <label className="block text-xs font-semibold mb-1">Date</label>
-            <div className="flex items-center gap-1">
-              <input
-                type="text"
-                placeholder="MM"
-                maxLength={2}
-                className="w-12 px-2 py-1 text-sm border border-gray-300 text-center"
-                value={formData.month}
-                onChange={(e) => setFormData({...formData, month: e.target.value})}
-              />
-              <span>/</span>
-              <input
-                type="text"
-                placeholder="DD"
-                maxLength={2}
-                className="w-12 px-2 py-1 text-sm border border-gray-300 text-center"
-                value={formData.day}
-                onChange={(e) => setFormData({...formData, day: e.target.value})}
-              />
-            </div>
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="text-md">Expense Details</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* 第一行：日期、项目类型、备注 */}
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-3">
+            <Label className="text-sm font-medium">Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, 'MM/dd/yyyy') : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(date) => date && setDate(date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
-          <div className="flex-1">
-            <label className="block text-xs font-semibold mb-1">Item No</label>
-            <select
-              className="w-full px-2 py-1 text-sm border border-gray-300"
-              value={formData.itemNo}
-              onChange={(e) => setFormData({...formData, itemNo: e.target.value})}
-            >
-              <option value="">Select</option>
-              {itemTypes.map(type => (
-                <option key={type.id} value={type.no}>
-                  {type.no} - {type.name}
-                </option>
-              ))}
-            </select>
+          <div className="col-span-4">
+            <Label className="text-sm font-medium">Item No</Label>
+            <Select value={formData.itemNo} onValueChange={(value) => setFormData({...formData, itemNo: value})}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Select item type" />
+              </SelectTrigger>
+              <SelectContent>
+                {itemTypes.map(type => (
+                  <SelectItem key={type.id} value={type.no} className="cursor-pointer">
+                    <span className="font-medium">{type.no}</span> - {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="flex-none w-20">
-            <label className="block text-xs font-semibold mb-1">GL Acct</label>
-            <input
-              type="text"
-              disabled
-              className="w-full px-2 py-1 text-sm border border-gray-300 bg-gray-50"
-              value="420" // 简化版本，固定值
-            />
-          </div>
-
-          <div className="flex-1">
-            <label className="block text-xs font-semibold mb-1">Item / Note</label>
-            <input
+          <div className="col-span-5">
+            <Label className="text-sm font-medium">Item / Note</Label>
+            <Input
               type="text"
               placeholder="Brief description"
-              className="w-full px-2 py-1 text-sm border border-gray-300"
               value={formData.note}
               onChange={(e) => setFormData({...formData, note: e.target.value})}
             />
@@ -148,70 +166,70 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         </div>
 
         {/* 详细说明 */}
-        <div className="mb-4">
-          <label className="block text-xs font-semibold mb-1">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">
             Details/Reason (Please Indicate Restaurant name or Supplier Name)
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"
-            className="w-full px-2 py-1 text-sm border border-gray-300 resize-vertical min-h-[60px]"
+            className="resize-vertical min-h-[80px]"
             value={formData.details}
             onChange={(e) => setFormData({...formData, details: e.target.value})}
           />
         </div>
 
         {/* 金额行 */}
-        <div className="flex gap-3 mb-4">
-          <div className="flex-1">
-            <label className="block text-xs font-semibold mb-1">Currency</label>
-            <select
-              className="w-full px-2 py-1 text-sm border border-gray-300"
-              value={formData.currency}
-              onChange={(e) => setFormData({...formData, currency: e.target.value})}
-            >
-              {currencies.map(currency => (
-                <option key={currency.id} value={currency.code}>{currency.code}</option>
-              ))}
-            </select>
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-2">
+            <Label className="text-sm font-medium">Currency</Label>
+            <Select value={formData.currency} onValueChange={handleCurrencyChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {currencies.map(currency => (
+                  <SelectItem key={currency.id} value={currency.code}>
+                    {currency.code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="flex-1">
-            <label className="block text-xs font-semibold mb-1">Amount</label>
-            <input
+          <div className="col-span-3">
+            <Label className="text-sm font-medium">Amount</Label>
+            <Input
               type="number"
               step="0.01"
-              className="w-full px-2 py-1 text-sm border border-gray-300"
               value={formData.amount}
-              onChange={(e) => setFormData({...formData, amount: e.target.value})}
+              onChange={(e) => handleAmountChange(e.target.value)}
             />
           </div>
 
-          <div className="flex-1">
-            <label className="block text-xs font-semibold mb-1">Forex Rate</label>
-            <input
+          <div className="col-span-2">
+            <Label className="text-sm font-medium">Forex Rate</Label>
+            <Input
               type="text"
               disabled
-              className="w-full px-2 py-1 text-sm border border-gray-300 bg-gray-50"
               value={forexRate.toFixed(4)}
             />
           </div>
 
-          <div className="flex-1">
-            <label className="block text-xs font-semibold mb-1">SGD Amount</label>
-            <input
-              type="text"
-              disabled
-              className="w-full px-2 py-1 text-sm border border-gray-300 bg-gray-50"
-              value={sgdAmount.toFixed(2)}
+          <div className="col-span-3">
+            <Label className="text-sm font-medium">SGD Amount</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.sgdAmount}
+              onChange={(e) => setFormData({...formData, sgdAmount: e.target.value})}
             />
           </div>
 
-          <div className="flex-none w-20">
-            <label className="block text-xs font-semibold mb-1">Evidence</label>
-            <input
+          <div className="col-span-2">
+            <Label className="text-sm font-medium">Evidence</Label>
+            <Input
               type="text"
               placeholder="No."
-              className="w-full px-2 py-1 text-sm border border-gray-300"
               value={formData.evidenceNo}
               onChange={(e) => setFormData({...formData, evidenceNo: e.target.value})}
             />
@@ -219,24 +237,23 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         </div>
 
         {/* 文件上传区域 */}
-        <div className="mb-4">
-          <ItemFileUpload
-            files={attachments}
-            onFilesChange={setAttachments}
-          />
-        </div>
+        <ItemFileUpload
+          files={attachments}
+          onFilesChange={setAttachments}
+        />
 
         {/* 添加按钮 */}
-        <div className="text-center">
-          <button
+        <div className="flex justify-center pt-2">
+          <Button
             type="button"
             onClick={handleAddItem}
-            className="px-4 py-2 bg-black text-white hover:bg-gray-800"
+            size="lg"
+            className="bg-black text-white hover:bg-gray-800"
           >
             + Add Item
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
