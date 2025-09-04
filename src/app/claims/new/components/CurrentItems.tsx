@@ -17,10 +17,15 @@ interface CurrentItemsProps {
 }
 
 export default function CurrentItems({ items, onRemoveItem, totalSGD }: CurrentItemsProps) {
+  // 如果没有items，不显示整个组件
+  if (items.length === 0) {
+    return null
+  }
+
   return (
     <Card className="mb-6">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg">Current Items</CardTitle>
+        <CardTitle className="text-lg">Current Items ({items.length})</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
 
@@ -37,47 +42,39 @@ export default function CurrentItems({ items, onRemoveItem, totalSGD }: CurrentI
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    No expense items added yet
+              {items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.date}</TableCell>
+                  <TableCell>{item.itemNo}</TableCell>
+                  <TableCell>
+                    <div className="max-w-xs">
+                      <div className="truncate" title={item.note}>
+                        {item.note}
+                      </div>
+                      {item.attachments && item.attachments.length > 0 && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          📎 {item.attachments.length} file{item.attachments.length > 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {item.currency} {item.amount.toFixed(2)}
+                  </TableCell>
+                  <TableCell>{item.sgdAmount.toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Button
+                      onClick={() => onRemoveItem(item.id)}
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:bg-red-50"
+                      title="Remove item"
+                    >
+                      ×
+                    </Button>
                   </TableCell>
                 </TableRow>
-              ) : (
-                items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.date}</TableCell>
-                    <TableCell>{item.itemNo}</TableCell>
-                    <TableCell>
-                      <div className="max-w-xs">
-                        <div className="truncate" title={item.note}>
-                          {item.note}
-                        </div>
-                        {item.attachments && item.attachments.length > 0 && (
-                          <div className="text-xs text-blue-600 mt-1">
-                            📎 {item.attachments.length} file{item.attachments.length > 1 ? 's' : ''}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {item.currency} {item.amount.toFixed(2)}
-                    </TableCell>
-                    <TableCell>{item.sgdAmount.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Button
-                        onClick={() => onRemoveItem(item.id)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:bg-red-50"
-                        title="Remove item"
-                      >
-                        ×
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </div>

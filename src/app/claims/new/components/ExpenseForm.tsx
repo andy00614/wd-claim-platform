@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, Plus } from 'lucide-react'
 import { ExpenseItem } from '../page'
 import ItemFileUpload from './ItemFileUpload'
 import { Button } from '@/components/ui/button'
@@ -46,7 +46,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     sgdAmount: '45.80',
     evidenceNo: '001'
   })
-  
+
   const [attachments, setAttachments] = useState<File[]>([])
 
   const forexRate = exchangeRates[formData.currency] || 1.0000
@@ -58,7 +58,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       sgdAmount: ((parseFloat(amount) || 0) * forexRate).toFixed(2)
     }))
   }
-  
+
   const handleCurrencyChange = (currency: string) => {
     const newRate = exchangeRates[currency] || 1.0000
     setFormData(prev => ({
@@ -88,7 +88,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     }
 
     onAddItem(item)
-    
+
     // 清空表单
     setDate(new Date())
     setFormData({
@@ -140,7 +140,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
 
           <div className="col-span-4">
             <Label className="text-sm font-medium">Item No</Label>
-            <Select value={formData.itemNo} onValueChange={(value) => setFormData({...formData, itemNo: value})}>
+            <Select value={formData.itemNo} onValueChange={(value) => setFormData({ ...formData, itemNo: value })}>
               <SelectTrigger className="h-10">
                 <SelectValue placeholder="Select item type" />
               </SelectTrigger>
@@ -160,7 +160,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
               type="text"
               placeholder="Brief description"
               value={formData.note}
-              onChange={(e) => setFormData({...formData, note: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
             />
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
             placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"
             className="resize-vertical min-h-[80px]"
             value={formData.details}
-            onChange={(e) => setFormData({...formData, details: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, details: e.target.value })}
           />
         </div>
 
@@ -221,7 +221,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
               type="number"
               step="0.01"
               value={formData.sgdAmount}
-              onChange={(e) => setFormData({...formData, sgdAmount: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, sgdAmount: e.target.value })}
             />
           </div>
 
@@ -231,28 +231,31 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
               type="text"
               placeholder="No."
               value={formData.evidenceNo}
-              onChange={(e) => setFormData({...formData, evidenceNo: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, evidenceNo: e.target.value })}
             />
           </div>
         </div>
 
-        {/* 文件上传区域 */}
-        <ItemFileUpload
-          files={attachments}
-          onFilesChange={setAttachments}
-        />
+        {/* 文件上传和添加按钮 */}
+        <div className="flex-1">
+          <ItemFileUpload
+            files={attachments}
+            onFilesChange={setAttachments}
+          />
+        </div>
 
-        {/* 添加按钮 */}
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-end">
           <Button
-            type="button"
+            variant="outline"
             onClick={handleAddItem}
-            size="lg"
-            className="bg-black text-white hover:bg-gray-800"
+            size="sm"
+            className="gap-2"
           >
-            + Add Item
+            <Plus className="h-4 w-4" />
+            Add to List
           </Button>
         </div>
+
       </CardContent>
     </Card>
   )

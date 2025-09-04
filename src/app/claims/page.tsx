@@ -1,12 +1,11 @@
-import { getUserClaims, checkIsAdmin } from '@/lib/actions'
+import { getUserClaims } from '@/lib/actions'
 import Link from 'next/link'
 import ActionButtons from './components/ActionButtons'
-import { logoutAction } from '../binding/actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Plus, Settings, LogOut } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 function getStatusBadge(status: string) {
   const statusConfig = {
@@ -26,10 +25,7 @@ function getStatusBadge(status: string) {
 }
 
 export default async function ClaimsPage() {
-  const [claimsData, adminCheck] = await Promise.all([
-    getUserClaims(),
-    checkIsAdmin()
-  ])
+  const claimsData = await getUserClaims()
 
   if (!claimsData.success || !claimsData.data) {
     return (
@@ -51,45 +47,10 @@ export default async function ClaimsPage() {
     )
   }
 
-  const { claims, employee, stats } = claimsData.data
+  const { claims, stats } = claimsData.data
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
-        {/* 页面头部 */}
-        <Card className="border-2 border-black">
-          <CardContent className="p-6 text-center">
-            <h1 className="text-xl font-bold">Wild Dynasty Pte Ltd</h1>
-            <h2 className="text-sm text-muted-foreground">Expense Claim History</h2>
-          </CardContent>
-        </Card>
-
-        {/* 用户信息和导航 */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-4 border-b">
-          <div className="text-sm">
-            Employee: <strong>{employee.name} (EMP{employee.employeeCode.toString().padStart(3, '0')})</strong>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button asChild>
-              <Link href="/claims/new">
-                <Plus className="mr-2 h-4 w-4" />
-                New Claim
-              </Link>
-            </Button>
-            {adminCheck.success && adminCheck.data?.isAdmin && (
-              <Button asChild variant="secondary">
-                <Link href="/admin">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Admin Dashboard
-                </Link>
-              </Button>
-            )}
-            <Button variant="outline" onClick={logoutAction}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
-          </div>
-        </div>
+    <div className="space-y-6">
 
         {/* 申请表格 */}
         <Card>
@@ -157,17 +118,6 @@ export default async function ClaimsPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* 新建申请按钮 */}
-        <div className="text-center">
-          <Button asChild size="lg" className="bg-black text-white hover:bg-gray-800">
-            <Link href="/claims/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Claim
-            </Link>
-          </Button>
-        </div>
-      </div>
     </div>
   )
 }

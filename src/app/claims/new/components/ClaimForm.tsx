@@ -207,7 +207,7 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
       )}
 
       {/* 操作按钮 */}
-      <div className="flex justify-center gap-4 pt-6">
+      <div className="flex justify-end gap-4 pt-6">
         <Button 
           type="button"
           variant="outline"
@@ -237,7 +237,6 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
           size="lg"
           onClick={handleSubmitClick}
           disabled={expenseItems.length === 0 || isLoading}
-          className="bg-black text-white hover:bg-gray-800"
         >
           {isLoading && actionType === 'submit' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isLoading && actionType === 'submit' ? 'Submitting...' : 'Submit Claim'}

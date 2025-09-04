@@ -73,7 +73,7 @@ export default function ItemFileUpload({ files, onFilesChange }: ItemFileUploadP
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={cn(
-          "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+          "border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors",
           isDragging 
             ? "border-primary bg-primary/10" 
             : "border-gray-300 hover:border-gray-400"
@@ -89,12 +89,14 @@ export default function ItemFileUpload({ files, onFilesChange }: ItemFileUploadP
           className="hidden"
         />
         
-        <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-        <p className="text-sm text-gray-600 mb-1">
-          Drag and drop files here, or click to select
-        </p>
-        <p className="text-xs text-gray-500">
-          Support: Images, PDF, DOC, DOCX
+        <div className="flex items-center justify-center gap-2">
+          <Upload className="h-4 w-4 text-gray-400" />
+          <span className="text-sm text-gray-600">
+            Drag files or click to select
+          </span>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Images, PDF, DOC, DOCX
         </p>
       </div>
 
