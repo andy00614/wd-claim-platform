@@ -41,6 +41,12 @@ export default async function AdminPage() {
               New Claim
             </Link>
             <Link 
+              href="/admin/reports"
+              className="text-blue-600 hover:underline"
+            >
+              Report Generation
+            </Link>
+            <Link 
               href="/claims"
               className="text-blue-600 hover:underline"
             >

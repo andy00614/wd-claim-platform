@@ -4,7 +4,7 @@ import { db } from '@/lib/db/drizzle'
 import { claims, claimItems, itemType, currency, employees, userEmployeeBind, attachment } from '@/lib/db/schema'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { eq, inArray, and } from 'drizzle-orm'
+import { eq, inArray, and, desc } from 'drizzle-orm'
 
 // 保存草稿
 export async function saveDraft(prevState: any, formData: FormData) {
@@ -377,7 +377,7 @@ export async function getUserClaims() {
       })
       .from(claims)
       .where(eq(claims.employeeId, employeeId))
-      .orderBy(claims.createdAt)
+      .orderBy(desc(claims.createdAt))
 
     // 计算统计信息
     const approved = userClaims.filter(claim => claim.status === 'approved')
@@ -658,7 +658,7 @@ export async function getAllClaims() {
       })
       .from(claims)
       .innerJoin(employees, eq(claims.employeeId, employees.id))
-      .orderBy(claims.createdAt)
+      .orderBy(desc(claims.createdAt))
 
     // 计算统计信息
     const stats = {
