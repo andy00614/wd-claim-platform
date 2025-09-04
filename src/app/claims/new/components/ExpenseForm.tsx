@@ -24,21 +24,20 @@ interface ExpenseFormProps {
 
 export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAddItem }: ExpenseFormProps) {
   const [formData, setFormData] = useState({
-    month: '',
-    day: '',
-    itemNo: '',
-    note: '',
-    details: '',
+    month: '12',
+    day: '25',
+    itemNo: 'C2',
+    note: 'Business meeting lunch',
+    details: 'Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)',
     currency: 'SGD',
-    amount: '',
-    evidenceNo: ''
+    amount: '45.80',
+    evidenceNo: '001'
   })
 
   const forexRate = exchangeRates[formData.currency] || 1.0000
   const sgdAmount = (parseFloat(formData.amount) || 0) * forexRate
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleAddItem = () => {
     
     if (!formData.month || !formData.day || !formData.itemNo || !formData.note || !formData.amount) {
       alert('请填写所有必填字段')
@@ -56,6 +55,9 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       sgdAmount: sgdAmount,
       evidenceNo: formData.evidenceNo
     }
+
+
+    console.log(item)
 
     onAddItem(item)
     
@@ -79,7 +81,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         Expense Details
       </h3>
 
-      <form onSubmit={handleSubmit}>
+      <div>
         {/* 第一行：日期、项目类型、GL账户、备注 */}
         <div className="flex gap-3 mb-4">
           <div className="flex-1">
@@ -217,13 +219,14 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         {/* 添加按钮 */}
         <div className="text-center">
           <button
-            type="submit"
+            type="button"
+            onClick={handleAddItem}
             className="px-4 py-2 bg-black text-white hover:bg-gray-800"
           >
             + Add Item
           </button>
         </div>
-      </form>
+      </div>
     </div>
   )
 }

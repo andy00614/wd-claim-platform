@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useFormState } from 'react-dom'
+import { useState, useEffect } from 'react'
+import { useActionState } from 'react'
 import { ExpenseItem } from '../page'
 import { submitClaim } from '@/lib/actions'
 import ExpenseForm from './ExpenseForm'
@@ -25,12 +25,13 @@ interface ClaimFormProps {
   itemTypes: ItemType[]
   currencies: Currency[]
   exchangeRates: Record<string, number>
+  employeeId: number
 }
 
-export default function ClaimForm({ itemTypes, currencies, exchangeRates }: ClaimFormProps) {
+export default function ClaimForm({ itemTypes, currencies, exchangeRates, employeeId }: ClaimFormProps) {
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([])
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
-  const [state, formAction] = useFormState(submitClaim, { success: false, error: '' })
+  const [state, formAction] = useActionState(submitClaim, { success: false, error: '' })
 
   const addExpenseItem = (item: Omit<ExpenseItem, 'id'>) => {
     const newItem = {
@@ -45,21 +46,20 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates }: Clai
   }
 
   // 处理提交成功后的清空逻辑
-  if (state.success && state.data?.claimId) {
-    // 提交成功后清空表单（只执行一次）
-    setTimeout(() => {
+  useEffect(() => {
+    if (state.success && state.data?.claimId) {
       setExpenseItems([])
       setAttachedFiles([])
       alert(`费用申请提交成功！申请ID: ${state.data?.claimId}`)
-    }, 100)
-  }
+    }
+  }, [state.success, state.data?.claimId])
 
   const totalSGD = expenseItems.reduce((sum, item) => sum + item.sgdAmount, 0)
 
   return (
     <form action={formAction}>
       {/* 隐藏字段 */}
-      <input type="hidden" name="employeeId" value="3" />
+      <input type="hidden" name="employeeId" value={employeeId} />
       <input 
         type="hidden" 
         name="expenseItems" 

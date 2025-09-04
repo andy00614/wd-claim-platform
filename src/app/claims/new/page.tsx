@@ -1,4 +1,4 @@
-import { getFormInitData } from '@/lib/actions'
+import { getFormInitData, getCurrentEmployee } from '@/lib/actions'
 import ClaimForm from './components/ClaimForm'
 
 export interface ExpenseItem {
@@ -15,8 +15,11 @@ export interface ExpenseItem {
 }
 
 export default async function NewClaimPage() {
-  // 在服务器端获取初始数据
-  const initData = await getFormInitData()
+  // 在服务器端获取初始数据和用户信息
+  const [initData, currentEmployee] = await Promise.all([
+    getFormInitData(),
+    getCurrentEmployee()
+  ])
   
   if (!initData.success || !initData.data) {
     return (
@@ -24,6 +27,20 @@ export default async function NewClaimPage() {
         <div className="text-center">
           <h1 className="text-xl font-bold text-red-600 mb-4">数据加载失败</h1>
           <p className="text-gray-600">{initData.error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentEmployee.success || !currentEmployee.data) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-red-600 mb-4">用户信息加载失败</h1>
+          <p className="text-gray-600">{currentEmployee.error}</p>
+          <a href="/login" className="text-blue-600 hover:underline mt-2 block">
+            请先登录
+          </a>
         </div>
       </div>
     )
@@ -40,7 +57,7 @@ export default async function NewClaimPage() {
 
         {/* 状态栏 */}
         <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-200 text-sm">
-          <span>Employee: <strong>Celine Chiong (EMP003)</strong></span>
+          <span>Employee: <strong>{currentEmployee.data.employee.name} (EMP{currentEmployee.data.employee.employeeCode.toString().padStart(3, '0')})</strong></span>
           <span>Posting Date: <strong>{new Date().toLocaleDateString()}</strong></span>
         </div>
 
@@ -49,6 +66,7 @@ export default async function NewClaimPage() {
           itemTypes={initData.data.itemTypes}
           currencies={initData.data.currencies}
           exchangeRates={initData.data.exchangeRates}
+          employeeId={currentEmployee.data.employee.employeeId}
         />
       </div>
     </div>

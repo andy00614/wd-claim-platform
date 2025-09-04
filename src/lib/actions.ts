@@ -1,7 +1,9 @@
 'use server'
 
 import { db } from '@/lib/db/drizzle'
-import { claims, claimItems, itemType, currency } from '@/lib/db/schema'
+import { claims, claimItems, itemType, currency, employees, userEmployeeBind } from '@/lib/db/schema'
+import { createClient } from '@/lib/supabase/server'
+import { eq } from 'drizzle-orm'
 
 // 提交费用申请
 export async function submitClaim(prevState: any, formData: FormData) {
@@ -32,6 +34,10 @@ export async function submitClaim(prevState: any, formData: FormData) {
       
       const itemTypeMap = Object.fromEntries(itemTypes.map(it => [it.no, it.id]))
       const currencyMap = Object.fromEntries(currencies.map(c => [c.code, c.id]))
+      
+      console.log('Available itemTypes:', itemTypes)
+      console.log('ItemTypeMap:', itemTypeMap)
+      console.log('ExpenseItems:', expenseItems)
 
       // 3. 创建申请项目记录
       const claimItemsData = expenseItems.map((item: any) => {
@@ -87,8 +93,8 @@ export async function getFormInitData() {
       db.select().from(currency)
     ])
 
-    // 汇率数据（模拟数据，可以后续替换为真实汇率API）
-    const exchangeRates = {
+    // 获取实时汇率数据（免费API）
+    let exchangeRates = {
       'SGD': 1.0000,
       'THB': 0.0270,
       'PHP': 0.0240,
@@ -98,6 +104,29 @@ export async function getFormInitData() {
       'IDR': 0.000067,
       'USD': 1.3400,
       'MYR': 0.2950
+    }
+
+    try {
+      const response = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/sgd.json')
+      const data = await response.json()
+      
+      if (data.sgd) {
+        // 将API返回的汇率转换为我们需要的格式（1 外币 = ? SGD）
+        exchangeRates = {
+          'SGD': 1.0000,
+          'THB': data.sgd.thb ? 1 / data.sgd.thb : exchangeRates['THB'],
+          'PHP': data.sgd.php ? 1 / data.sgd.php : exchangeRates['PHP'],
+          'VND': data.sgd.vnd ? 1 / data.sgd.vnd : exchangeRates['VND'],
+          'CNY': data.sgd.cny ? 1 / data.sgd.cny : exchangeRates['CNY'],
+          'INR': data.sgd.inr ? 1 / data.sgd.inr : exchangeRates['INR'],
+          'IDR': data.sgd.idr ? 1 / data.sgd.idr : exchangeRates['IDR'],
+          'USD': data.sgd.usd ? 1 / data.sgd.usd : exchangeRates['USD'],
+          'MYR': data.sgd.myr ? 1 / data.sgd.myr : exchangeRates['MYR']
+        }
+      }
+    } catch (error) {
+      console.log('使用备用汇率数据:', error)
+      // 如果API失败，使用备用数据，不影响功能
     }
 
     return {
@@ -111,5 +140,98 @@ export async function getFormInitData() {
   } catch (error) {
     console.error('Failed to fetch form init data:', error)
     return { success: false, error: 'Failed to fetch form init data' }
+  }
+}
+
+// 获取当前登录用户的员工信息
+export async function getCurrentEmployee() {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return { success: false, error: '用户未登录' }
+    }
+
+    // 查询用户绑定的员工信息
+    const binding = await db
+      .select({
+        employeeId: userEmployeeBind.employeeId,
+        name: employees.name,
+        employeeCode: employees.employeeCode,
+        department: employees.departmentEnum
+      })
+      .from(userEmployeeBind)
+      .innerJoin(employees, eq(userEmployeeBind.employeeId, employees.id))
+      .where(eq(userEmployeeBind.userId, user.id))
+      .limit(1)
+
+    if (binding.length === 0) {
+      return { success: false, error: '用户未绑定员工信息' }
+    }
+
+    return {
+      success: true,
+      data: {
+        userId: user.id,
+        employee: binding[0]
+      }
+    }
+  } catch (error) {
+    console.error('Failed to get current employee:', error)
+    return { success: false, error: '获取用户信息失败' }
+  }
+}
+
+// 获取用户的申请记录
+export async function getUserClaims() {
+  try {
+    const currentEmployee = await getCurrentEmployee()
+
+    console.log(currentEmployee)
+    
+    if (!currentEmployee.success || !currentEmployee.data) {
+      console.log('getCurrentEmployee failed:', currentEmployee.error)
+      return { success: false, error: currentEmployee.error || '用户未登录或未绑定员工' }
+    }
+
+    const employeeId = currentEmployee.data.employee.employeeId
+    console.log('Looking for claims for employeeId:', employeeId)
+
+    // 查询用户的申请记录
+    const userClaims = await db
+      .select({
+        id: claims.id,
+        status: claims.status,
+        totalAmount: claims.totalAmount,
+        createdAt: claims.createdAt,
+      })
+      .from(claims)
+      .where(eq(claims.employeeId, employeeId))
+      .orderBy(claims.createdAt)
+
+    console.log('Found claims:', userClaims)
+
+    // 计算统计信息
+    const approved = userClaims.filter(claim => claim.status === 'approved')
+    const pending = userClaims.filter(claim => claim.status === 'submitted')
+    
+    const totalApproved = approved.reduce((sum, claim) => sum + parseFloat(claim.totalAmount), 0)
+    const pendingCount = pending.length
+
+    return {
+      success: true,
+      data: {
+        claims: userClaims,
+        employee: currentEmployee.data.employee,
+        stats: {
+          totalApproved,
+          pendingCount
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to get user claims:', error)
+    return { success: false, error: '获取申请记录失败' }
   }
 }
