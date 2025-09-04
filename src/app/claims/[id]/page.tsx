@@ -25,7 +25,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
     )
   }
 
-  const { claim, items, employee } = claimData.data
+  const { claim, items, attachments, employee } = claimData.data
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -92,6 +92,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
                     <th className="text-left p-3 font-semibold">Rate</th>
                     <th className="text-left p-3 font-semibold">SGD Amount</th>
                     <th className="text-left p-3 font-semibold">Evidence</th>
+                    <th className="text-left p-3 font-semibold">Attachments</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -110,6 +111,28 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
                       <td className="p-3">{parseFloat(item.rate).toFixed(4)}</td>
                       <td className="p-3">{parseFloat(item.sgdAmount).toFixed(2)}</td>
                       <td className="p-3">{item.evidenceNo || 'N/A'}</td>
+                      <td className="p-3">
+                        {item.attachments && item.attachments.length > 0 ? (
+                          <div className="space-y-1">
+                            {item.attachments.map((attachment: any) => (
+                              <div key={attachment.id} className="flex items-center gap-2 text-xs">
+                                <span>📄</span>
+                                <a 
+                                  href={attachment.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline truncate max-w-[100px]"
+                                  title={attachment.fileName}
+                                >
+                                  {attachment.fileName}
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">No files</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -125,6 +148,48 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
             </div>
           </div>
         </div>
+
+        {/* 附件列表 */}
+        {attachments && attachments.length > 0 && (
+          <div className="bg-white border border-gray-300 mb-6">
+            <div className="p-4">
+              <h3 className="text-lg font-semibold mb-4">Supporting Documents</h3>
+              
+              <div className="space-y-2">
+                {attachments.map((attachment: any) => (
+                  <div key={attachment.id} className="flex items-center justify-between p-3 border border-gray-200 rounded hover:bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">📄</span>
+                      <div>
+                        <div className="font-medium text-sm">{attachment.fileName}</div>
+                        <div className="text-xs text-gray-500">
+                          {attachment.fileType} • {Math.round(parseFloat(attachment.fileSize) / 1024)} KB
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <a 
+                        href={attachment.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 border border-gray-300 hover:bg-gray-50 text-sm rounded"
+                      >
+                        View
+                      </a>
+                      <a 
+                        href={attachment.url}
+                        download={attachment.fileName}
+                        className="px-3 py-1 bg-blue-600 text-white hover:bg-blue-700 text-sm rounded"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 操作按钮 */}
         <div className="flex gap-4">

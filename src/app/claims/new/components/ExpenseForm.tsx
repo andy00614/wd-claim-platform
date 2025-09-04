@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ExpenseItem } from '../page'
+import ItemFileUpload from './ItemFileUpload'
 
 interface ItemType {
   id: number
@@ -33,6 +34,8 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     amount: '45.80',
     evidenceNo: '001'
   })
+  
+  const [attachments, setAttachments] = useState<File[]>([])
 
   const forexRate = exchangeRates[formData.currency] || 1.0000
   const sgdAmount = (parseFloat(formData.amount) || 0) * forexRate
@@ -53,7 +56,8 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       amount: parseFloat(formData.amount),
       rate: forexRate,
       sgdAmount: sgdAmount,
-      evidenceNo: formData.evidenceNo
+      evidenceNo: formData.evidenceNo,
+      attachments: [...attachments]
     }
 
     onAddItem(item)
@@ -69,6 +73,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       amount: '',
       evidenceNo: ''
     })
+    setAttachments([])
   }
 
 
@@ -211,6 +216,14 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
               onChange={(e) => setFormData({...formData, evidenceNo: e.target.value})}
             />
           </div>
+        </div>
+
+        {/* 文件上传区域 */}
+        <div className="mb-4">
+          <ItemFileUpload
+            files={attachments}
+            onFilesChange={setAttachments}
+          />
         </div>
 
         {/* 添加按钮 */}

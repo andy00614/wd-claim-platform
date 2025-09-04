@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useActionState } from 'react'
 import { ExpenseItem } from '../page'
-import { submitClaim } from '@/lib/actions'
+import { submitClaim, uploadClaimFiles, uploadItemAttachments } from '@/lib/actions'
 import ExpenseForm from './ExpenseForm'
 import CurrentItems from './CurrentItems'
 import FileUpload from './FileUpload'
@@ -45,14 +45,45 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
     setExpenseItems(prev => prev.filter(item => item.id !== id))
   }
 
-  // 处理提交成功后的清空逻辑
+  // 处理提交成功后的清空逻辑和文件上传
   useEffect(() => {
-    if (state.success && state.data?.claimId) {
-      setExpenseItems([])
-      setAttachedFiles([])
-      alert(`费用申请提交成功！申请ID: ${state.data?.claimId}`)
+    if (state.success && state.data?.claimId && state.data?.insertedItems) {
+      const handleFileUpload = async () => {
+        try {
+          // 1. 上传claim级别的附件（如果有）
+          if (attachedFiles.length > 0) {
+            const uploadResult = await uploadClaimFiles(state.data.claimId, attachedFiles)
+            if (!uploadResult.success) {
+              alert(`申请文件上传失败: ${uploadResult.error}`)
+            }
+          }
+
+          // 2. 上传item级别的附件
+          const itemsWithAttachments = state.data.insertedItems.map((insertedItem: any, index: number) => ({
+            id: insertedItem.id,
+            attachments: expenseItems[index]?.attachments || []
+          })).filter(item => item.attachments.length > 0)
+
+          if (itemsWithAttachments.length > 0) {
+            const itemUploadResult = await uploadItemAttachments(itemsWithAttachments)
+            if (!itemUploadResult.success) {
+              alert(`项目附件上传失败: ${itemUploadResult.error}`)
+            }
+          }
+
+          // 清空表单
+          setExpenseItems([])
+          setAttachedFiles([])
+          // alert(`费用申请提交成功！申请ID: ${state.data?.claimId}`)
+        } catch (error) {
+          console.error('File upload error:', error)
+          alert('文件上传失败')
+        }
+      }
+
+      handleFileUpload()
     }
-  }, [state.success, state.data?.claimId])
+  }, [state.success, state.data?.claimId, state.data?.insertedItems, attachedFiles, expenseItems])
 
   const totalSGD = expenseItems.reduce((sum, item) => sum + item.sgdAmount, 0)
 
@@ -94,10 +125,10 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
       />
 
       {/* 文件上传区域 */}
-      <FileUpload 
+      {/* <FileUpload 
         files={attachedFiles}
         onFilesChange={setAttachedFiles}
-      />
+      /> */}
 
       {/* 错误提示 */}
       {state.error && (

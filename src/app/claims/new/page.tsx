@@ -12,6 +12,7 @@ export interface ExpenseItem {
   rate: number
   sgdAmount: number
   evidenceNo: string
+  attachments?: File[]
 }
 
 export default async function NewClaimPage() {

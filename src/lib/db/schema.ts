@@ -77,6 +77,7 @@ export const claimItems = pgTable('claim_items', {
 
 export const attachment = pgTable('attachments', {
   id: serial('id').primaryKey(),
+  claimId: integer('claim_id').references(() => claims.id),
   claimItemId: integer('claim_item_id').references(() => claimItems.id),
   fileName: varchar('file_name').notNull(),
   url: varchar('url').notNull(),

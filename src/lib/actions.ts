@@ -1,9 +1,10 @@
 'use server'
 
 import { db } from '@/lib/db/drizzle'
-import { claims, claimItems, itemType, currency, employees, userEmployeeBind } from '@/lib/db/schema'
+import { claims, claimItems, itemType, currency, employees, userEmployeeBind, attachment } from '@/lib/db/schema'
 import { createClient } from '@/lib/supabase/server'
-import { eq } from 'drizzle-orm'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { eq, inArray } from 'drizzle-orm'
 
 // 提交费用申请
 export async function submitClaim(prevState: any, formData: FormData) {
@@ -62,7 +63,8 @@ export async function submitClaim(prevState: any, formData: FormData) {
       return {
         claimId: newClaim.id,
         itemsCount: insertedItems.length,
-        totalAmount
+        totalAmount,
+        insertedItems
       }
     })
 
@@ -281,11 +283,27 @@ export async function getClaimDetails(claimId: number) {
       .where(eq(claimItems.claimId, claimId))
       .orderBy(claimItems.date)
 
+    // 获取附件信息 - 包括claim级别和item级别的附件
+    const itemIds = claimItemsResult.map(item => item.id)
+    const [claimAttachmentsResult, itemAttachmentsResult] = await Promise.all([
+      getClaimAttachments(claimId),
+      itemIds.length > 0 ? db.select().from(attachment).where(inArray(attachment.claimItemId, itemIds)) : Promise.resolve([])
+    ])
+
+    const claimAttachments = claimAttachmentsResult.success ? claimAttachmentsResult.data : []
+    
+    // 为每个item添加其对应的附件
+    const itemsWithAttachments = claimItemsResult.map(item => ({
+      ...item,
+      attachments: itemAttachmentsResult.filter(att => att.claimItemId === item.id)
+    }))
+
     return {
       success: true,
       data: {
         claim,
-        items: claimItemsResult,
+        items: itemsWithAttachments,
+        attachments: claimAttachments,
         employee: currentEmployee.data.employee
       }
     }
@@ -534,5 +552,210 @@ export async function updateClaimStatus(claimId: number, status: string, adminNo
   } catch (error) {
     console.error("Failed to update claim status:", error)
     return { success: false, error: "更新申请状态失败" }
+  }
+}
+
+// 上传文件到Supabase Storage
+export async function uploadClaimFiles(claimId: number, files: File[]) {
+  try {
+    const currentEmployee = await getCurrentEmployee()
+    
+    if (!currentEmployee.success || !currentEmployee.data) {
+      return { success: false, error: "用户未登录或未绑定员工" }
+    }
+
+    const supabase = createAdminClient()
+    const uploadedFiles: any[] = []
+
+    for (const file of files) {
+      // 生成唯一文件名
+      const fileExt = file.name.split(".").pop()
+      const fileName = `claim_${claimId}_${Date.now()}.${fileExt}`
+      const filePath = `claims/${claimId}/${fileName}`
+
+      // 上传文件到Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("wd-attachments")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false
+        })
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError)
+        return { success: false, error: `文件上传失败: ${uploadError.message}` }
+      }
+
+      // 获取文件的公开URL
+      const { data: urlData } = supabase.storage
+        .from("claim-attachments")
+        .getPublicUrl(filePath)
+
+      // 将文件信息保存到数据库
+      const [attachmentRecord] = await db
+        .insert(attachment)
+        .values({
+          claimId: claimId,
+          claimItemId: null, // 可以后续关联到具体的claimItem
+          fileName: file.name,
+          url: urlData.publicUrl,
+          fileSize: file.size.toString(),
+          fileType: file.type
+        })
+        .returning()
+
+      uploadedFiles.push({
+        id: attachmentRecord.id,
+        fileName: file.name,
+        url: urlData.publicUrl,
+        fileSize: file.size,
+        fileType: file.type
+      })
+    }
+
+    return {
+      success: true,
+      message: `成功上传 ${files.length} 个文件`,
+      data: uploadedFiles
+    }
+  } catch (error) {
+    console.error("File upload error:", error)
+    return { success: false, error: "文件上传失败" }
+  }
+}
+
+// 删除文件
+export async function deleteClaimFile(attachmentId: number) {
+  try {
+    const currentEmployee = await getCurrentEmployee()
+    
+    if (!currentEmployee.success || !currentEmployee.data) {
+      return { success: false, error: "用户未登录或未绑定员工" }
+    }
+
+    // 查询文件信息
+    const [fileRecord] = await db
+      .select()
+      .from(attachment)
+      .where(eq(attachment.id, attachmentId))
+      .limit(1)
+
+    if (!fileRecord) {
+      return { success: false, error: "文件不存在" }
+    }
+
+    const supabase = await createClient()
+    
+    // 从URL中提取文件路径
+    const url = new URL(fileRecord.url)
+    const filePath = url.pathname.split("/").slice(-3).join("/") // 获取 claims/claimId/fileName 部分
+
+    // 从Supabase Storage删除文件
+    const { error: deleteError } = await supabase.storage
+      .from("claim-attachments")
+      .remove([filePath])
+
+    if (deleteError) {
+      console.error("Delete error:", deleteError)
+      return { success: false, error: `文件删除失败: ${deleteError.message}` }
+    }
+
+    // 从数据库删除记录
+    await db
+      .delete(attachment)
+      .where(eq(attachment.id, attachmentId))
+
+    return {
+      success: true,
+      message: "文件删除成功"
+    }
+  } catch (error) {
+    console.error("File delete error:", error)
+    return { success: false, error: "文件删除失败" }
+  }
+}
+
+// 获取申请的附件列表
+export async function getClaimAttachments(claimId: number) {
+  try {
+    const attachments = await db
+      .select()
+      .from(attachment)
+      .where(eq(attachment.claimId, claimId))
+      .orderBy(attachment.createdAt)
+
+    return {
+      success: true,
+      data: attachments
+    }
+  } catch (error) {
+    console.error("Get attachments error:", error)
+    return { success: false, error: "获取附件失败" }
+  }
+}
+
+// 上传item级别的附件
+export async function uploadItemAttachments(claimItemsData: Array<{id: number, attachments?: File[]}>) {
+  try {
+    const supabase = createAdminClient()
+    const uploadResults: any[] = []
+
+    for (const itemData of claimItemsData) {
+      if (!itemData.attachments || itemData.attachments.length === 0) {
+        continue
+      }
+
+      for (const file of itemData.attachments) {
+        // 生成唯一文件名
+        const fileExt = file.name.split(".").pop()
+        const fileName = `item_${itemData.id}_${Date.now()}.${fileExt}`
+        const filePath = `items/${itemData.id}/${fileName}`
+
+        // 上传文件到Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from("wd-attachments")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false
+          })
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError)
+          return { success: false, error: `文件上传失败: ${uploadError.message}` }
+        }
+
+        // 获取文件的公开URL
+        const { data: urlData } = supabase.storage
+          .from("wd-attachments")
+          .getPublicUrl(filePath)
+
+        // 将文件信息保存到数据库
+        const [attachmentRecord] = await db
+          .insert(attachment)
+          .values({
+            claimItemId: itemData.id,
+            fileName: file.name,
+            url: urlData.publicUrl,
+            fileSize: file.size.toString(),
+            fileType: file.type || "application/octet-stream"
+          })
+          .returning()
+
+        uploadResults.push(attachmentRecord)
+      }
+    }
+
+    return {
+      success: true,
+      data: uploadResults,
+      message: `成功上传 ${uploadResults.length} 个文件`
+    }
+  } catch (error) {
+    console.error("Item attachments upload error:", error)
+    return { 
+      success: false, 
+      error: "附件上传失败",
+      details: error instanceof Error ? error.message : "未知错误"
+    }
   }
 }

@@ -38,8 +38,15 @@ export default function CurrentItems({ items, onRemoveItem, totalSGD }: CurrentI
                   <td className="border border-gray-200 px-2 py-1">{item.date}</td>
                   <td className="border border-gray-200 px-2 py-1">{item.itemNo}</td>
                   <td className="border border-gray-200 px-2 py-1">
-                    <div className="max-w-xs truncate" title={item.note}>
-                      {item.note}
+                    <div className="max-w-xs">
+                      <div className="truncate" title={item.note}>
+                        {item.note}
+                      </div>
+                      {item.attachments && item.attachments.length > 0 && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          📎 {item.attachments.length} file{item.attachments.length > 1 ? 's' : ''}
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="border border-gray-200 px-2 py-1">
