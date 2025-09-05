@@ -27,29 +27,22 @@ export function TextAnimate({
   const variants = {
     blur: {
       hidden: { filter: 'blur(10px)', opacity: 0, y: 20 },
-      visible: { 
-        filter: 'blur(0px)', 
-        opacity: 1, 
-        y: 0,
-        transition: { duration: 0.8, ease: 'easeOut' }
-      }
+      visible: { filter: 'blur(0px)', opacity: 1, y: 0 }
     },
     fade: {
       hidden: { opacity: 0, y: 20 },
-      visible: { 
-        opacity: 1, 
-        y: 0,
-        transition: { duration: 0.6, ease: 'easeOut' }
-      }
+      visible: { opacity: 1, y: 0 }
     },
     slide: {
       hidden: { x: -20, opacity: 0 },
-      visible: { 
-        x: 0, 
-        opacity: 1,
-        transition: { duration: 0.6, ease: 'easeOut' }
-      }
+      visible: { x: 0, opacity: 1 }
     }
+  }
+
+  const transitions = {
+    blur: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as const },
+    fade: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const },
+    slide: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const }
   }
 
   return (
@@ -57,6 +50,7 @@ export function TextAnimate({
       initial="hidden"
       animate={isVisible ? "visible" : "hidden"}
       variants={variants[animation]}
+      transition={transitions[animation]}
       className={className}
     >
       {children}
@@ -264,6 +258,67 @@ export function DockItem({ children, className, title, onClick }: DockItemProps)
       }}
       whileTap={{ scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+    >
+      {children}
+    </motion.button>
+  )
+}
+
+interface MagicCardProps {
+  children: React.ReactNode
+  className?: string
+}
+
+export function MagicCard({ children, className }: MagicCardProps) {
+  return (
+    <motion.div
+      className={cn(
+        'relative overflow-hidden rounded-xl border border-slate-200/50 bg-white/80 backdrop-blur-sm',
+        'shadow-md hover:shadow-lg transition-all duration-300',
+        className
+      )}
+      whileHover={{ y: -2 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+interface ShimmerButtonProps {
+  children: React.ReactNode
+  className?: string
+  disabled?: boolean
+  type?: 'button' | 'submit' | 'reset'
+  onClick?: () => void
+}
+
+export function ShimmerButton({ 
+  children, 
+  className, 
+  disabled = false,
+  type = 'button',
+  onClick,
+  ...props 
+}: ShimmerButtonProps) {
+  return (
+    <motion.button
+      type={type}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'relative overflow-hidden rounded-md px-6 py-3 font-medium text-white',
+        'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700',
+        'shadow-md hover:shadow-lg transition-all duration-300',
+        'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent',
+        'before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md',
+        className
+      )}
+      whileHover={!disabled ? { scale: 1.02 } : {}}
+      whileTap={!disabled ? { scale: 0.98 } : {}}
+      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+      {...props}
     >
       {children}
     </motion.button>

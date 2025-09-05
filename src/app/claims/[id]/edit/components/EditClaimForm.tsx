@@ -24,9 +24,7 @@ interface Currency {
 interface ExistingItem {
   id: number
   date: Date | null
-  note: string | null
   details: string | null
-  evidenceNo: string | null
   amount: string
   rate: string
   sgdAmount: string
@@ -39,13 +37,12 @@ interface ExpenseItem {
   id: number
   date: string
   itemNo: string
-  note: string
   details: string
   currency: string
   amount: number
   rate: number
   sgdAmount: number
-  evidenceNo: string
+  attachments?: File[]
 }
 
 interface EditClaimFormProps {
@@ -74,13 +71,12 @@ export default function EditClaimForm({
       id: Date.now() + index, // 使用临时ID
       date: `${(itemDate.getMonth() + 1).toString().padStart(2, '0')}/${itemDate.getDate().toString().padStart(2, '0')}`,
       itemNo: item.itemTypeNo,
-      note: item.note || '',
       details: item.details || '',
       currency: item.currencyCode,
       amount: parseFloat(item.amount),
       rate: parseFloat(item.rate),
       sgdAmount: parseFloat(item.sgdAmount),
-      evidenceNo: item.evidenceNo || ''
+      attachments: []
     }
   })
 
@@ -125,13 +121,11 @@ export default function EditClaimForm({
           expenseItems.map(item => ({
             date: item.date,
             itemNo: item.itemNo,
-            note: item.note,
             details: item.details,
             currency: item.currency,
             amount: item.amount,
             rate: item.rate,
             sgdAmount: item.sgdAmount,
-            evidenceNo: item.evidenceNo,
           }))
         )} 
       />

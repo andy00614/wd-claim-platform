@@ -33,9 +33,6 @@ export function EmployeeSelector({ employees, currentBindingId, onSubmit }: Empl
   return (
     <div className={styles.formSection}>
       <h3>{currentBindingId ? 'Change Employee Profile' : 'Select Your Employee Profile'}</h3>
-      <div>id:{currentBindingId}</div>
-      <div>select:{selectedEmployeeId}</div>
-      <div>employee:{selectedEmployee?.name}</div>
       <form action={formAction}>
         <div className={styles.formGroup}>
           <label>Choose Employee</label>

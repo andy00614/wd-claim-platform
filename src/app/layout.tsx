@@ -53,7 +53,7 @@ export default async function RootLayout({
   }
 
   // 如果是登录页面，不显示header
-  if (pathname.includes('/login') || pathname.includes('/binding')) {
+  if (pathname.includes('/login')) {
     return (
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
