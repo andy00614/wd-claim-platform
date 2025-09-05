@@ -690,9 +690,12 @@ export async function getAllClaims() {
 // 上传文件到Supabase Storage
 export async function uploadClaimFiles(claimId: number, files: File[]) {
   try {
+    console.log(`[uploadClaimFiles] Starting upload for ${files.length} files, claimId: ${claimId}`)
+    
     const currentEmployee = await getCurrentEmployee()
     
     if (!currentEmployee.success || !currentEmployee.data) {
+      console.error("[uploadClaimFiles] User not authenticated")
       return { success: false, error: "用户未登录或未绑定员工" }
     }
 
@@ -700,10 +703,14 @@ export async function uploadClaimFiles(claimId: number, files: File[]) {
     const uploadedFiles: any[] = []
 
     for (const file of files) {
+      console.log(`[uploadClaimFiles] Processing file: ${file.name}, size: ${file.size}, type: ${file.type}`)
+      
       // 生成唯一文件名
       const fileExt = file.name.split(".").pop()
       const fileName = `claim_${claimId}_${Date.now()}.${fileExt}`
       const filePath = `claims/${claimId}/${fileName}`
+
+      console.log(`[uploadClaimFiles] Uploading to path: ${filePath}`)
 
       // 上传文件到Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -714,13 +721,15 @@ export async function uploadClaimFiles(claimId: number, files: File[]) {
         })
 
       if (uploadError) {
-        console.error("Upload error:", uploadError)
+        console.error("[uploadClaimFiles] Upload error:", uploadError)
         return { success: false, error: `文件上传失败: ${uploadError.message}` }
       }
 
+      console.log(`[uploadClaimFiles] File uploaded successfully: ${filePath}`)
+
       // 获取文件的公开URL
       const { data: urlData } = supabase.storage
-        .from("claim-attachments")
+        .from("wd-attachments")
         .getPublicUrl(filePath)
 
       // 将文件信息保存到数据库
@@ -908,19 +917,28 @@ export async function updateClaimStatus(claimId: number, newStatus: 'draft' | 's
 // 上传item级别的附件
 export async function uploadItemAttachments(claimItemsData: Array<{id: number, attachments?: File[]}>) {
   try {
+    console.log(`[uploadItemAttachments] Starting upload for ${claimItemsData.length} items`)
+    
     const supabase = createAdminClient()
     const uploadResults: any[] = []
 
     for (const itemData of claimItemsData) {
       if (!itemData.attachments || itemData.attachments.length === 0) {
+        console.log(`[uploadItemAttachments] Skipping item ${itemData.id} - no attachments`)
         continue
       }
 
+      console.log(`[uploadItemAttachments] Processing item ${itemData.id} with ${itemData.attachments.length} files`)
+
       for (const file of itemData.attachments) {
+        console.log(`[uploadItemAttachments] Processing file: ${file.name}, size: ${file.size}, type: ${file.type}`)
+        
         // 生成唯一文件名
         const fileExt = file.name.split(".").pop()
         const fileName = `item_${itemData.id}_${Date.now()}.${fileExt}`
         const filePath = `items/${itemData.id}/${fileName}`
+
+        console.log(`[uploadItemAttachments] Uploading to path: ${filePath}`)
 
         // 上传文件到Supabase Storage
         const { error: uploadError } = await supabase.storage
@@ -931,9 +949,11 @@ export async function uploadItemAttachments(claimItemsData: Array<{id: number, a
           })
 
         if (uploadError) {
-          console.error("Upload error:", uploadError)
+          console.error("[uploadItemAttachments] Upload error:", uploadError)
           return { success: false, error: `文件上传失败: ${uploadError.message}` }
         }
+
+        console.log(`[uploadItemAttachments] File uploaded successfully: ${filePath}`)
 
         // 获取文件的公开URL
         const { data: urlData } = supabase.storage
