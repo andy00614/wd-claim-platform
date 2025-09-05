@@ -31,8 +31,7 @@ export default function AIAssistant({ onExtractData }: AIAssistantProps) {
         currency: 'SGD',
         amount: 25.00,
         rate: 1.0000,
-        sgdAmount: 25.00,
-        evidenceNo: ''
+        sgdAmount: 25.00
       }
       
       onExtractData(mockExtraction)

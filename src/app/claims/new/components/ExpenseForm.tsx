@@ -39,37 +39,74 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
   const [date, setDate] = useState<Date>(new Date(2024, 11, 25)) // 默认日期
   const [formData, setFormData] = useState({
     itemNo: 'C2',
-    note: 'Business meeting lunch',
     details: 'Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)',
     currency: 'SGD',
     amount: '45.80',
-    sgdAmount: '45.80',
-    evidenceNo: '001'
+    forexRate: '1.0000',
+    sgdAmount: '45.80'
   })
 
   const [attachments, setAttachments] = useState<File[]>([])
 
-  const forexRate = exchangeRates[formData.currency] || 1.0000
-  // 当汇率或金额改变时，自动计算 SGD 金额
+  // 计算SGD金额
+  const calculateSgdAmount = (amount: string, rate: string) => {
+    const numAmount = parseFloat(amount) || 0
+    const numRate = parseFloat(rate) || 0
+    return (numAmount * numRate).toFixed(2)
+  }
+
+  // 计算汇率 (SGD Amount / Amount)
+  const calculateForexRate = (sgdAmount: string, amount: string) => {
+    const numSgdAmount = parseFloat(sgdAmount) || 0
+    const numAmount = parseFloat(amount) || 0
+    if (numAmount === 0) return '0.0000'
+    return (numSgdAmount / numAmount).toFixed(4)
+  }
+
+  // 当金额改变时，自动计算 SGD 金额
   const handleAmountChange = (amount: string) => {
+    const sgdAmount = calculateSgdAmount(amount, formData.forexRate)
     setFormData(prev => ({
       ...prev,
       amount,
-      sgdAmount: ((parseFloat(amount) || 0) * forexRate).toFixed(2)
+      sgdAmount
     }))
   }
 
+  // 当汇率改变时，自动计算 SGD 金额
+  const handleForexRateChange = (rate: string) => {
+    const sgdAmount = calculateSgdAmount(formData.amount, rate)
+    setFormData(prev => ({
+      ...prev,
+      forexRate: rate,
+      sgdAmount
+    }))
+  }
+
+  // 当SGD金额改变时，自动计算汇率
+  const handleSgdAmountChange = (sgdAmount: string) => {
+    const forexRate = calculateForexRate(sgdAmount, formData.amount)
+    setFormData(prev => ({
+      ...prev,
+      sgdAmount,
+      forexRate
+    }))
+  }
+
+  // 当货币改变时，更新汇率并重新计算
   const handleCurrencyChange = (currency: string) => {
-    const newRate = exchangeRates[currency] || 1.0000
+    const newRate = (exchangeRates[currency] || 1.0000).toFixed(4)
+    const sgdAmount = calculateSgdAmount(formData.amount, newRate)
     setFormData(prev => ({
       ...prev,
       currency,
-      sgdAmount: ((parseFloat(prev.amount) || 0) * newRate).toFixed(2)
+      forexRate: newRate,
+      sgdAmount
     }))
   }
 
   const handleAddItem = () => {
-    if (!date || !formData.itemNo || !formData.note || !formData.amount) {
+    if (!date || !formData.itemNo || !formData.amount) {
       toast.error('请填写所有必填字段')
       return
     }
@@ -77,13 +114,11 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     const item = {
       date: format(date, 'MM/dd'),
       itemNo: formData.itemNo,
-      note: formData.note,
       details: formData.details,
       currency: formData.currency,
       amount: parseFloat(formData.amount),
-      rate: forexRate,
+      rate: parseFloat(formData.forexRate),
       sgdAmount: parseFloat(formData.sgdAmount),
-      evidenceNo: formData.evidenceNo,
       attachments: [...attachments]
     }
 
@@ -93,12 +128,11 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     setDate(new Date())
     setFormData({
       itemNo: '',
-      note: '',
       details: '',
       currency: 'SGD',
       amount: '',
-      sgdAmount: '',
-      evidenceNo: ''
+      forexRate: '1.0000',
+      sgdAmount: ''
     })
     setAttachments([])
   }
@@ -110,7 +144,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         <CardTitle className="text-md">Expense Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* 第一行：日期、项目类型、备注 */}
+        {/* 第一行：日期、项目类型 */}
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-3">
             <Label className="text-sm font-semibold mb-1">Date</Label>
@@ -138,7 +172,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
             </Popover>
           </div>
 
-          <div className="col-span-4">
+          <div className="col-span-9">
             <Label className="text-sm font-semibold mb-1">Item No</Label>
             <Select value={formData.itemNo} onValueChange={(value) => setFormData({ ...formData, itemNo: value })}>
               <SelectTrigger className="h-10">
@@ -153,29 +187,6 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
               </SelectContent>
             </Select>
           </div>
-
-          <div className="col-span-5">
-            <Label className="text-sm font-semibold mb-1">Item / Note</Label>
-            <Input
-              type="text"
-              placeholder="Brief description"
-              value={formData.note}
-              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-            />
-          </div>
-        </div>
-
-        {/* 详细说明 */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold mb-1">
-            Details/Reason (Please Indicate Restaurant name or Supplier Name)
-          </Label>
-          <Textarea
-            placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"
-            className="resize-vertical min-h-[80px]"
-            value={formData.details}
-            onChange={(e) => setFormData({ ...formData, details: e.target.value })}
-          />
         </div>
 
         {/* 金额行 */}
@@ -209,31 +220,35 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           <div className="col-span-2">
             <Label className="text-sm font-semibold mb-1">Forex Rate</Label>
             <Input
-              type="text"
-              disabled
-              value={forexRate.toFixed(4)}
+              type="number"
+              step="0.0001"
+              value={formData.forexRate}
+              onChange={(e) => handleForexRateChange(e.target.value)}
             />
           </div>
 
-          <div className="col-span-3">
+          <div className="col-span-5">
             <Label className="text-sm font-semibold mb-1">SGD Amount</Label>
             <Input
               type="number"
               step="0.01"
               value={formData.sgdAmount}
-              onChange={(e) => setFormData({ ...formData, sgdAmount: e.target.value })}
+              onChange={(e) => handleSgdAmountChange(e.target.value)}
             />
           </div>
+        </div>
 
-          <div className="col-span-2">
-            <Label className="text-sm font-semibold mb-1">Evidence</Label>
-            <Input
-              type="text"
-              placeholder="No."
-              value={formData.evidenceNo}
-              onChange={(e) => setFormData({ ...formData, evidenceNo: e.target.value })}
-            />
-          </div>
+        {/* 详细说明 */}
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold mb-1">
+            Details/Reason (Please Indicate Restaurant name or Supplier Name)
+          </Label>
+          <Textarea
+            placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"
+            className="resize-vertical min-h-[80px]"
+            value={formData.details}
+            onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+          />
         </div>
 
         {/* 文件上传和添加按钮 */}

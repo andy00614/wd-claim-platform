@@ -48,8 +48,8 @@ export default function CurrentItems({ items, onRemoveItem, totalSGD }: CurrentI
                   <TableCell>{item.itemNo}</TableCell>
                   <TableCell>
                     <div className="max-w-xs">
-                      <div className="truncate" title={item.note}>
-                        {item.note}
+                      <div className="truncate" title={item.details}>
+                        {item.details}
                       </div>
                       {item.attachments && item.attachments.length > 0 && (
                         <div className="text-xs text-blue-600 mt-1">

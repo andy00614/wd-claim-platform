@@ -5,13 +5,11 @@ export interface ExpenseItem {
   id: number
   date: string
   itemNo: string
-  note: string
   details: string
   currency: string
   amount: number
   rate: number
   sgdAmount: number
-  evidenceNo: string
   attachments?: File[]
 }
 

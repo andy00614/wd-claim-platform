@@ -149,13 +149,11 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
             expenseItems.map(item => ({
               date: item.date,
               itemNo: item.itemNo,
-              note: item.note,
               details: item.details,
               currency: item.currency,
               amount: item.amount,
               rate: item.rate,
               sgdAmount: item.sgdAmount,
-              evidenceNo: item.evidenceNo,
             }))
           )} 
         />
@@ -170,13 +168,11 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
             expenseItems.map(item => ({
               date: item.date,
               itemNo: item.itemNo,
-              note: item.note,
               details: item.details,
               currency: item.currency,
               amount: item.amount,
               rate: item.rate,
               sgdAmount: item.sgdAmount,
-              evidenceNo: item.evidenceNo,
             }))
           )} 
         />
