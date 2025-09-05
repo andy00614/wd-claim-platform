@@ -45,7 +45,6 @@ export default function LoginPage() {
 
     // 使用 getUrl() 获取动态 URL（支持 production、preview、local）
     const redirectTo = `${getUrl()}auth/callback`
-    
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
