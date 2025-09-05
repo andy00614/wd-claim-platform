@@ -107,9 +107,9 @@ export default async function ClaimsPage() {
                   <div key={claim.id} className="border rounded-lg p-4 bg-white shadow-sm">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <div className="font-mono font-medium text-sm">
+                        <Link href={`/claims/${claim.id}`} className="font-mono font-medium text-sm text-blue-600 hover:text-blue-800 hover:underline">
                           CL-{claim.id.toString().padStart(4, '0')}
-                        </div>
+                        </Link>
                         <div className="text-xs text-gray-500 mt-1">
                           {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                         </div>
@@ -170,9 +170,9 @@ export default async function ClaimsPage() {
                     claims.map((claim) => (
                       <TableRow key={claim.id}>
                         <TableCell className="font-medium text-sm">
-                          <div className="font-mono">
+                          <Link href={`/claims/${claim.id}`} className="font-mono text-blue-600 hover:text-blue-800 hover:underline">
                             CL-{claim.id.toString().padStart(4, '0')}
-                          </div>
+                          </Link>
                         </TableCell>
                         <TableCell className="text-sm">
                           {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}

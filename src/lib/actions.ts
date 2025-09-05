@@ -990,3 +990,93 @@ export async function uploadItemAttachments(claimItemsData: Array<{id: number, a
     }
   }
 }
+
+export async function deleteClaim(claimId: number) {
+  try {
+    const user = await getCurrentEmployee()
+    if (!user.success || !user.data) {
+      return { success: false, error: '用户未认证' }
+    }
+
+    const result = await db.transaction(async (tx) => {
+      // 检查claim是否存在以及是否属于当前用户
+      const [claim] = await tx
+        .select()
+        .from(claims)
+        .where(and(eq(claims.id, claimId), eq(claims.employeeId, user.data.employee.employeeId)))
+
+      if (!claim) {
+        throw new Error('申请不存在或无权限删除')
+      }
+
+      // 只允许删除draft状态的申请
+      if (claim.status !== 'draft') {
+        throw new Error('只能删除草稿状态的申请')
+      }
+
+      // 删除相关附件（先从storage中删除文件，再删除数据库记录）
+      const attachments = await tx
+        .select()
+        .from(attachment)
+        .where(eq(attachment.claimId, claimId))
+
+      if (attachments.length > 0) {
+        const supabase = createAdminClient()
+        
+        // 从storage删除文件
+        for (const att of attachments) {
+          const filePath = att.url.split('/').pop() // 简单提取文件路径
+          if (filePath) {
+            await supabase.storage
+              .from("wd-attachments")
+              .remove([`claims/${claimId}/${filePath}`])
+          }
+        }
+
+        // 删除附件记录
+        await tx.delete(attachment).where(eq(attachment.claimId, claimId))
+      }
+
+      // 删除claim items的附件
+      const itemAttachments = await tx
+        .select({ id: attachment.id, url: attachment.url })
+        .from(attachment)
+        .innerJoin(claimItems, eq(attachment.claimItemId, claimItems.id))
+        .where(eq(claimItems.claimId, claimId))
+
+      if (itemAttachments.length > 0) {
+        const supabase = createAdminClient()
+        
+        for (const att of itemAttachments) {
+          const filePath = att.url.split('/').pop()
+          if (filePath) {
+            await supabase.storage
+              .from("wd-attachments")
+              .remove([filePath])
+          }
+        }
+
+        await tx.delete(attachment).where(
+          inArray(attachment.id, itemAttachments.map(a => a.id))
+        )
+      }
+
+      // 删除claim items
+      await tx.delete(claimItems).where(eq(claimItems.claimId, claimId))
+
+      // 删除claim
+      await tx.delete(claims).where(eq(claims.id, claimId))
+
+      return { success: true, message: '申请删除成功' }
+    })
+
+    return result
+  } catch (error) {
+    console.error('删除申请失败:', error)
+    return {
+      success: false,
+      error: '删除申请失败',
+      details: error instanceof Error ? error.message : '未知错误'
+    }
+  }
+}
