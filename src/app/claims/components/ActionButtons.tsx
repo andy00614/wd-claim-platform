@@ -2,7 +2,13 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Download, Eye, Edit, Send } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Download, Eye, Edit, Send, MoreHorizontal } from 'lucide-react'
 
 interface Claim {
   id: number
@@ -42,40 +48,50 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
   }
 
   return (
-    <div className="flex gap-1">
-      <Button asChild variant="outline" size="sm">
-        <Link href={`/claims/${claim.id}`}>
-          <Eye className="h-3 w-3 mr-1" />
-          View
-        </Link>
-      </Button>
-      
-      <Button 
-        onClick={() => downloadClaimCSV(claim)}
-        variant="outline" 
-        size="sm"
-      >
-        <Download className="h-3 w-3 mr-1" />
-        CSV
-      </Button>
-      
-      {(claim.status === 'submitted' || claim.status === 'draft') && (
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/claims/${claim.id}/edit`}>
-            <Edit className="h-3 w-3 mr-1" />
-            Edit
-          </Link>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="h-7 w-7 p-0 hover:bg-gray-100"
+        >
+          <MoreHorizontal className="h-4 w-4" />
         </Button>
-      )}
-      
-      {claim.status === 'draft' && (
-        <Button asChild size="sm">
-          <Link href={`/claims/${claim.id}/submit`}>
-            <Send className="h-3 w-3 mr-1" />
-            Submit
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuItem asChild>
+          <Link href={`/claims/${claim.id}`} className="flex items-center gap-2 cursor-pointer">
+            <Eye className="h-4 w-4" />
+            <span>View Details</span>
           </Link>
-        </Button>
-      )}
-    </div>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem 
+          onClick={() => downloadClaimCSV(claim)}
+          className="flex items-center gap-2 cursor-pointer"
+        >
+          <Download className="h-4 w-4" />
+          <span>Download CSV</span>
+        </DropdownMenuItem>
+        
+        {(claim.status === 'submitted' || claim.status === 'draft') && (
+          <DropdownMenuItem asChild>
+            <Link href={`/claims/${claim.id}/edit`} className="flex items-center gap-2 cursor-pointer">
+              <Edit className="h-4 w-4" />
+              <span>Edit Claim</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        
+        {claim.status === 'draft' && (
+          <DropdownMenuItem asChild>
+            <Link href={`/claims/${claim.id}/submit`} className="flex items-center gap-2 cursor-pointer text-blue-600">
+              <Send className="h-4 w-4" />
+              <span>Submit Claim</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

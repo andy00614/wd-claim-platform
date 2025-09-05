@@ -1,6 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table'
+import { ArrowLeft, Printer, FileDown, Image, FileText } from 'lucide-react'
 
 interface ClaimReportProps {
   claim: {
@@ -57,6 +62,21 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
     
     return imageTypes.includes(fileType.toLowerCase()) || 
            imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext))
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>
+      case 'submitted':
+        return <Badge variant="secondary" className="bg-orange-100 text-orange-800 hover:bg-orange-100">Pending</Badge>
+      case 'rejected':
+        return <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>
+      case 'draft':
+        return <Badge variant="outline">Draft</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
+    }
   }
 
   const handlePrint = () => {
@@ -119,223 +139,313 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
   `
 
   return (
-    <>
+    <div className="min-h-screen bg-white">
       {/* 操作按钮 - 不打印 */}
-      <div className="no-print bg-gray-100 p-4 mb-6 border-b print:hidden">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold">Expense Claim Report</h1>
-          <div className="flex gap-4">
-            <button
-              onClick={() => window.history.back()}
-              className="px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50"
-            >
-              ← Back
-            </button>
-            <button
-              onClick={handlePrint}
-              className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
-            >
-              🖨️ Print Report
-            </button>
-            <button
-              onClick={handleExportHTML}
-              className="px-4 py-2 bg-green-600 text-white hover:bg-green-700"
-            >
-              📄 Export HTML
-            </button>
+      <div className="no-print bg-white border-b print:hidden">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">Expense Claim Report</h1>
+              <p className="text-sm text-gray-600 mt-1">
+                CL-2024-{claim.id.toString().padStart(4, '0')}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => window.history.back()}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handlePrint}
+                className="flex items-center gap-2"
+              >
+                <Printer className="h-4 w-4" />
+                Print
+              </Button>
+              <Button
+                onClick={handleExportHTML}
+                className="flex items-center gap-2"
+              >
+                <FileDown className="h-4 w-4" />
+                Export HTML
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 报表内容 */}
-      <div id="report-content" className="max-w-6xl mx-auto bg-white p-8">
-        {/* 报表头部 */}
-        <div className="text-center border-2 border-black p-6 mb-8">
-          <h1 className="text-2xl font-bold mb-2">Wild Dynasty Pte Ltd</h1>
-          <h2 className="text-lg">Expense Claim Audit Report</h2>
-          <p className="text-sm text-gray-600 mt-2">
-            Generated on: {new Date().toLocaleDateString('en-SG')} at {new Date().toLocaleTimeString('en-SG')}
-          </p>
-        </div>
-
-        {/* 基本信息 */}
-        <div className="mb-8">
-          <h3 className="text-lg font-bold mb-4 border-b border-black pb-2">Claim Information</h3>
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <div className="mb-2"><span className="font-bold">Claim ID:</span> CL-2024-{claim.id.toString().padStart(4, '0')}</div>
-              <div className="mb-2"><span className="font-bold">Employee:</span> {employee.name}</div>
-              <div className="mb-2"><span className="font-bold">Employee Code:</span> EMP{employee.employeeCode.toString().padStart(3, '0')}</div>
-              {employee.department && (
-                <div className="mb-2"><span className="font-bold">Department:</span> {employee.department}</div>
-              )}
-            </div>
-            <div>
-              <div className="mb-2"><span className="font-bold">Submission Date:</span> {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString('en-SG') : 'N/A'}</div>
-              <div className="mb-2"><span className="font-bold">Status:</span> <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">APPROVED</span></div>
-              <div className="mb-2"><span className="font-bold">Total Amount:</span> <span className="text-xl font-bold">SGD {parseFloat(claim.totalAmount).toFixed(2)}</span></div>
-              {claim.adminNotes && (
-                <div className="mb-2"><span className="font-bold">Admin Notes:</span> {claim.adminNotes}</div>
-              )}
-            </div>
+      {/* Invoice Content */}
+      <div className="max-w-4xl mx-auto p-6">
+        <div id="report-content" className="bg-white border-2 border-black print:border-2 print:border-black">
+          
+          {/* Invoice Header */}
+          <div className="p-8 text-center border-b-2 border-black">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Wild Dynasty Pte Ltd</h1>
+            <p className="text-lg font-medium text-gray-700 mb-1">Expense Claim Audit Report</p>
+            <p className="text-sm text-gray-500">
+              Generated on: {new Date().toLocaleDateString('en-SG')} at {new Date().toLocaleTimeString('en-SG')}
+            </p>
           </div>
-        </div>
 
-        {/* 费用明细 */}
-        <div className="mb-8">
-          <h3 className="text-lg font-bold mb-4 border-b border-black pb-2">Expense Details</h3>
-          <table className="w-full border-collapse border border-black">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-black p-3 text-left font-bold">Date</th>
-                <th className="border border-black p-3 text-left font-bold">Item Type</th>
-                <th className="border border-black p-3 text-left font-bold">Description</th>
-                <th className="border border-black p-3 text-left font-bold">Details</th>
-                <th className="border border-black p-3 text-left font-bold">Currency</th>
-                <th className="border border-black p-3 text-left font-bold">Amount</th>
-                <th className="border border-black p-3 text-left font-bold">Rate</th>
-                <th className="border border-black p-3 text-left font-bold">SGD Amount</th>
-                <th className="border border-black p-3 text-left font-bold">Evidence</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, index) => (
-                <tr key={item.id}>
-                  <td className="border border-black p-3">{item.date ? new Date(item.date).toLocaleDateString('en-SG') : 'N/A'}</td>
-                  <td className="border border-black p-3">{item.itemTypeNo} - {item.itemTypeName}</td>
-                  <td className="border border-black p-3">{item.note || 'N/A'}</td>
-                  <td className="border border-black p-3 text-sm">{item.details || 'N/A'}</td>
-                  <td className="border border-black p-3">{item.currencyCode}</td>
-                  <td className="border border-black p-3 text-right">{parseFloat(item.amount).toFixed(2)}</td>
-                  <td className="border border-black p-3 text-right">{parseFloat(item.rate).toFixed(4)}</td>
-                  <td className="border border-black p-3 text-right font-medium">{parseFloat(item.sgdAmount).toFixed(2)}</td>
-                  <td className="border border-black p-3">{item.evidenceNo || 'N/A'}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="bg-gray-50">
-                <td colSpan={7} className="border border-black p-3 text-right font-bold">Total:</td>
-                <td className="border border-black p-3 text-right font-bold text-lg">SGD {parseFloat(claim.totalAmount).toFixed(2)}</td>
-                <td className="border border-black p-3"></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        {/* 支持文档 */}
-        {((attachments && attachments.length > 0) || items.some(item => item.attachments && item.attachments.length > 0)) && (
-          <div className="mb-8">
-            <h3 className="text-lg font-bold mb-4 border-b border-black pb-2">Supporting Documents</h3>
-            
-            {/* Claim级别的附件 */}
-            {attachments && attachments.length > 0 && (
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">General Attachments:</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {attachments.map((attachment) => (
-                    <div key={attachment.id} className="border border-gray-300 p-3">
-                      <div className="font-medium text-sm mb-2">{attachment.fileName}</div>
-                      <div className="text-xs text-gray-500 mb-2">
-                        {attachment.fileType} • {Math.round(parseFloat(attachment.fileSize) / 1024)} KB
-                      </div>
-                      {isImageFile(attachment.fileType, attachment.fileName) ? (
-                        <img
-                          src={attachment.url}
-                          alt={attachment.fileName}
-                          className="max-w-full max-h-48 border border-gray-300 rounded"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            const fallback = document.createElement('div')
-                            fallback.className = 'p-4 bg-gray-100 text-center text-sm text-gray-500'
-                            fallback.textContent = 'Image not available'
-                            target.parentNode?.appendChild(fallback)
-                          }}
-                        />
-                      ) : (
-                        <div className="p-4 bg-gray-100 text-center">
-                          <span className="text-sm">📄 {attachment.fileName}</span>
-                          <div className="text-xs text-gray-500">Preview not available</div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+          {/* Claim Information */}
+          <div className="p-8 border-b border-gray-300">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Claim Details</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">Claim ID:</span>
+                    <span className="font-mono font-semibold">CL-2024-{claim.id.toString().padStart(4, '0')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">Status:</span>
+                    {getStatusBadge(claim.status)}
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">Submission Date:</span>
+                    <span>{claim.createdAt ? new Date(claim.createdAt).toLocaleDateString('en-SG') : 'N/A'}</span>
+                  </div>
                 </div>
               </div>
-            )}
-
-            {/* Item级别的附件 */}
-            {items.some(item => item.attachments && item.attachments.length > 0) && (
-              <div>
-                <h4 className="font-medium mb-3">Item-specific Attachments:</h4>
-                {items.map((item, itemIndex) => (
-                  item.attachments && item.attachments.length > 0 && (
-                    <div key={item.id} className="mb-6 border-l-4 border-blue-500 pl-4">
-                      <h5 className="font-medium mb-2">
-                        Item #{itemIndex + 1}: {item.note || 'N/A'} (SGD {parseFloat(item.sgdAmount).toFixed(2)})
-                      </h5>
-                      <div className="grid grid-cols-2 gap-4">
-                        {item.attachments.map((attachment) => (
-                          <div key={attachment.id} className="border border-gray-300 p-3">
-                            <div className="font-medium text-sm mb-2">{attachment.fileName}</div>
-                            <div className="text-xs text-gray-500 mb-2">
-                              {attachment.fileType} • {Math.round(parseFloat(attachment.fileSize) / 1024)} KB
-                            </div>
-                            {isImageFile(attachment.fileType, attachment.fileName) ? (
-                              <img
-                                src={attachment.url}
-                                alt={attachment.fileName}
-                                className="max-w-full max-h-48 border border-gray-300 rounded"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement
-                                  target.style.display = 'none'
-                                  const fallback = document.createElement('div')
-                                  fallback.className = 'p-4 bg-gray-100 text-center text-sm text-gray-500'
-                                  fallback.textContent = 'Image not available'
-                                  target.parentNode?.appendChild(fallback)
-                                }}
-                              />
-                            ) : (
-                              <div className="p-4 bg-gray-100 text-center">
-                                <span className="text-sm">📄 {attachment.fileName}</span>
-                                <div className="text-xs text-gray-500">Preview not available</div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Employee Information</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">Name:</span>
+                    <span className="font-semibold">{employee.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">Employee Code:</span>
+                    <span className="font-mono">EMP{employee.employeeCode.toString().padStart(3, '0')}</span>
+                  </div>
+                  {employee.department && (
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Department:</span>
+                      <span>{employee.department}</span>
                     </div>
-                  )
-                ))}
+                  )}
+                </div>
+              </div>
+            </div>
+            {claim.adminNotes && (
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <h4 className="font-medium text-gray-900 mb-2">Admin Notes:</h4>
+                <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">{claim.adminNotes}</p>
               </div>
             )}
           </div>
-        )}
 
-        {/* 审核签名区域 */}
-        <div className="mt-16">
-          <h3 className="text-lg font-bold mb-6 border-b border-black pb-2">Audit Review</h3>
-          <div className="grid grid-cols-2 gap-12">
-            <div>
-              <div className="mb-2 font-medium">Finance Manager Review:</div>
-              <div className="border border-black h-16 mb-2"></div>
-              <div className="text-sm">Signature: __________________ Date: __________</div>
-            </div>
-            <div>
-              <div className="mb-2 font-medium">Accounting Department:</div>
-              <div className="border border-black h-16 mb-2"></div>
-              <div className="text-sm">Signature: __________________ Date: __________</div>
+          {/* Expense Details Table */}
+          <div className="p-8 border-b border-gray-300">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Expense Details</h3>
+            <div className="border border-black">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-100 border-b border-black">
+                    <TableHead className="border-r border-black font-semibold text-black">Date</TableHead>
+                    <TableHead className="border-r border-black font-semibold text-black">Item Type</TableHead>
+                    <TableHead className="border-r border-black font-semibold text-black">Description</TableHead>
+                    <TableHead className="border-r border-black font-semibold text-black">Details</TableHead>
+                    <TableHead className="border-r border-black font-semibold text-black">Currency</TableHead>
+                    <TableHead className="text-right border-r border-black font-semibold text-black">Amount</TableHead>
+                    <TableHead className="text-right border-r border-black font-semibold text-black">Rate</TableHead>
+                    <TableHead className="text-right border-r border-black font-semibold text-black">SGD Amount</TableHead>
+                    <TableHead className="font-semibold text-black">Evidence</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item, index) => (
+                    <TableRow key={item.id} className="border-b border-gray-300">
+                      <TableCell className="border-r border-gray-300">
+                        {item.date ? new Date(item.date).toLocaleDateString('en-SG') : 'N/A'}
+                      </TableCell>
+                      <TableCell className="border-r border-gray-300">
+                        <div className="font-medium">{item.itemTypeNo} - {item.itemTypeName}</div>
+                      </TableCell>
+                      <TableCell className="border-r border-gray-300">
+                        {item.note || 'N/A'}
+                      </TableCell>
+                      <TableCell className="border-r border-gray-300 text-sm">
+                        {item.details || 'N/A'}
+                      </TableCell>
+                      <TableCell className="border-r border-gray-300">
+                        {item.currencyCode}
+                      </TableCell>
+                      <TableCell className="text-right border-r border-gray-300 font-mono">
+                        {parseFloat(item.amount).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right border-r border-gray-300 font-mono">
+                        {parseFloat(item.rate).toFixed(4)}
+                      </TableCell>
+                      <TableCell className="text-right border-r border-gray-300 font-mono font-medium">
+                        {parseFloat(item.sgdAmount).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        {item.evidenceNo || 'N/A'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow className="bg-gray-100 border-t-2 border-black">
+                    <TableCell colSpan={7} className="text-right font-bold text-lg border-r border-black">
+                      TOTAL AMOUNT:
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-xl font-mono border-r border-black">
+                      SGD {parseFloat(claim.totalAmount).toFixed(2)}
+                    </TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
             </div>
           </div>
-        </div>
 
-        {/* 页脚 */}
-        <div className="mt-8 pt-4 border-t border-gray-300 text-center text-xs text-gray-500">
-          <p>Wild Dynasty Pte Ltd - Expense Claim Audit Report</p>
-          <p>This report is generated for internal audit purposes only. All amounts are in Singapore Dollars (SGD).</p>
+          {/* Supporting Documents */}
+          {((attachments && attachments.length > 0) || items.some(item => item.attachments && item.attachments.length > 0)) && (
+            <div className="p-8 border-b border-gray-300">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Supporting Documents</h3>
+              
+              {/* Claim级别的附件 */}
+              {attachments && attachments.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">General Attachments</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {attachments.map((attachment) => (
+                      <div key={attachment.id} className="border rounded p-3 bg-gray-50">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0">
+                            {isImageFile(attachment.fileType, attachment.fileName) ? (
+                              <Image className="h-6 w-6 text-blue-500" />
+                            ) : (
+                              <FileText className="h-6 w-6 text-gray-500" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm text-gray-900 truncate">{attachment.fileName}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {attachment.fileType} • {Math.round(parseFloat(attachment.fileSize) / 1024)} KB
+                            </p>
+                          </div>
+                        </div>
+                        {isImageFile(attachment.fileType, attachment.fileName) && (
+                          <div className="mt-2">
+                            <img
+                              src={attachment.url}
+                              alt={attachment.fileName}
+                              className="max-w-full max-h-32 rounded border object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                                const fallback = document.createElement('div')
+                                fallback.className = 'p-2 bg-gray-200 text-center text-xs text-gray-500 rounded'
+                                fallback.textContent = 'Image not available'
+                                target.parentNode?.appendChild(fallback)
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Item级别的附件 */}
+              {items.some(item => item.attachments && item.attachments.length > 0) && (
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Item-specific Attachments</h4>
+                  <div className="space-y-4">
+                    {items.map((item, itemIndex) => (
+                      item.attachments && item.attachments.length > 0 && (
+                        <div key={item.id} className="border-l-4 border-blue-500 pl-4">
+                          <h5 className="font-medium mb-2 text-gray-800">
+                            Item #{itemIndex + 1}: {item.note || 'N/A'} 
+                            <span className="text-green-600 font-mono ml-2">(SGD {parseFloat(item.sgdAmount).toFixed(2)})</span>
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {item.attachments.map((attachment) => (
+                              <div key={attachment.id} className="border rounded p-3 bg-gray-50">
+                                <div className="flex items-start gap-3">
+                                  <div className="flex-shrink-0">
+                                    {isImageFile(attachment.fileType, attachment.fileName) ? (
+                                      <Image className="h-6 w-6 text-blue-500" />
+                                    ) : (
+                                      <FileText className="h-6 w-6 text-gray-500" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-medium text-sm text-gray-900 truncate">{attachment.fileName}</p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {attachment.fileType} • {Math.round(parseFloat(attachment.fileSize) / 1024)} KB
+                                    </p>
+                                  </div>
+                                </div>
+                                {isImageFile(attachment.fileType, attachment.fileName) && (
+                                  <div className="mt-2">
+                                    <img
+                                      src={attachment.url}
+                                      alt={attachment.fileName}
+                                      className="max-w-full max-h-32 rounded border object-cover"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement
+                                        target.style.display = 'none'
+                                        const fallback = document.createElement('div')
+                                        fallback.className = 'p-2 bg-gray-200 text-center text-xs text-gray-500 rounded'
+                                        fallback.textContent = 'Image not available'
+                                        target.parentNode?.appendChild(fallback)
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Audit Review Section */}
+          <div className="p-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Audit Review</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900">Finance Manager Review</h4>
+                <div className="border-2 border-dashed border-gray-400 h-20 flex items-center justify-center text-gray-400">
+                  Signature Area
+                </div>
+                <div className="text-sm text-gray-700">
+                  Signature: __________________ Date: __________
+                </div>
+              </div>
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900">Accounting Department</h4>
+                <div className="border-2 border-dashed border-gray-400 h-20 flex items-center justify-center text-gray-400">
+                  Signature Area
+                </div>
+                <div className="text-sm text-gray-700">
+                  Signature: __________________ Date: __________
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Invoice Footer */}
+          <div className="p-6 bg-gray-50 border-t-2 border-black text-center">
+            <p className="font-semibold text-gray-900">Wild Dynasty Pte Ltd - Expense Claim Audit Report</p>
+            <p className="text-sm text-gray-600 mt-1">This report is generated for internal audit purposes only. All amounts are in Singapore Dollars (SGD).</p>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }

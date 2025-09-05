@@ -8,8 +8,14 @@ import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
-import { Eye, Pencil, Check, X } from 'lucide-react'
+import { Eye, Pencil, Check, X, BarChart3, MoreHorizontal } from 'lucide-react'
 
 interface Claim {
   id: number
@@ -86,12 +92,11 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
           <TableRow>
             <TableHead>Claim ID</TableHead>
             <TableHead>Employee</TableHead>
-            <TableHead>Department</TableHead>
             <TableHead>Date</TableHead>
             <TableHead className="text-right">Amount (SGD)</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Admin Notes</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="w-12">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -110,11 +115,10 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                   <div className="space-y-1">
                     <div className="font-medium">{claim.employeeName}</div>
                     <div className="text-xs text-muted-foreground">
-                      EMP{claim.employeeCode.toString().padStart(3, '0')}
+                      EMP{claim.employeeCode.toString().padStart(3, '0')} • {claim.department}
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{claim.department}</TableCell>
                 <TableCell>
                   {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
                 </TableCell>
@@ -174,29 +178,45 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/claims/${claim.id}`}
-                        className="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-100 rounded"
-                        title="View details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                      <button
-                        onClick={() => handleEdit(claim)}
-                        className="p-1 text-orange-500 hover:text-orange-600 hover:bg-orange-100 rounded"
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 hover:bg-gray-100"
+                        >
+                          <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/claims/${claim.id}`} className="flex items-center gap-2 cursor-pointer">
+                            <Eye className="h-4 w-4 text-gray-500" />
+                            View Details
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/reports/${claim.id}`} className="flex items-center gap-2 cursor-pointer">
+                            <BarChart3 className="h-4 w-4 text-gray-500" />
+                            View Report
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleEdit(claim)}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Pencil className="h-4 w-4 text-gray-500" />
+                          Edit Status
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                 </TableCell>
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                 No claims found
               </TableCell>
             </TableRow>

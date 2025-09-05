@@ -23,11 +23,6 @@ export default async function ClaimReportPage({ params }: ClaimReportPageProps) 
 
   const { claim, items, attachments, employee } = claimData.data
 
-  // 只允许已批准的申请生成报表
-  if (claim.status !== 'approved') {
-    redirect('/admin/reports')
-  }
-
   return (
     <div className="min-h-screen bg-white">
       <ClaimReport 

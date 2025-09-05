@@ -9,16 +9,16 @@ import { Plus } from 'lucide-react'
 
 function getStatusBadge(status: string) {
   const statusConfig = {
-    approved: { variant: 'default' as const, label: 'Approved' },
-    submitted: { variant: 'secondary' as const, label: 'Pending' },
-    draft: { variant: 'outline' as const, label: 'Draft' },
-    rejected: { variant: 'destructive' as const, label: 'Rejected' }
+    approved: { className: 'bg-green-100 text-green-700 hover:bg-green-100', label: 'Approved' },
+    submitted: { className: 'bg-orange-100 text-orange-700 hover:bg-orange-100', label: 'Pending' },
+    draft: { className: 'bg-gray-100 text-gray-700 hover:bg-gray-100', label: 'Draft' },
+    rejected: { className: 'bg-red-100 text-red-700 hover:bg-red-100', label: 'Rejected' }
   }
   
-  const config = statusConfig[status as keyof typeof statusConfig] || { variant: 'outline' as const, label: status }
+  const config = statusConfig[status as keyof typeof statusConfig] || { className: 'bg-gray-100 text-gray-700 hover:bg-gray-100', label: status }
   
   return (
-    <Badge variant={config.variant}>
+    <Badge className={config.className}>
       {config.label}
     </Badge>
   )

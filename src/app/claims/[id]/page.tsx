@@ -164,7 +164,6 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead className="text-right">Rate</TableHead>
                   <TableHead className="text-right">SGD Amount</TableHead>
-                  <TableHead>Evidence</TableHead>
                   <TableHead>Attachments</TableHead>
                 </TableRow>
               </TableHeader>
@@ -203,9 +202,6 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
                     </TableCell>
                     <TableCell className="text-right font-mono font-medium">
                       {parseFloat(item.sgdAmount).toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {item.evidenceNo || 'N/A'}
                     </TableCell>
                     <TableCell>
                       {item.attachments && item.attachments.length > 0 ? (
