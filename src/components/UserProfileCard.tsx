@@ -46,7 +46,7 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
             )}
           </Button>
         </HoverCardTrigger>
-        <HoverCardContent className="w-80 p-0" align="end">
+        <HoverCardContent className="w-72 sm:w-80 p-0" align="end">
           <div className={`relative overflow-hidden ${
             employee.role === 'admin' 
               ? 'bg-gradient-to-br from-yellow-50 via-white to-amber-50' 

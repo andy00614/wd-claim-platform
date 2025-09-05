@@ -49,44 +49,135 @@ export default async function ClaimsPage() {
 
   const { claims, stats } = claimsData.data
 
+  // Calculate status counts
+  const totalClaims = claims.length
+  const submittedCount = claims.filter(c => c.status === 'submitted').length
+  const approvedCount = claims.filter(c => c.status === 'approved').length
+  const rejectedCount = claims.filter(c => c.status === 'rejected').length
+  const totalAmount = claims.reduce((sum, c) => sum + parseFloat(c.totalAmount), 0)
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
+
+      {/* Mini Stats */}
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4">
+        <div className="text-center p-2 sm:p-3 bg-white rounded-lg border">
+          <div className="text-sm sm:text-lg font-semibold">{totalClaims}</div>
+          <div className="text-xs text-muted-foreground">Total</div>
+        </div>
+        
+        <div className="text-center p-2 sm:p-3 bg-white rounded-lg border">
+          <div className="text-sm sm:text-lg font-semibold text-orange-600">{submittedCount}</div>
+          <div className="text-xs text-muted-foreground">Pending</div>
+        </div>
+        
+        <div className="text-center p-2 sm:p-3 bg-white rounded-lg border">
+          <div className="text-sm sm:text-lg font-semibold text-green-600">{approvedCount}</div>
+          <div className="text-xs text-muted-foreground">Approved</div>
+        </div>
+        
+        <div className="text-center p-2 sm:p-3 bg-white rounded-lg border sm:block hidden">
+          <div className="text-sm sm:text-lg font-semibold text-red-600">{rejectedCount}</div>
+          <div className="text-xs text-muted-foreground">Rejected</div>
+        </div>
+
+        <div className="text-center p-2 sm:p-3 bg-white rounded-lg border sm:block hidden">
+          <div className="text-xs sm:text-lg font-bold font-mono">SGD {totalAmount.toFixed(2)}</div>
+          <div className="text-xs text-muted-foreground">Amount</div>
+        </div>
+      </div>
 
         {/* 申请表格 */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Your Claims</CardTitle>
-            <Button asChild size="sm" className="gap-2">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+            <CardTitle className="text-lg sm:text-xl">Your Claims</CardTitle>
+            <Button asChild size="sm" className="gap-2 w-full sm:w-auto">
               <Link href="/claims/new">
                 <Plus className="h-4 w-4" />
-                Create Claim
+                <span className="sm:hidden">New Claim</span>
+                <span className="hidden sm:inline">Create Claim</span>
               </Link>
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Claim ID</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Amount (SGD)</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Admin Notes</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
+            {/* Mobile Card Layout */}
+            <div className="sm:hidden space-y-3">
+              {claims.length > 0 ? (
+                claims.map((claim) => (
+                  <div key={claim.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="font-mono font-medium text-sm">
+                          CL-{claim.id.toString().padStart(4, '0')}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono font-bold text-lg">
+                          SGD {parseFloat(claim.totalAmount).toFixed(2)}
+                        </div>
+                        <div className="mt-1">
+                          {getStatusBadge(claim.status)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {claim.adminNotes && (
+                      <div className="mb-3 p-2 bg-gray-50 rounded text-xs">
+                        <div className="font-medium text-gray-700 mb-1">Admin Notes:</div>
+                        <div className="text-gray-600">{claim.adminNotes}</div>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-end">
+                      <ActionButtons claim={claim} />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <div className="flex flex-col items-center gap-3">
+                    <span>No claims found</span>
+                    <Button asChild size="sm" variant="outline">
+                      <Link href="/claims/new">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Create your first claim
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Table Layout */}
+            <div className="hidden sm:block rounded-md border overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[100px]">Claim ID</TableHead>
+                      <TableHead className="min-w-[80px]">Date</TableHead>
+                      <TableHead className="min-w-[90px] text-right">Amount</TableHead>
+                      <TableHead className="min-w-[80px]">Status</TableHead>
+                      <TableHead className="min-w-[120px]">Admin Notes</TableHead>
+                      <TableHead className="min-w-[80px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {claims.length > 0 ? (
                     claims.map((claim) => (
                       <TableRow key={claim.id}>
-                        <TableCell className="font-medium">
-                          CL-2024-{claim.id.toString().padStart(4, '0')}
+                        <TableCell className="font-medium text-sm">
+                          <div className="font-mono">
+                            CL-{claim.id.toString().padStart(4, '0')}
+                          </div>
                         </TableCell>
-                        <TableCell>
-                          {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
+                        <TableCell className="text-sm">
+                          {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
                         </TableCell>
-                        <TableCell className="text-center font-mono text-lg font-bold">
+                        <TableCell className="text-right font-mono text-lg font-bold">
                           {parseFloat(claim.totalAmount).toFixed(2)}
                         </TableCell>
                         <TableCell>
@@ -105,21 +196,32 @@ export default async function ClaimsPage() {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No claims found
+                        <div className="flex flex-col items-center gap-3">
+                          <span>No claims found</span>
+                          <Button asChild size="sm" variant="outline">
+                            <Link href="/claims/new">
+                              <Plus className="h-4 w-4 mr-1" />
+                              Create your first claim
+                            </Link>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             </div>
 
             {/* 统计信息 */}
-            <div className="flex flex-col sm:flex-row sm:justify-between gap-4 mt-6 pt-4 border-t">
-              <div className="text-sm font-semibold">
-                Total Approved: <span className="text-green-600">SGD {stats.totalApproved.toFixed(2)}</span>
+            <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t">
+              <div className="text-center sm:text-left">
+                <div className="text-xs text-gray-500 mb-1">Total Approved</div>
+                <div className="text-sm font-bold text-green-600">SGD {stats.totalApproved.toFixed(2)}</div>
               </div>
-              <div className="text-sm font-semibold">
-                Pending: <span className="text-orange-600">{stats.pendingCount}</span>
+              <div className="text-center sm:text-right">
+                <div className="text-xs text-gray-500 mb-1">Pending</div>
+                <div className="text-sm font-bold text-orange-600">{stats.pendingCount}</div>
               </div>
             </div>
           </CardContent>

@@ -203,7 +203,7 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
       )}
 
       {/* 操作按钮 */}
-      <div className="flex justify-end gap-4 pt-6">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6">
         <Button 
           type="button"
           variant="outline"
@@ -213,6 +213,7 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
             router.back()
           }}
           disabled={isLoading}
+          className="w-full sm:w-auto"
         >
           Cancel
         </Button>
@@ -223,6 +224,7 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
           size="lg"
           onClick={handleDraftClick}
           disabled={expenseItems.length === 0 || isLoading}
+          className="w-full sm:w-auto"
         >
           {isLoading && actionType === 'draft' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isLoading && actionType === 'draft' ? 'Saving...' : 'Save as Draft'}
@@ -233,6 +235,7 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
           size="lg"
           onClick={handleSubmitClick}
           disabled={expenseItems.length === 0 || isLoading}
+          className="w-full sm:w-auto"
         >
           {isLoading && actionType === 'submit' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isLoading && actionType === 'submit' ? 'Submitting...' : 'Submit Claim'}

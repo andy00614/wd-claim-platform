@@ -86,20 +86,153 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
 
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Claim ID</TableHead>
-            <TableHead>Employee</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead className="text-right">Amount (SGD)</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Admin Notes</TableHead>
-            <TableHead className="w-12">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <>
+      {/* Mobile Card Layout */}
+      <div className="sm:hidden space-y-4">
+        {claims.length > 0 ? (
+          claims.map((claim) => (
+            <div key={claim.id} className="border rounded-lg p-4 bg-white shadow-sm space-y-3">
+              {/* Header Row */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <Link 
+                    href={`/claims/${claim.id}`}
+                    className="text-blue-600 hover:underline font-mono font-medium text-sm"
+                  >
+                    CL-2024-{claim.id.toString().padStart(4, '0')}
+                  </Link>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-mono font-bold text-lg">
+                    SGD {parseFloat(claim.totalAmount).toFixed(2)}
+                  </div>
+                  <div className="mt-1">
+                    {editingClaim === claim.id ? (
+                      <Select value={newStatus} onValueChange={setNewStatus}>
+                        <SelectTrigger className="w-20 h-7">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="submitted">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      getStatusBadge(claim.status)
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Employee Info */}
+              <div className="bg-gray-50 p-3 rounded">
+                <div className="font-medium text-sm">{claim.employeeName}</div>
+                <div className="text-xs text-gray-500">
+                  EMP{claim.employeeCode.toString().padStart(3, '0')} • {claim.department}
+                </div>
+              </div>
+
+              {/* Admin Notes */}
+              {(editingClaim === claim.id || claim.adminNotes) && (
+                <div className="border-t pt-3">
+                  <div className="text-xs font-medium text-gray-600 mb-1">Admin Notes</div>
+                  {editingClaim === claim.id ? (
+                    <Textarea
+                      value={newNotes}
+                      onChange={(e) => setNewNotes(e.target.value)}
+                      placeholder="Add admin notes..."
+                      className="min-h-[60px] text-xs"
+                    />
+                  ) : (
+                    <div className="text-xs text-gray-700 bg-gray-50 p-2 rounded">
+                      {claim.adminNotes || 'No notes'}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end border-t pt-3">
+                {editingClaim === claim.id ? (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSave(claim.id)}
+                      disabled={loading}
+                      className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      disabled={loading}
+                      className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 hover:bg-gray-100"
+                      >
+                        <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/claims/${claim.id}`} className="flex items-center gap-2 cursor-pointer">
+                          <Eye className="h-4 w-4 text-gray-500" />
+                          View Details
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/reports/${claim.id}`} className="flex items-center gap-2 cursor-pointer">
+                          <BarChart3 className="h-4 w-4 text-gray-500" />
+                          View Report
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleEdit(claim)}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <Pencil className="h-4 w-4 text-gray-500" />
+                        Edit Status
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <span>No claims found</span>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table Layout */}
+      <div className="hidden sm:block rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Claim ID</TableHead>
+              <TableHead>Employee</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="text-right">Amount (SGD)</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Admin Notes</TableHead>
+              <TableHead className="w-12">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
           {claims.length > 0 ? (
             claims.map((claim) => (
               <TableRow key={claim.id}>
@@ -224,5 +357,6 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
         </TableBody>
       </Table>
     </div>
+    </>
   )
 }

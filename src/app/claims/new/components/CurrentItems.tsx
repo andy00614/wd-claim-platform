@@ -29,45 +29,49 @@ export default function CurrentItems({ items, onRemoveItem, totalSGD }: CurrentI
       </CardHeader>
       <CardContent className="space-y-4">
 
-        <div className="max-h-64 overflow-y-auto">
+        <div className="max-h-64 overflow-y-auto overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Item No</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>SGD</TableHead>
-                <TableHead>Action</TableHead>
+                <TableHead className="min-w-[80px]">Date</TableHead>
+                <TableHead className="min-w-[60px]">Item</TableHead>
+                <TableHead className="min-w-[150px]">Description</TableHead>
+                <TableHead className="min-w-[80px] hidden sm:table-cell">Amount</TableHead>
+                <TableHead className="min-w-[70px]">SGD</TableHead>
+                <TableHead className="min-w-[60px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.date}</TableCell>
-                  <TableCell>{item.itemNo}</TableCell>
+                <TableRow key={item.id} className="text-sm">
+                  <TableCell className="text-xs">
+                    {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </TableCell>
+                  <TableCell className="text-xs font-mono">{item.itemNo}</TableCell>
                   <TableCell>
-                    <div className="max-w-xs">
-                      <div className="truncate" title={item.details}>
+                    <div className="max-w-[150px] sm:max-w-xs">
+                      <div className="truncate text-xs" title={item.details}>
                         {item.details}
                       </div>
                       {item.attachments && item.attachments.length > 0 && (
                         <div className="text-xs text-blue-600 mt-1">
-                          📎 {item.attachments.length} file{item.attachments.length > 1 ? 's' : ''}
+                          📎 {item.attachments.length}
                         </div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell text-xs">
                     {item.currency} {item.amount.toFixed(2)}
                   </TableCell>
-                  <TableCell>{item.sgdAmount.toFixed(2)}</TableCell>
+                  <TableCell className="text-xs font-mono font-semibold">
+                    {item.sgdAmount.toFixed(2)}
+                  </TableCell>
                   <TableCell>
                     <Button
                       onClick={() => onRemoveItem(item.id)}
                       variant="outline"
                       size="sm"
-                      className="text-red-600 hover:bg-red-50"
+                      className="text-red-600 hover:bg-red-50 h-7 w-7 p-0"
                       title="Remove item"
                     >
                       ×
@@ -79,8 +83,11 @@ export default function CurrentItems({ items, onRemoveItem, totalSGD }: CurrentI
           </Table>
         </div>
 
-        <div className="bg-gray-50 px-4 py-3 rounded-md border text-right">
-          <span className="text-lg font-semibold">Total SGD: {totalSGD.toFixed(2)}</span>
+        <div className="bg-gray-50 px-3 sm:px-4 py-3 rounded-md border">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">{items.length} item{items.length > 1 ? 's' : ''}</span>
+            <span className="text-lg font-semibold">Total SGD: {totalSGD.toFixed(2)}</span>
+          </div>
         </div>
       </CardContent>
     </Card>

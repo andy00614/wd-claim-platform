@@ -62,13 +62,13 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50`}>
-        <div className="max-w-6xl mx-auto p-6">
+        <div className="max-w-6xl mx-auto p-4 sm:p-6">
           {/* 全局 Header */}
-          <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-200">
+          <div className="flex justify-between items-center mb-6 sm:mb-8 pb-3 sm:pb-4 border-b border-gray-200">
             <DynamicTitle />
             <div className="flex items-center gap-1">
               {/* 导航按钮组 */}
-              <div className="flex items-center gap-0.5 mr-2">
+              <div className="hidden sm:flex items-center gap-0.5 mr-2">
                 <Button 
                   asChild 
                   variant="ghost" 
@@ -106,6 +106,45 @@ export default async function RootLayout({
                 </Button>
               </div>
 
+              {/* Mobile Navigation */}
+              <div className="sm:hidden flex items-center gap-0.5 mr-2">
+                <Button 
+                  asChild 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 hover:bg-gray-100 rounded-md"
+                  title="New Claim"
+                >
+                  <Link href="/claims/new">
+                    <Plus className="h-4 w-4" />
+                  </Link>
+                </Button>
+                
+                <Button 
+                  asChild 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 hover:bg-gray-100 rounded-md"
+                  title="My Claims"
+                >
+                  <Link href="/claims">
+                    <Receipt className="h-4 w-4" />
+                  </Link>
+                </Button>
+                
+                <Button 
+                  asChild 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 hover:bg-gray-100 rounded-md"
+                  title="Admin Panel"
+                >
+                  <Link href="/admin">
+                    <UserCog className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+              
               {/* 用户信息 */}
               {currentEmployee && (
                 <UserProfileCard employee={currentEmployee} />

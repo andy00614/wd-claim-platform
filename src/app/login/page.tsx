@@ -100,34 +100,33 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="w-full max-w-md space-y-8 px-6">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+      <div className="w-full max-w-md space-y-6 sm:space-y-8">
         <div className="text-center space-y-4">
           <Image
             alt="WD Logo"
             src="/icon.png"
-            width={48}
-            height={48}
-            className="inline mb-6"
+            width={40}
+            height={40}
+            className="inline mb-4 sm:mb-6 sm:w-12 sm:h-12"
           />
           <TextAnimate
             animation="blur"
             delay={200}
-            className="text-2xl font-semibold text-gray-900"
+            className="text-xl sm:text-2xl font-semibold text-gray-900"
           >
-
             Wild Dynasty Expense Claims
           </TextAnimate>
 
           <TypingAnimation
             text="Where expense claims meet efficiency"
-            className="text-gray-600"
+            className="text-gray-600 text-sm sm:text-base"
             duration={2000}
             delay={800}
           />
         </div>
 
-        <BlurFade delay={1500} className="space-y-6">
+        <BlurFade delay={1500} className="space-y-4 sm:space-y-6">
           <Button
             onClick={handleGoogleLogin}
             disabled={loading}

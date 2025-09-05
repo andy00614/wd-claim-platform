@@ -52,31 +52,31 @@ export default async function AdminPage() {
   return (
     <div className="space-y-6">
 
-      {/* 简洁统计栏 */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-        <div>
-          <div className="text-lg font-semibold">{stats.total}</div>
+      {/* Mini Stats */}
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4">
+        <div className="text-center p-2 sm:p-3 bg-white rounded-lg border shadow-sm">
+          <div className="text-sm sm:text-lg font-semibold">{stats.total}</div>
           <div className="text-xs text-muted-foreground">Total</div>
         </div>
         
-        <div>
-          <div className="text-lg font-semibold text-orange-600">{stats.pending}</div>
+        <div className="text-center p-2 sm:p-3 bg-white rounded-lg border shadow-sm">
+          <div className="text-sm sm:text-lg font-semibold text-orange-600">{stats.pending}</div>
           <div className="text-xs text-muted-foreground">Pending</div>
         </div>
         
-        <div>
-          <div className="text-lg font-semibold text-green-600">{stats.approved}</div>
+        <div className="text-center p-2 sm:p-3 bg-white rounded-lg border shadow-sm">
+          <div className="text-sm sm:text-lg font-semibold text-green-600">{stats.approved}</div>
           <div className="text-xs text-muted-foreground">Approved</div>
         </div>
         
-        <div>
-          <div className="text-lg font-semibold text-red-600">{stats.rejected}</div>
+        <div className="text-center p-2 sm:p-3 bg-white rounded-lg border shadow-sm sm:block hidden">
+          <div className="text-sm sm:text-lg font-semibold text-red-600">{stats.rejected}</div>
           <div className="text-xs text-muted-foreground">Rejected</div>
         </div>
 
-        <div className="col-span-2 md:col-span-1">
-          <div className="text-xl font-bold font-mono">SGD {stats.totalAmount.toFixed(2)}</div>
-          <div className="text-xs text-muted-foreground">Total Amount</div>
+        <div className="text-center p-2 sm:p-3 bg-white rounded-lg border shadow-sm sm:block hidden">
+          <div className="text-xs sm:text-lg font-bold font-mono">SGD {stats.totalAmount.toFixed(2)}</div>
+          <div className="text-xs text-muted-foreground">Amount</div>
         </div>
       </div>
 

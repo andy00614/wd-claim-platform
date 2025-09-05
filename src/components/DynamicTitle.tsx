@@ -16,24 +16,25 @@ export default function DynamicTitle() {
   const router = useRouter()
 
   return (
-    <h1 className="flex items-center gap-2 text-lg font-semibold">
+    <h1 className="flex items-center gap-1 sm:gap-2 text-base sm:text-lg font-semibold min-w-0">
       <div
-        className="flex items-center gap-2 cursor-pointer hover:opacity-75"
+        className="flex items-center gap-1 sm:gap-2 cursor-pointer hover:opacity-75 flex-shrink-0"
         onClick={() => router.push('/claims')}
       >
         <Image
           src="/icon.png"
-          width={24}
-          height={24}
+          width={20}
+          height={20}
           alt="WD Logo"
-          className="flex-shrink-0 mr-1"
+          className="sm:w-6 sm:h-6 flex-shrink-0"
           unoptimized
           priority
         />
-        <span className="text-gray-900">Wild Dynasty</span>
+        <span className="text-gray-900 hidden sm:inline">Wild Dynasty</span>
+        <span className="text-gray-900 sm:hidden text-sm font-bold">WD</span>
       </div>
-      <span className="text-gray-500 font-normal">•</span>
-      <span className="text-gray-600 font-normal text-sm font-semibold">{title}</span>
+      <span className="text-gray-500 font-normal hidden sm:inline">•</span>
+      <span className="text-gray-600 font-normal text-xs sm:text-sm font-semibold truncate">{title}</span>
     </h1>
   )
 }

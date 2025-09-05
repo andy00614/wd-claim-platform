@@ -143,10 +143,10 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       <CardHeader>
         <CardTitle className="text-md">Expense Details</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6">
         {/* 第一行：日期、项目类型 */}
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-3">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+          <div className="sm:col-span-3">
             <Label className="text-sm font-semibold mb-1">Date</Label>
             <Popover>
               <PopoverTrigger asChild>
@@ -172,7 +172,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
             </Popover>
           </div>
 
-          <div className="col-span-9">
+          <div className="sm:col-span-9">
             <Label className="text-sm font-semibold mb-1">Item No</Label>
             <Select value={formData.itemNo} onValueChange={(value) => setFormData({ ...formData, itemNo: value })}>
               <SelectTrigger className="h-10">
@@ -190,8 +190,8 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         </div>
 
         {/* 金额行 */}
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-2">
+        <div className="grid grid-cols-2 sm:grid-cols-12 gap-4">
+          <div className="sm:col-span-2">
             <Label className="text-sm font-semibold mb-1">Currency</Label>
             <Select value={formData.currency} onValueChange={handleCurrencyChange}>
               <SelectTrigger>
@@ -207,7 +207,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
             </Select>
           </div>
 
-          <div className="col-span-3">
+          <div className="sm:col-span-3">
             <Label className="text-sm font-semibold mb-1">Amount</Label>
             <Input
               type="number"
@@ -217,8 +217,8 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
             />
           </div>
 
-          <div className="col-span-2">
-            <Label className="text-sm font-semibold mb-1">Forex Rate</Label>
+          <div className="col-span-2 sm:col-span-2">
+            <Label className="text-sm font-semibold mb-1">Rate</Label>
             <Input
               type="number"
               step="0.0001"
@@ -227,7 +227,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
             />
           </div>
 
-          <div className="col-span-5">
+          <div className="col-span-2 sm:col-span-5">
             <Label className="text-sm font-semibold mb-1">SGD Amount</Label>
             <Input
               type="number"
@@ -241,7 +241,8 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         {/* 详细说明 */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold mb-1">
-            Details/Reason (Please Indicate Restaurant name or Supplier Name)
+            <span className="hidden sm:inline">Details/Reason (Please Indicate Restaurant name or Supplier Name)</span>
+            <span className="sm:hidden">Details/Reason</span>
           </Label>
           <Textarea
             placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"
@@ -264,7 +265,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
             variant="outline"
             onClick={handleAddItem}
             size="sm"
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             Add to List
