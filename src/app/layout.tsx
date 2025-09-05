@@ -21,8 +21,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Wild Dynasty - Expense Claims",
-  description: "Employee expense claim management system",
+  title: "Wild Dynasty - Intelligent Expense Claims",
+  description: "Your intelligent expense claim platform for seamless business expense management",
 };
 
 

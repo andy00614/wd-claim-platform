@@ -4,10 +4,10 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 
 function getPageTitle(pathname: string) {
-  if (pathname.startsWith('/claims/new')) return 'New Expense Claim'
-  if (pathname.startsWith('/claims')) return 'Expense Claim History'
-  if (pathname.startsWith('/admin')) return 'Admin Dashboard'
-  return 'Wild Dynasty'
+  if (pathname.startsWith('/claims/new')) return 'Create Claim'
+  if (pathname.startsWith('/claims')) return 'My Claims'
+  if (pathname.startsWith('/admin')) return 'Approval Requests'
+  return 'Expense Platform'
 }
 
 export default function DynamicTitle() {

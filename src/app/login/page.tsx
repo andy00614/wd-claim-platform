@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
 import { TextAnimate, TypingAnimation, BlurFade } from '@/components/ui/magic-ui'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -55,7 +56,7 @@ export default function LoginPage() {
           },
         },
       })
-      
+
       if (error) throw error
     } catch (error: any) {
       setError(error.message)
@@ -79,15 +80,15 @@ export default function LoginPage() {
             Welcome back, {user.email}
           </p>
           <div className="space-y-3">
-            <Button 
-              onClick={() => router.push('/binding')} 
+            <Button
+              onClick={() => router.push('/binding')}
               className="w-full"
             >
               Continue to Dashboard
             </Button>
-            <Button 
-              onClick={handleLogout} 
-              variant="outline" 
+            <Button
+              onClick={handleLogout}
+              variant="outline"
               className="w-full"
             >
               Sign out
@@ -102,28 +103,36 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="w-full max-w-md space-y-8 px-6">
         <div className="text-center space-y-4">
-          <TextAnimate 
+          <Image
+            alt="WD Logo"
+            src="/icon.png"
+            width={48}
+            height={48}
+            className="inline mb-6"
+          />
+          <TextAnimate
             animation="blur"
             delay={200}
-            className="text-3xl font-semibold text-gray-900"
+            className="text-2xl font-semibold text-gray-900"
           >
-            Welcome Back
+
+            Wild Dynasty Expense Claims
           </TextAnimate>
-          
+
           <TypingAnimation
-            text="Sign in to access your expense dashboard"
+            text="Where expense claims meet efficiency"
             className="text-gray-600"
             duration={2000}
             delay={800}
           />
         </div>
-        
+
         <BlurFade delay={1500} className="space-y-6">
-          <Button 
+          <Button
             onClick={handleGoogleLogin}
             disabled={loading}
             size="lg"
-            className="w-full h-12 bg-white border border-gray-300 text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow-md transition-all duration-200"
+            className="cursor-pointer w-full h-12 bg-white border border-gray-300 text-gray-700 shadow-sm hover:shadow-md transition-all duration-200"
             variant="outline"
           >
             {loading ? (
@@ -155,7 +164,7 @@ export default function LoginPage() {
               </>
             )}
           </Button>
-          
+
           {error && (
             <Alert variant="destructive" className="border-red-200 bg-red-50">
               <AlertDescription className="text-red-800">{error}</AlertDescription>
@@ -164,8 +173,8 @@ export default function LoginPage() {
         </BlurFade>
 
         <BlurFade delay={2000} className="text-center">
-          <p className="text-xs text-gray-500">
-            Wild Dynasty Expense Management
+          <p className="text-sm text-gray-500">
+            Intelligent expense management made simple
           </p>
         </BlurFade>
       </div>
