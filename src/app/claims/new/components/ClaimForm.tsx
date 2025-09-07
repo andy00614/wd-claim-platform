@@ -68,6 +68,16 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
     addExpenseItem(rest)
   }
 
+  const editExpenseItem = (id: number, updatedItem: Partial<ExpenseItem>) => {
+    setExpenseItems(prev => 
+      prev.map(item => 
+        item.id === id 
+          ? { ...item, ...updatedItem }
+          : item
+      )
+    )
+  }
+
   // 处理提交成功后的逻辑
   useEffect(() => {
     const currentState = actionType === 'submit' ? submitState : draftState
@@ -225,6 +235,10 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
         onRemoveItem={removeExpenseItem}
         onRestoreItem={restoreExpenseItem}
         onDuplicateItem={duplicateExpenseItem}
+        onEditItem={editExpenseItem}
+        itemTypes={itemTypes}
+        currencies={currencies}
+        exchangeRates={exchangeRates}
         totalSGD={totalSGD}
       />
 
