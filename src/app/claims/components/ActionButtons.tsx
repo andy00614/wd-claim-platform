@@ -107,7 +107,7 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
           <span>Download CSV</span>
         </DropdownMenuItem>
         
-        {claim.status === 'submitted' ? (
+        {(claim.status === 'submitted' || claim.status === 'draft') ? (
           <DropdownMenuItem asChild>
             <Link href={`/claims/${claim.id}/edit`} className="flex items-center gap-2 cursor-pointer">
               <Edit className="h-4 w-4" />
