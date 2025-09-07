@@ -89,6 +89,15 @@ export default function EditClaimForm({
     const { id, ...rest } = item
     addExpenseItem(rest)
   }
+  const editExpenseItem = (id: number, updatedItem: Partial<ExpenseItem>) => {
+    setExpenseItems(prev => 
+      prev.map(item => 
+        item.id === id 
+          ? { ...item, ...updatedItem }
+          : item
+      )
+    )
+  }
 
   // 提交包装，触发隐藏表单提交
   const handleUpdateClick = () => {
@@ -154,6 +163,10 @@ export default function EditClaimForm({
         onRemoveItem={removeExpenseItem}
         onRestoreItem={restoreExpenseItem}
         onDuplicateItem={duplicateExpenseItem}
+        onEditItem={editExpenseItem}
+        itemTypes={itemTypes}
+        currencies={currencies}
+        exchangeRates={exchangeRates}
         totalSGD={totalSGD}
       />
 

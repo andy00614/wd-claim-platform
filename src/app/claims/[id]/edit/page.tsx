@@ -42,12 +42,13 @@ export default async function EditClaimPage({ params }: EditClaimPageProps) {
   }
 
   // 检查申请状态是否可编辑
-  if (claimData.data.claim.status !== 'submitted') {
+  const status = claimData.data.claim.status
+  if (status !== 'submitted' && status !== 'draft') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-xl font-bold text-red-600 mb-4">无法编辑</h1>
-          <p className="text-gray-600">只能编辑待审核状态的申请</p>
+          <p className="text-gray-600">只能编辑草稿或待审核状态的申请</p>
           <Link href="/claims" className="text-blue-600 hover:underline mt-2 block">
             返回申请列表
           </Link>
