@@ -168,7 +168,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item) => (
+                {items.map((item: any) => (
                   <TableRow key={item.id}>
                     <TableCell>
                       {item.date ? new Date(item.date).toLocaleDateString() : 'N/A'}

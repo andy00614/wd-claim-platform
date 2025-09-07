@@ -39,9 +39,12 @@ export default async function BatchReportPage({ searchParams }: BatchReportPageP
     redirect('/admin/reports')
   }
 
+  // 兼容旧组件的 props：提供 employee 字段
+  const normalizedClaims = validClaims.map((d: any) => ({ ...d, employee: d.owner }))
+
   return (
     <div className="min-h-screen bg-white">
-      <BatchReport claims={validClaims} />
+      <BatchReport claims={normalizedClaims as any} />
     </div>
   )
 }

@@ -64,7 +64,7 @@ export default async function EditClaimPage({ params }: EditClaimPageProps) {
       currencies={initData.data.currencies}
       exchangeRates={initData.data.exchangeRates}
       existingItems={claimData.data.items}
-      employeeId={claimData.data.owner.id}
+      employeeId={(claimData.data as any).owner.employeeId ?? (claimData.data as any).owner.id}
     />
   )
 }

@@ -21,7 +21,8 @@ export default async function ClaimReportPage({ params }: ClaimReportPageProps) 
     redirect('/admin/reports')
   }
 
-  const { claim, items, attachments, employee } = claimData.data
+  const { claim, items, attachments, owner } = claimData.data as any
+  const employee = owner
 
   return (
     <div className="min-h-screen bg-white">
