@@ -6,6 +6,27 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { eq, inArray, and, desc } from 'drizzle-orm'
 
+// 解析前端传来的日期，兼容 'yyyy-MM-dd' 和 'MM/dd'
+function parseItemDate(dateStr: string): Date {
+  try {
+    if (!dateStr) return new Date()
+    if (dateStr.includes('-')) {
+      const [y, m, d] = dateStr.split('-').map((n) => parseInt(n, 10))
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m - 1, d)
+    }
+    if (dateStr.includes('/')) {
+      const [month, day] = dateStr.split('/')
+      const y = new Date().getFullYear()
+      const m = parseInt(month, 10)
+      const d = parseInt(day, 10)
+      if (!isNaN(m) && !isNaN(d)) return new Date(y, m - 1, d)
+    }
+    const d2 = new Date(dateStr)
+    if (!isNaN(d2.getTime())) return d2
+  } catch (_) {}
+  return new Date()
+}
+
 // 保存草稿
 export async function saveDraft(prevState: any, formData: FormData) {
   try {
@@ -38,10 +59,7 @@ export async function saveDraft(prevState: any, formData: FormData) {
         const currencyMap = Object.fromEntries(currencies.map(c => [c.code, c.id]))
 
         const claimItemsData = expenseItems.map((item: any) => {
-          const [month, day] = item.date.split('/')
-          const currentYear = new Date().getFullYear()
-          const itemDate = new Date(currentYear, parseInt(month) - 1, parseInt(day))
-
+          const itemDate = parseItemDate(item.date)
           return {
             claimId: newClaim.id,
             employeeId,
@@ -124,10 +142,7 @@ export async function submitClaim(prevState: any, formData: FormData) {
 
       // 3. 创建申请项目记录
       const claimItemsData = expenseItems.map((item: any) => {
-        const [month, day] = item.date.split('/')
-        const currentYear = new Date().getFullYear()
-        const itemDate = new Date(currentYear, parseInt(month) - 1, parseInt(day))
-
+        const itemDate = parseItemDate(item.date)
         return {
           claimId: newClaim.id,
           employeeId,
@@ -605,10 +620,7 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
       }
 
       const claimItemsData = expenseItems.map((item: any) => {
-        const [month, day] = item.date.split('/')
-        const currentYear = new Date().getFullYear()
-        const itemDate = new Date(currentYear, parseInt(month) - 1, parseInt(day))
-
+        const itemDate = parseItemDate(item.date)
         return {
           claimId,
           employeeId: targetEmployeeId,

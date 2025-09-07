@@ -61,7 +61,7 @@ export default function EditClaimForm({
       const d = item.date ? new Date(item.date) : new Date()
       return {
         id: Date.now() + index,
-        date: `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}`,
+        date: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`,
         itemNo: item.itemTypeNo,
         details: item.details || '',
         currency: item.currencyCode,
@@ -84,6 +84,11 @@ export default function EditClaimForm({
     setExpenseItems(prev => [...prev, { ...item, id: Date.now() }])
   }
   const removeExpenseItem = (id: number) => setExpenseItems(prev => prev.filter(i => i.id !== id))
+  const restoreExpenseItem = (item: ExpenseItem) => setExpenseItems(prev => [...prev, { ...item, id: Date.now() }])
+  const duplicateExpenseItem = (item: ExpenseItem) => {
+    const { id, ...rest } = item
+    addExpenseItem(rest)
+  }
 
   // 提交包装，触发隐藏表单提交
   const handleUpdateClick = () => {
@@ -147,6 +152,8 @@ export default function EditClaimForm({
       <CurrentItems
         items={expenseItems}
         onRemoveItem={removeExpenseItem}
+        onRestoreItem={restoreExpenseItem}
+        onDuplicateItem={duplicateExpenseItem}
         totalSGD={totalSGD}
       />
 

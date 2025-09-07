@@ -52,6 +52,22 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
     setExpenseItems(prev => prev.filter(item => item.id !== id))
   }
 
+  const restoreExpenseItem = (item: ExpenseItem, index?: number) => {
+    setExpenseItems(prev => {
+      if (index !== undefined) {
+        const arr = [...prev]
+        arr.splice(index, 0, item)
+        return arr
+      }
+      return [...prev, { ...item, id: Date.now() }]
+    })
+  }
+
+  const duplicateExpenseItem = (item: ExpenseItem) => {
+    const { id, ...rest } = item
+    addExpenseItem(rest)
+  }
+
   // 处理提交成功后的逻辑
   useEffect(() => {
     const currentState = actionType === 'submit' ? submitState : draftState
@@ -105,8 +121,25 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
       }
 
       handleFileUpload()
+    } else if (currentState.error) {
+      // 失败时确保解锁按钮
+      setIsLoading(false)
+      setActionType(null)
+      if (currentState.error) {
+        toast.error(currentState.error)
+      }
     }
-  }, [submitState.success, draftState.success, submitState.data, draftState.data, attachedFiles, expenseItems, actionType])
+  }, [
+    submitState.success,
+    draftState.success,
+    submitState.data,
+    draftState.data,
+    submitState.error,
+    draftState.error,
+    attachedFiles,
+    expenseItems,
+    actionType,
+  ])
 
   const totalSGD = expenseItems.reduce((sum, item) => sum + item.sgdAmount, 0)
 
@@ -190,6 +223,8 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
       <CurrentItems 
         items={expenseItems}
         onRemoveItem={removeExpenseItem}
+        onRestoreItem={restoreExpenseItem}
+        onDuplicateItem={duplicateExpenseItem}
         totalSGD={totalSGD}
       />
 
@@ -203,7 +238,10 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
       )}
 
       {/* 操作按钮 */}
-      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6 sticky bottom-0 bg-white/80 backdrop-blur border-t border-gray-200 py-3">
+        <div aria-live="polite" className="sr-only">
+          {isLoading ? (actionType === 'submit' ? 'Submitting your claim' : 'Saving draft') : ''}
+        </div>
         <Button 
           type="button"
           variant="outline"
@@ -223,7 +261,7 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
           variant="secondary"
           size="lg"
           onClick={handleDraftClick}
-          disabled={expenseItems.length === 0 || isLoading}
+          disabled={isLoading}
           className="w-full sm:w-auto"
         >
           {isLoading && actionType === 'draft' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

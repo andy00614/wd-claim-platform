@@ -47,6 +47,8 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
   })
 
   const [attachments, setAttachments] = useState<File[]>([])
+  const [autoCalcSgd, setAutoCalcSgd] = useState(true)
+  const [errors, setErrors] = useState<{ amount?: string; itemNo?: string; date?: string }>({})
 
   // 计算SGD金额
   const calculateSgdAmount = (amount: string, rate: string) => {
@@ -69,7 +71,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     setFormData(prev => ({
       ...prev,
       amount,
-      sgdAmount
+      sgdAmount: autoCalcSgd ? sgdAmount : prev.sgdAmount
     }))
   }
 
@@ -79,7 +81,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     setFormData(prev => ({
       ...prev,
       forexRate: rate,
-      sgdAmount
+      sgdAmount: autoCalcSgd ? sgdAmount : prev.sgdAmount
     }))
   }
 
@@ -89,7 +91,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     setFormData(prev => ({
       ...prev,
       sgdAmount,
-      forexRate
+      forexRate: autoCalcSgd ? prev.forexRate : forexRate
     }))
   }
 
@@ -101,18 +103,22 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       ...prev,
       currency,
       forexRate: newRate,
-      sgdAmount
+      sgdAmount: autoCalcSgd ? sgdAmount : prev.sgdAmount
     }))
   }
 
   const handleAddItem = () => {
-    if (!date || !formData.itemNo || !formData.amount) {
-      toast.error('请填写所有必填字段')
-      return
-    }
+    // 校验
+    const newErrors: typeof errors = {}
+    if (!date) newErrors.date = '必填'
+    if (!formData.itemNo) newErrors.itemNo = '必选'
+    if (!formData.amount || parseFloat(formData.amount) <= 0) newErrors.amount = '请输入金额'
+    setErrors(newErrors)
+    if (Object.keys(newErrors).length > 0) return
 
     const item = {
-      date: format(date, 'MM/dd'),
+      // 存 ISO，显示时再格式化
+      date: format(date, 'yyyy-MM-dd'),
       itemNo: formData.itemNo,
       details: formData.details,
       currency: formData.currency,
@@ -127,11 +133,12 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     // 清空表单
     setDate(new Date())
     setFormData({
-      itemNo: '',
+      // 保留常用字段以便连续录入
+      itemNo: formData.itemNo,
       details: '',
-      currency: 'SGD',
+      currency: formData.currency,
       amount: '',
-      forexRate: '1.0000',
+      forexRate: formData.forexRate,
       sgdAmount: ''
     })
     setAttachments([])
@@ -214,7 +221,15 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
               step="0.01"
               value={formData.amount}
               onChange={(e) => handleAmountChange(e.target.value)}
+              onBlur={(e) => {
+                const v = e.target.value
+                if (v !== '') setFormData(p => ({ ...p, amount: (parseFloat(v) || 0).toFixed(2) }))
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddItem()
+              }}
             />
+            {errors.amount && <div className="text-xs text-red-600 mt-1">{errors.amount}</div>}
           </div>
 
           <div className="col-span-2 sm:col-span-2">
@@ -224,7 +239,19 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
               step="0.0001"
               value={formData.forexRate}
               onChange={(e) => handleForexRateChange(e.target.value)}
+              onBlur={(e) => {
+                const v = e.target.value
+                if (v !== '') setFormData(p => ({ ...p, forexRate: (parseFloat(v) || 0).toFixed(4) }))
+              }}
             />
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-[11px] text-gray-500">来自 {formData.currency} 默认汇率</span>
+              <button
+                type="button"
+                className="text-[11px] text-blue-600 hover:underline"
+                onClick={() => handleCurrencyChange(formData.currency)}
+              >重置</button>
+            </div>
           </div>
 
           <div className="col-span-2 sm:col-span-5">
@@ -234,16 +261,31 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
               step="0.01"
               value={formData.sgdAmount}
               onChange={(e) => handleSgdAmountChange(e.target.value)}
+              onBlur={(e) => {
+                const v = e.target.value
+                if (v !== '') setFormData(p => ({ ...p, sgdAmount: (parseFloat(v) || 0).toFixed(2) }))
+              }}
+              readOnly={autoCalcSgd}
+              className={cn(autoCalcSgd && 'bg-gray-50')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddItem()
+              }}
             />
+            <label className="inline-flex items-center gap-2 mt-1">
+              <input
+                type="checkbox"
+                checked={autoCalcSgd}
+                onChange={(e) => setAutoCalcSgd(e.target.checked)}
+              />
+              <span className="text-[11px] text-gray-600">自动计算 SGD（金額×汇率）</span>
+            </label>
           </div>
         </div>
 
         {/* 详细说明 */}
         <div className="space-y-2">
-          <Label className="text-sm font-semibold mb-1">
-            <span className="hidden sm:inline">Details/Reason (Please Indicate Restaurant name or Supplier Name)</span>
-            <span className="sm:hidden">Details/Reason</span>
-          </Label>
+          <Label className="text-sm font-semibold mb-1">Details/Reason</Label>
+          <div className="text-[11px] text-gray-500 -mt-1 mb-1">Please include restaurant or supplier name</div>
           <Textarea
             placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"
             className="resize-vertical min-h-[80px]"
@@ -262,10 +304,11 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
 
         <div className="flex justify-end">
           <Button
-            variant="outline"
+            variant="default"
             onClick={handleAddItem}
             size="sm"
             className="gap-2 w-full sm:w-auto"
+            disabled={!date || !formData.itemNo || !formData.amount || parseFloat(formData.amount) <= 0}
           >
             <Plus className="h-4 w-4" />
             Add to List
