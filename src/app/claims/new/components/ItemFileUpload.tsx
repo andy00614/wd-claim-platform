@@ -84,7 +84,7 @@ export default function ItemFileUpload({ files, onFilesChange }: ItemFileUploadP
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/*,.pdf,.doc,.docx"
+          accept="image/*"
           onChange={handleFileSelect}
           className="hidden"
         />
@@ -96,7 +96,7 @@ export default function ItemFileUpload({ files, onFilesChange }: ItemFileUploadP
           </span>
         </div>
         <p className="text-xs text-gray-500 mt-1">
-          Images, PDF, DOC, DOCX
+          Images
         </p>
       </div>
 
