@@ -48,7 +48,49 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
 
   const [attachments, setAttachments] = useState<File[]>([])
   const [autoCalcSgd, setAutoCalcSgd] = useState(true)
-  const [errors, setErrors] = useState<{ amount?: string; itemNo?: string; date?: string }>({})
+  const [errors, setErrors] = useState<{
+    date?: string;
+    itemNo?: string;
+    amount?: string;
+    currency?: string;
+    forexRate?: string;
+    sgdAmount?: string;
+  }>({})
+
+  // 实时验证函数
+  const validateField = (field: string, value: any) => {
+    const newErrors = { ...errors }
+    
+    switch (field) {
+      case 'date':
+        if (!value) newErrors.date = 'Date is required'
+        else delete newErrors.date
+        break
+      case 'itemNo':
+        if (!value) newErrors.itemNo = 'Item type is required'
+        else delete newErrors.itemNo
+        break
+      case 'amount':
+        if (!value || parseFloat(value) <= 0) newErrors.amount = 'Amount must be greater than 0'
+        else delete newErrors.amount
+        break
+      case 'currency':
+        if (!value) newErrors.currency = 'Currency is required'
+        else delete newErrors.currency
+        break
+      case 'forexRate':
+        if (!value || parseFloat(value) <= 0) newErrors.forexRate = 'Exchange rate must be greater than 0'
+        else delete newErrors.forexRate
+        break
+      case 'sgdAmount':
+        if (!value || parseFloat(value) <= 0) newErrors.sgdAmount = 'SGD amount must be greater than 0'
+        else delete newErrors.sgdAmount
+        break
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   // 计算SGD金额
   const calculateSgdAmount = (amount: string, rate: string) => {
@@ -73,6 +115,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       amount,
       sgdAmount: autoCalcSgd ? sgdAmount : prev.sgdAmount
     }))
+    validateField('amount', amount)
   }
 
   // 当汇率改变时，自动计算 SGD 金额
@@ -83,6 +126,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       forexRate: rate,
       sgdAmount: autoCalcSgd ? sgdAmount : prev.sgdAmount
     }))
+    validateField('forexRate', rate)
   }
 
   // 当SGD金额改变时，自动计算汇率
@@ -93,6 +137,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       sgdAmount,
       forexRate: autoCalcSgd ? prev.forexRate : forexRate
     }))
+    validateField('sgdAmount', sgdAmount)
   }
 
   // 当货币改变时，更新汇率并重新计算
@@ -105,16 +150,26 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       forexRate: newRate,
       sgdAmount: autoCalcSgd ? sgdAmount : prev.sgdAmount
     }))
+    validateField('currency', currency)
   }
 
   const handleAddItem = () => {
-    // 校验
+    // 完整验证所有必填字段
     const newErrors: typeof errors = {}
-    if (!date) newErrors.date = '必填'
-    if (!formData.itemNo) newErrors.itemNo = '必选'
-    if (!formData.amount || parseFloat(formData.amount) <= 0) newErrors.amount = '请输入金额'
+    
+    if (!date) newErrors.date = 'Date is required'
+    if (!formData.itemNo) newErrors.itemNo = 'Item type is required'  
+    if (!formData.currency) newErrors.currency = 'Currency is required'
+    if (!formData.amount || parseFloat(formData.amount) <= 0) newErrors.amount = 'Amount must be greater than 0'
+    if (!formData.forexRate || parseFloat(formData.forexRate) <= 0) newErrors.forexRate = 'Exchange rate must be greater than 0'
+    if (!formData.sgdAmount || parseFloat(formData.sgdAmount) <= 0) newErrors.sgdAmount = 'SGD amount must be greater than 0'
+    
     setErrors(newErrors)
-    if (Object.keys(newErrors).length > 0) return
+    
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please fill in all required fields')
+      return
+    }
 
     const item = {
       // 存 ISO，显示时再格式化
@@ -142,6 +197,9 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       sgdAmount: ''
     })
     setAttachments([])
+    setErrors({}) // 清空验证错误
+    
+    toast.success('Expense item added successfully')
   }
 
 
@@ -154,14 +212,17 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         {/* 第一行：日期、项目类型 */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
           <div className="sm:col-span-3">
-            <Label className="text-sm font-semibold mb-1">Date</Label>
+            <Label className="text-sm font-semibold mb-1">
+              Date <span className="text-red-500">*</span>
+            </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
+                    !date && "text-muted-foreground",
+                    errors.date && "border-red-500"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -172,17 +233,34 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
                 <Calendar
                   mode="single"
                   selected={date}
-                  onSelect={(date) => date && setDate(date)}
+                  onSelect={(selectedDate) => {
+                    if (selectedDate) {
+                      setDate(selectedDate)
+                      validateField('date', selectedDate)
+                    }
+                  }}
                   initialFocus
                 />
               </PopoverContent>
             </Popover>
+            {errors.date && <div className="text-xs text-red-600 mt-1">{errors.date}</div>}
           </div>
 
           <div className="sm:col-span-9">
-            <Label className="text-sm font-semibold mb-1">Item No</Label>
-            <Select value={formData.itemNo} onValueChange={(value) => setFormData({ ...formData, itemNo: value })}>
-              <SelectTrigger className="h-10">
+            <Label className="text-sm font-semibold mb-1">
+              Item No <span className="text-red-500">*</span>
+            </Label>
+            <Select 
+              value={formData.itemNo} 
+              onValueChange={(value) => {
+                setFormData({ ...formData, itemNo: value })
+                validateField('itemNo', value)
+              }}
+            >
+              <SelectTrigger className={cn(
+                "h-10",
+                errors.itemNo && "border-red-500"
+              )}>
                 <SelectValue placeholder="Select item type" />
               </SelectTrigger>
               <SelectContent>
@@ -193,15 +271,20 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
                 ))}
               </SelectContent>
             </Select>
+            {errors.itemNo && <div className="text-xs text-red-600 mt-1">{errors.itemNo}</div>}
           </div>
         </div>
 
         {/* 金额行 */}
         <div className="grid grid-cols-2 sm:grid-cols-12 gap-4">
           <div className="sm:col-span-2">
-            <Label className="text-sm font-semibold mb-1">Currency</Label>
+            <Label className="text-sm font-semibold mb-1">
+              Currency <span className="text-red-500">*</span>
+            </Label>
             <Select value={formData.currency} onValueChange={handleCurrencyChange}>
-              <SelectTrigger>
+              <SelectTrigger className={cn(
+                errors.currency && "border-red-500"
+              )}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -212,10 +295,13 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
                 ))}
               </SelectContent>
             </Select>
+            {errors.currency && <div className="text-xs text-red-600 mt-1">{errors.currency}</div>}
           </div>
 
           <div className="sm:col-span-3">
-            <Label className="text-sm font-semibold mb-1">Amount</Label>
+            <Label className="text-sm font-semibold mb-1">
+              Amount <span className="text-red-500">*</span>
+            </Label>
             <Input
               type="number"
               step="0.01"
@@ -228,12 +314,17 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleAddItem()
               }}
+              className={cn(
+                errors.amount && "border-red-500"
+              )}
             />
             {errors.amount && <div className="text-xs text-red-600 mt-1">{errors.amount}</div>}
           </div>
 
           <div className="col-span-2 sm:col-span-2">
-            <Label className="text-sm font-semibold mb-1">Rate</Label>
+            <Label className="text-sm font-semibold mb-1">
+              Rate <span className="text-red-500">*</span>
+            </Label>
             <Input
               type="number"
               step="0.0001"
@@ -243,6 +334,9 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
                 const v = e.target.value
                 if (v !== '') setFormData(p => ({ ...p, forexRate: (parseFloat(v) || 0).toFixed(4) }))
               }}
+              className={cn(
+                errors.forexRate && "border-red-500"
+              )}
             />
             <div className="flex justify-between items-center mt-1">
               <span className="text-[11px] text-gray-500">来自 {formData.currency} 默认汇率</span>
@@ -252,10 +346,13 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
                 onClick={() => handleCurrencyChange(formData.currency)}
               >重置</button>
             </div>
+            {errors.forexRate && <div className="text-xs text-red-600 mt-1">{errors.forexRate}</div>}
           </div>
 
           <div className="col-span-2 sm:col-span-5">
-            <Label className="text-sm font-semibold mb-1">SGD Amount</Label>
+            <Label className="text-sm font-semibold mb-1">
+              SGD Amount <span className="text-red-500">*</span>
+            </Label>
             <Input
               type="number"
               step="0.01"
@@ -266,7 +363,10 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
                 if (v !== '') setFormData(p => ({ ...p, sgdAmount: (parseFloat(v) || 0).toFixed(2) }))
               }}
               readOnly={autoCalcSgd}
-              className={cn(autoCalcSgd && 'bg-gray-50')}
+              className={cn(
+                autoCalcSgd && 'bg-gray-50',
+                errors.sgdAmount && "border-red-500"
+              )}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleAddItem()
               }}
@@ -279,12 +379,13 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
               />
               <span className="text-[11px] text-gray-600">自动计算 SGD（金額×汇率）</span>
             </label>
+            {errors.sgdAmount && <div className="text-xs text-red-600 mt-1">{errors.sgdAmount}</div>}
           </div>
         </div>
 
         {/* 详细说明 */}
         <div className="space-y-2">
-          <Label className="text-sm font-semibold mb-1">Details/Reason</Label>
+          <Label className="text-sm font-semibold mb-1">Details/Reason (Optional)</Label>
           <div className="text-[11px] text-gray-500 -mt-1 mb-1">Please include restaurant or supplier name</div>
           <Textarea
             placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"
@@ -308,7 +409,14 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
             onClick={handleAddItem}
             size="sm"
             className="gap-2 w-full sm:w-auto"
-            disabled={!date || !formData.itemNo || !formData.amount || parseFloat(formData.amount) <= 0}
+            disabled={
+              !date || 
+              !formData.itemNo || 
+              !formData.currency ||
+              !formData.amount || parseFloat(formData.amount) <= 0 ||
+              !formData.forexRate || parseFloat(formData.forexRate) <= 0 ||
+              !formData.sgdAmount || parseFloat(formData.sgdAmount) <= 0
+            }
           >
             <Plus className="h-4 w-4" />
             Add to List
