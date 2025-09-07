@@ -433,10 +433,23 @@ export async function getClaimDetails(claimId: number) {
       return { success: false, error: '申请不存在' }
     }
 
-    // 验证申请属于当前用户
+    // 验证申请属于当前用户；管理员可查看
     if (claim.employeeId !== currentEmployee.data.employee.employeeId && currentEmployee.data.employee.role !== 'admin') {
       return { success: false, error: '无权查看此申请' }
     }
+
+    // 获取申请所属员工信息（用于展示与编辑场景）
+    const [claimOwner] = await db
+      .select({
+        id: employees.id,
+        name: employees.name,
+        employeeCode: employees.employeeCode,
+        department: employees.departmentEnum,
+        role: employees.role,
+      })
+      .from(employees)
+      .where(eq(employees.id, claim.employeeId))
+      .limit(1)
 
     // 查询申请项目详情
     const claimItemsResult = await db
@@ -474,13 +487,27 @@ export async function getClaimDetails(claimId: number) {
       attachments: itemAttachmentsResult.filter(att => att.claimItemId === item.id)
     }))
 
+    const owner = claimOwner
+      ? {
+          id: claimOwner.id,
+          employeeId: claimOwner.id,
+          name: claimOwner.name,
+          employeeCode: claimOwner.employeeCode,
+          department: claimOwner.department,
+          role: claimOwner.role,
+        }
+      : currentEmployee.data.employee
+
     return {
       success: true,
       data: {
         claim,
         items: itemsWithAttachments,
         attachments: claimAttachments,
-        employee: currentEmployee.data.employee
+        // 当前查看者
+        viewer: currentEmployee.data.employee,
+        // 申请所属员工（包含 id/employeeId 以保证前端兼容）
+        owner
       }
     }
   } catch (error) {
@@ -498,7 +525,8 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
       return { success: false, error: '用户未登录或未绑定员工' }
     }
 
-    const employeeId = currentEmployee.data.employee.employeeId
+    const currentEmployeeId = currentEmployee.data.employee.employeeId
+    const isAdmin = currentEmployee.data.employee.role === 'admin'
     const expenseItemsJson = formData.get('expenseItems') as string
     const expenseItems = JSON.parse(expenseItemsJson)
 
@@ -506,7 +534,7 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
       return { success: false, error: '缺少费用项目数据' }
     }
 
-    // 验证申请存在且属于当前用户
+    // 验证申请存在并获取归属
     const [existingClaim] = await db
       .select({ employeeId: claims.employeeId, status: claims.status })
       .from(claims)
@@ -517,7 +545,8 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
       return { success: false, error: '申请不存在' }
     }
 
-    if (existingClaim.employeeId !== employeeId) {
+    // 仅本人或管理员可编辑
+    if (existingClaim.employeeId !== currentEmployeeId && !isAdmin) {
       return { success: false, error: '无权编辑此申请' }
     }
 
@@ -539,7 +568,21 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
         })
         .where(eq(claims.id, claimId))
 
-      // 2. 删除旧的申请项目
+      // 2. 删除旧的申请项目前，解除附件的外键引用以避免约束报错
+      const oldItems = await tx
+        .select({ id: claimItems.id })
+        .from(claimItems)
+        .where(eq(claimItems.claimId, claimId))
+
+      const oldItemIds = oldItems.map((i) => i.id)
+      if (oldItemIds.length > 0) {
+        await tx
+          .update(attachment)
+          .set({ claimItemId: null })
+          .where(inArray(attachment.claimItemId, oldItemIds))
+      }
+
+      // 2b. 删除旧的申请项目
       await tx.delete(claimItems).where(eq(claimItems.claimId, claimId))
 
       // 3. 获取映射数据
@@ -550,6 +593,17 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
       const currencyMap = Object.fromEntries(currencies.map(c => [c.code, c.id]))
 
       // 4. 插入新的申请项目
+      const targetEmployeeId = existingClaim.employeeId
+      // 校验映射
+      for (const [index, item] of expenseItems.entries()) {
+        if (!itemTypeMap[item.itemNo]) {
+          throw new Error(`无效的费用项目编号: itemNo='${item.itemNo}' (第 ${index + 1} 行)`) 
+        }
+        if (!currencyMap[item.currency]) {
+          throw new Error(`无效的币种代码: currency='${item.currency}' (第 ${index + 1} 行)`) 
+        }
+      }
+
       const claimItemsData = expenseItems.map((item: any) => {
         const [month, day] = item.date.split('/')
         const currentYear = new Date().getFullYear()
@@ -557,7 +611,7 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
 
         return {
           claimId,
-          employeeId,
+          employeeId: targetEmployeeId,
           date: itemDate,
           type: itemTypeMap[item.itemNo],
           note: item.note,
@@ -570,12 +624,16 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
         }
       })
 
-      await tx.insert(claimItems).values(claimItemsData)
+      const inserted = await tx
+        .insert(claimItems)
+        .values(claimItemsData)
+        .returning({ id: claimItems.id })
 
       return {
         claimId,
         itemsCount: claimItemsData.length,
-        totalAmount
+        totalAmount,
+        insertedItems: inserted
       }
     })
 
@@ -589,8 +647,8 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
     console.error('更新申请失败:', error)
     return {
       success: false,
-      error: '更新申请失败',
-      details: error instanceof Error ? error.message : '未知错误'
+      error: error instanceof Error ? error.message : '更新申请失败',
+      details: error instanceof Error ? error.stack : '未知错误'
     }
   }
 }

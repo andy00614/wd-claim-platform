@@ -41,7 +41,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
     )
   }
 
-  const { claim, items, attachments, employee } = claimData.data
+  const { claim, items, attachments, owner } = claimData.data as any
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -91,16 +91,16 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
               </div>
             </div>
             
-            {/* Employee */}
+            {/* Employee (claim owner) */}
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground flex items-center gap-1">
                 <User className="h-3 w-3" />
                 Employee
               </div>
               <div className="space-y-1">
-                <div className="font-medium">{employee.name}</div>
+                <div className="font-medium">{owner?.name}</div>
                 <div className="text-xs text-muted-foreground">
-                  EMP{employee.employeeCode.toString().padStart(3, '0')}
+                  EMP{(owner?.employeeCode || 0).toString().padStart(3, '0')}
                 </div>
               </div>
             </div>

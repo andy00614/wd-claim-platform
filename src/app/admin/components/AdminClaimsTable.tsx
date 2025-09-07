@@ -198,6 +198,21 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                           View Report
                         </Link>
                       </DropdownMenuItem>
+                      {claim.status === 'submitted' ? (
+                        <DropdownMenuItem asChild>
+                          <Link href={`/claims/${claim.id}/edit`} className="flex items-center gap-2 cursor-pointer">
+                            <Pencil className="h-4 w-4 text-blue-600" />
+                            Edit Claim
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem disabled className="text-gray-400">
+                          <div className="flex items-center gap-2">
+                            <Pencil className="h-4 w-4" />
+                            Edit Claim
+                          </div>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem 
                         onClick={() => handleEdit(claim)}
                         className="flex items-center gap-2 cursor-pointer"
@@ -334,6 +349,21 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                             View Report
                           </Link>
                         </DropdownMenuItem>
+                        {claim.status === 'submitted' ? (
+                          <DropdownMenuItem asChild>
+                            <Link href={`/claims/${claim.id}/edit`} className="flex items-center gap-2 cursor-pointer">
+                              <Pencil className="h-4 w-4 text-blue-600" />
+                              Edit Claim
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem disabled className="text-gray-400">
+                            <div className="flex items-center gap-2">
+                              <Pencil className="h-4 w-4" />
+                              Edit Claim
+                            </div>
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem 
                           onClick={() => handleEdit(claim)}
                           className="flex items-center gap-2 cursor-pointer"

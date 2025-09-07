@@ -107,12 +107,19 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
           <span>Download CSV</span>
         </DropdownMenuItem>
         
-        {(claim.status === 'submitted' || claim.status === 'draft') && (
+        {claim.status === 'submitted' ? (
           <DropdownMenuItem asChild>
             <Link href={`/claims/${claim.id}/edit`} className="flex items-center gap-2 cursor-pointer">
               <Edit className="h-4 w-4" />
               <span>Edit Claim</span>
             </Link>
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem disabled className="text-gray-400">
+            <div className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+              <span>Edit Claim</span>
+            </div>
           </DropdownMenuItem>
         )}
         
