@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
-import { FileText, Download, Eye, ArrowLeft, User, Calendar, DollarSign } from 'lucide-react'
+import { FileText, Download, Eye, ArrowLeft, User, Calendar, DollarSign, Edit } from 'lucide-react'
 
 interface ClaimDetailPageProps {
   params: Promise<{ id: string }>
@@ -63,14 +63,25 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
   return (
     <div className="space-y-6">
       {/* Header with Back Button */}
-      <div className="flex items-center gap-4">
-        <Button asChild variant="outline" size="sm">
-          <BackButton className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </BackButton>
-        </Button>
-        <h1 className="text-2xl font-semibold">Claim Details</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Button asChild variant="outline" size="sm">
+            <BackButton className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </BackButton>
+          </Button>
+          <h1 className="text-2xl font-semibold">Claim Details</h1>
+        </div>
+
+        {(claim.status === 'draft' || claim.status === 'submitted') && (
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/claims/new?claimId=${claim.id}`} className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+              Edit Claim
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Claim Overview */}

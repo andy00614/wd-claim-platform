@@ -62,6 +62,10 @@ export default function ClaimForm({
     setExpenseItems(prev => [...prev, newItem])
   }
 
+  const handleEditItem = (updatedItem: ExpenseItem) => {
+    setExpenseItems(prev => prev.map(item => (item.id === updatedItem.id ? updatedItem : item)))
+  }
+
   useEffect(() => {
     if (isEditMode) {
       setExpenseItems(initialItems)
@@ -135,6 +139,7 @@ export default function ClaimForm({
     if (updateState.success && updateState.data?.claimId) {
       toast.success(`Claim updated! ID: CL-2024-${updateState.data.claimId.toString().padStart(4, '0')}`)
       setIsLoading(false)
+      setActionType(null)
       router.push(`/claims/${updateState.data.claimId}`)
       return
     }
@@ -142,6 +147,7 @@ export default function ClaimForm({
     if (updateState.error) {
       toast.error(updateState.error)
       setIsLoading(false)
+      setActionType(null)
     }
   }, [isEditMode, updateState.success, updateState.data?.claimId, updateState.error, router])
 
@@ -259,7 +265,11 @@ export default function ClaimForm({
       <CurrentItems 
         items={expenseItems}
         onRemoveItem={removeExpenseItem}
+        onEditItem={handleEditItem}
         totalSGD={totalSGD}
+        itemTypes={itemTypes}
+        currencies={currencies}
+        exchangeRates={exchangeRates}
       />
 
       {/* 错误提示 */}

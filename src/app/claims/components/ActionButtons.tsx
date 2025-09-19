@@ -20,9 +20,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Eye, Edit, Send, MoreHorizontal, Trash2 } from 'lucide-react'
-import { useState, useTransition } from 'react'
-import { deleteClaim } from '@/lib/actions'
+import { Eye, Edit, Send, MoreHorizontal, Trash2, Undo2 } from 'lucide-react'
+import { useState } from 'react'
+import { deleteClaim, updateClaimStatus } from '@/lib/actions'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
@@ -39,20 +39,66 @@ interface ActionButtonsProps {
 
 export default function ActionButtons({ claim }: ActionButtonsProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isPending, startTransition] = useTransition()
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false)
+  const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false)
+  const [actionInFlight, setActionInFlight] = useState<null | 'delete' | 'submit' | 'revert'>(null)
   const router = useRouter()
 
   const handleDelete = async () => {
-    startTransition(async () => {
+    try {
+      setActionInFlight('delete')
       const result = await deleteClaim(claim.id)
       if (result.success) {
         toast.success('Claim deleted successfully')
         router.refresh()
       } else {
-        toast.error('Failed to delete claim')
+        toast.error(result.error || 'Failed to delete claim')
       }
+    } catch (error) {
+      toast.error('Failed to delete claim')
+      console.error(error)
+    } finally {
+      setActionInFlight(null)
       setIsDeleteDialogOpen(false)
-    })
+    }
+  }
+
+  const handleSubmitClaim = async () => {
+    try {
+      setActionInFlight('submit')
+      const result = await updateClaimStatus(claim.id, 'submitted')
+      if (result.success) {
+        toast.success('Claim submitted successfully')
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to submit claim')
+      }
+    } catch (error) {
+      toast.error('Failed to submit claim')
+      console.error(error)
+    } finally {
+      setActionInFlight(null)
+      setIsSubmitDialogOpen(false)
+    }
+  }
+
+  const handleRevertClaim = async () => {
+    try {
+      setActionInFlight('revert')
+      const result = await updateClaimStatus(claim.id, 'draft')
+      if (result.success) {
+        toast.success('Claim returned to draft')
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to revert claim')
+      }
+    } catch (error) {
+      toast.error('Failed to revert claim')
+      console.error(error)
+    } finally {
+      setActionInFlight(null)
+      setIsRevertDialogOpen(false)
+    }
   }
 
   return (
@@ -85,12 +131,34 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
 
         {claim.status === 'draft' && (
           <>
-            <DropdownMenuItem asChild>
-              <Link href={`/claims/${claim.id}/submit`} className="flex items-center gap-2 cursor-pointer text-primary">
-                <Send className="h-4 w-4" />
-                <span>Submit Claim</span>
-              </Link>
-            </DropdownMenuItem>
+            <AlertDialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem
+                  onSelect={(e) => e.preventDefault()}
+                  className="flex items-center gap-2 cursor-pointer text-primary"
+                >
+                  <Send className="h-4 w-4" />
+                  <span>Submit Claim</span>
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Submit Claim</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Ready to submit this claim for approval? You can still make changes until it is approved.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleSubmitClaim}
+                    disabled={actionInFlight === 'submit'}
+                  >
+                    {actionInFlight === 'submit' ? 'Submitting...' : 'Confirm Submit'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             
             <DropdownMenuSeparator />
             
@@ -112,10 +180,44 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDelete}
-                    disabled={isPending}
+                    disabled={actionInFlight === 'delete'}
                     variant="destructive"
                   >
-                    {isPending ? 'Deleting...' : 'Confirm Delete'}
+                    {actionInFlight === 'delete' ? 'Deleting...' : 'Confirm Delete'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        )}
+
+        {claim.status === 'submitted' && (
+          <>
+            <DropdownMenuSeparator />
+            <AlertDialog open={isRevertDialogOpen} onOpenChange={setIsRevertDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem
+                  onSelect={(e) => e.preventDefault()}
+                  className="flex items-center gap-2 cursor-pointer text-muted-foreground"
+                >
+                  <Undo2 className="h-4 w-4" />
+                  <span>Return to Draft</span>
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Return Claim to Draft</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will move the claim back to draft so you can make more changes. Continue?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleRevertClaim}
+                    disabled={actionInFlight === 'revert'}
+                  >
+                    {actionInFlight === 'revert' ? 'Reverting...' : 'Confirm'}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
