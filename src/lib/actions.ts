@@ -526,7 +526,10 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
     }
 
     // 计算新的总金额
-    const totalAmount = expenseItems.reduce((sum: number, item: any) => sum + item.sgdAmount, 0)
+    const totalAmount = expenseItems.reduce((sum: number, item: any) => {
+      const sgd = Number.parseFloat(String(item.sgdAmount))
+      return sum + (Number.isFinite(sgd) ? sgd : 0)
+    }, 0)
 
     // 在数据库事务中处理更新
     const result = await db.transaction(async (tx) => {
@@ -539,7 +542,23 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
         })
         .where(eq(claims.id, claimId))
 
-      // 2. 删除旧的申请项目
+      // 2. 删除旧的申请项目和相关附件
+      // 首先获取要删除的claimItems的ID列表
+      const itemsToDelete = await tx
+        .select({ id: claimItems.id })
+        .from(claimItems)
+        .where(eq(claimItems.claimId, claimId))
+
+      if (itemsToDelete.length > 0) {
+        const itemIds = itemsToDelete.map(item => item.id)
+
+        // 先删除这些claimItems相关的附件
+        await tx
+          .delete(attachment)
+          .where(inArray(attachment.claimItemId, itemIds))
+      }
+
+      // 然后删除claimItems本身
       await tx.delete(claimItems).where(eq(claimItems.claimId, claimId))
 
       // 3. 获取映射数据
@@ -550,23 +569,51 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
       const currencyMap = Object.fromEntries(currencies.map(c => [c.code, c.id]))
 
       // 4. 插入新的申请项目
-      const claimItemsData = expenseItems.map((item: any) => {
-        const [month, day] = item.date.split('/')
+      const claimItemsData = expenseItems.map((item: any, index: number) => {
+        const [month = '0', day = '0'] = (item.date || '').split('/').map((part: string) => part.trim())
         const currentYear = new Date().getFullYear()
-        const itemDate = new Date(currentYear, parseInt(month) - 1, parseInt(day))
+        const parsedMonth = parseInt(month, 10)
+        const parsedDay = parseInt(day, 10)
+        const itemDate = new Date(currentYear, Number.isNaN(parsedMonth) ? 0 : parsedMonth - 1, Number.isNaN(parsedDay) ? 1 : parsedDay)
+
+        const rawItemNo = (item.itemNo || '').split('–')[0].split('-')[0].trim()
+        const itemTypeId = itemTypeMap[rawItemNo]
+        if (!itemTypeId) {
+          throw new Error(`无效的费用项目编号 (index ${index}): ${item.itemNo}`)
+        }
+
+        const rawCurrency = (item.currency || '').split(' ')[0].trim()
+        const currencyId = currencyMap[item.currency] ?? currencyMap[rawCurrency]
+        if (!currencyId) {
+          throw new Error(`无效的货币代码 (index ${index}): ${item.currency}`)
+        }
+
+        const amountNum = Number.parseFloat(String(item.amount))
+        const rateNum = Number.parseFloat(String(item.rate))
+        const sgdAmountNum = Number.parseFloat(String(item.sgdAmount))
+
+        if (!Number.isFinite(amountNum)) {
+          throw new Error(`金额格式不正确 (index ${index}): ${item.amount}`)
+        }
+        if (!Number.isFinite(rateNum)) {
+          throw new Error(`汇率格式不正确 (index ${index}): ${item.rate}`)
+        }
+        if (!Number.isFinite(sgdAmountNum)) {
+          throw new Error(`SGD金额格式不正确 (index ${index}): ${item.sgdAmount}`)
+        }
 
         return {
           claimId,
           employeeId,
           date: itemDate,
-          type: itemTypeMap[item.itemNo],
-          note: item.note,
-          details: item.details,
-          evidenceNo: item.evidenceNo,
-          currencyId: currencyMap[item.currency],
-          amount: item.amount.toString(),
-          rate: item.rate.toString(),
-          sgdAmount: item.sgdAmount.toString(),
+          type: itemTypeId,
+          note: item.note ?? null,
+          details: item.details ?? null,
+          evidenceNo: item.evidenceNo ?? null,
+          currencyId,
+          amount: amountNum.toString(),
+          rate: rateNum.toString(),
+          sgdAmount: sgdAmountNum.toString(),
         }
       })
 
@@ -589,8 +636,7 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
     console.error('更新申请失败:', error)
     return {
       success: false,
-      error: '更新申请失败',
-      details: error instanceof Error ? error.message : '未知错误'
+      error: error instanceof Error ? error.message : '更新申请失败'
     }
   }
 }
