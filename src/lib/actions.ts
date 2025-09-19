@@ -867,9 +867,11 @@ export async function updateClaimStatus(claimId: number, newStatus: 'draft' | 's
 
     // 状态变更规则验证
     if (!isAdmin) {
-      // 非管理员只能将draft状态改为submitted
-      if (existingClaim.status !== 'draft' || newStatus !== 'submitted') {
-        return { success: false, error: '只能提交草稿状态的申请' }
+      const isSubmitDraft = existingClaim.status === 'draft' && newStatus === 'submitted'
+      const isRevertPending = existingClaim.status === 'submitted' && newStatus === 'draft'
+
+      if (!isSubmitDraft && !isRevertPending) {
+        return { success: false, error: '无权执行此状态变更' }
       }
     } else {
       // 管理员可以设置为approved/rejected，但需要验证状态值

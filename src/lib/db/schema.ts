@@ -35,8 +35,9 @@ export const userEmployeeBind = pgTable('user_employee_bindings', {
 
 export const itemType = pgTable('item_type', {
   id: serial('id').primaryKey(),
-  name: varchar('name').notNull(),
-  no: varchar('no', { length: 10 }).notNull().unique(),
+  name: varchar('name').notNull(),  // 这是 GL Code Description
+  no: varchar('no', { length: 10 }).notNull().unique(), // 这是 Xero Code
+  remark: varchar('remark', { length: 200 }),
 })
 
 export const currency = pgTable('currency', {

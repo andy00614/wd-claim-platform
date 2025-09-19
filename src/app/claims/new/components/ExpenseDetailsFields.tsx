@@ -1,7 +1,8 @@
 'use client'
 
+import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, Check, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem
+} from '@/components/ui/command'
 
 export interface ExpenseItemTypeOption {
   id: number
@@ -88,6 +96,18 @@ export default function ExpenseDetailsFields({
   const itemTypeLabel = itemTypes.find(type => type.no === itemNo)
   const currencyLabel = currencies.find(cur => cur.code === currency)
 
+  const [itemPopoverOpen, setItemPopoverOpen] = useState(false)
+
+  const itemDisplayLabel = useMemo(() => {
+    if (itemTypeLabel) {
+      return `${itemTypeLabel.no} – ${itemTypeLabel.name}`
+    }
+    if (itemNo) {
+      return itemNo
+    }
+    return 'Select item type'
+  }, [itemTypeLabel, itemNo])
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Date & Item */}
@@ -127,18 +147,49 @@ export default function ExpenseDetailsFields({
         <div className="sm:col-span-9">
           <Label className="text-sm font-semibold mb-1">Item No</Label>
           {mode === 'edit' ? (
-            <Select value={itemNo || ''} onValueChange={(value) => onItemNoChange?.(value)}>
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Select item type" />
-              </SelectTrigger>
-              <SelectContent>
-                {itemTypes.map(type => (
-                  <SelectItem key={type.id} value={type.no} className="cursor-pointer">
-                    <span className="font-medium">{type.no}</span> - {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={itemPopoverOpen} onOpenChange={setItemPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={itemPopoverOpen}
+                  className="w-full justify-between"
+                >
+                  <span className={cn('truncate text-left', !itemNo && 'text-muted-foreground')}>
+                    {itemDisplayLabel}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[min(360px,calc(100vw-2rem))] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search item code or name..." className="h-9" />
+                  <CommandEmpty>No item found.</CommandEmpty>
+                  <CommandGroup className="max-h-60 overflow-y-auto">
+                    {itemTypes.map(type => (
+                      <CommandItem
+                        key={type.id}
+                        value={`${type.no} ${type.name}`}
+                        onSelect={() => {
+                          onItemNoChange?.(type.no)
+                          setItemPopoverOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Check
+                          className={cn(
+                            'h-4 w-4 text-primary transition-opacity',
+                            itemNo === type.no ? 'opacity-100' : 'opacity-0'
+                          )}
+                        />
+                        <span className="font-medium">{type.no}</span>
+                        <span className="text-muted-foreground">– {type.name}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
           ) : (
             <p className="text-sm p-2 bg-gray-50 rounded border min-h-[40px] flex items-center">
               {itemTypeLabel ? `${itemTypeLabel.no} - ${itemTypeLabel.name}` : itemNo || 'Not detected'}
@@ -156,7 +207,7 @@ export default function ExpenseDetailsFields({
               <SelectTrigger>
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60 overflow-y-auto">
                 {currencies.map(cur => (
                   <SelectItem key={cur.id} value={cur.code}>
                     {cur.code}
@@ -242,4 +293,3 @@ export default function ExpenseDetailsFields({
     </div>
   )
 }
-
