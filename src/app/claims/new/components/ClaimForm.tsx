@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useActionState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { ExpenseItem } from '../page'
-import { submitClaim, uploadClaimFiles, uploadItemAttachments, saveDraft } from '@/lib/actions'
+import { submitClaim, uploadClaimFiles, uploadItemAttachments, saveDraft, updateClaim } from '@/lib/actions'
 import ExpenseForm from './ExpenseForm'
 import CurrentItems from './CurrentItems'
 import { useRouter } from 'next/navigation'
@@ -29,15 +29,29 @@ interface ClaimFormProps {
   currencies: Currency[]
   exchangeRates: Record<string, number>
   employeeId: number
+  mode?: 'create' | 'edit'
+  initialItems?: ExpenseItem[]
+  claimId?: number
 }
 
-export default function ClaimForm({ itemTypes, currencies, exchangeRates, employeeId }: ClaimFormProps) {
-  const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([])
+export default function ClaimForm({
+  itemTypes,
+  currencies,
+  exchangeRates,
+  employeeId,
+  mode = 'create',
+  initialItems = [],
+  claimId
+}: ClaimFormProps) {
+  const isEditMode = mode === 'edit' && typeof claimId === 'number'
+  const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>(initialItems)
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
-  const [actionType, setActionType] = useState<'submit' | 'draft' | null>(null)
+  const [actionType, setActionType] = useState<'submit' | 'draft' | 'update' | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [submitState, submitFormAction] = useActionState(submitClaim, { success: false, error: '' })
   const [draftState, draftFormAction] = useActionState(saveDraft, { success: false, error: '' })
+  const updateActionHandler = updateClaim.bind(null, claimId ?? 0)
+  const [updateState, updateFormAction] = useActionState(updateActionHandler, { success: false, error: '' })
   const router = useRouter()
 
   const addExpenseItem = (item: Omit<ExpenseItem, 'id'>) => {
@@ -48,12 +62,19 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
     setExpenseItems(prev => [...prev, newItem])
   }
 
+  useEffect(() => {
+    if (isEditMode) {
+      setExpenseItems(initialItems)
+    }
+  }, [isEditMode, initialItems])
+
   const removeExpenseItem = (id: number) => {
     setExpenseItems(prev => prev.filter(item => item.id !== id))
   }
 
   // 处理提交成功后的逻辑
   useEffect(() => {
+    if (isEditMode) return
     const currentState = actionType === 'submit' ? submitState : draftState
     
     if (currentState.success && currentState.data?.claimId && currentState.data?.insertedItems) {
@@ -106,7 +127,23 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
 
       handleFileUpload()
     }
-  }, [submitState.success, draftState.success, submitState.data, draftState.data, attachedFiles, expenseItems, actionType])
+  }, [submitState.success, draftState.success, submitState.data, draftState.data, attachedFiles, expenseItems, actionType, isEditMode])
+
+  useEffect(() => {
+    if (!isEditMode) return
+
+    if (updateState.success && updateState.data?.claimId) {
+      toast.success(`Claim updated! ID: CL-2024-${updateState.data.claimId.toString().padStart(4, '0')}`)
+      setIsLoading(false)
+      router.push(`/claims/${updateState.data.claimId}`)
+      return
+    }
+
+    if (updateState.error) {
+      toast.error(updateState.error)
+      setIsLoading(false)
+    }
+  }, [isEditMode, updateState.success, updateState.data?.claimId, updateState.error, router])
 
   const totalSGD = expenseItems.reduce((sum, item) => sum + item.sgdAmount, 0)
 
@@ -126,57 +163,89 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
 
   // 处理按钮点击
   const handleSubmitClick = () => {
-    setIsLoading(true);
-    (document.getElementById('submit-form') as HTMLFormElement)?.requestSubmit()
+    if (isEditMode) {
+      setActionType('update')
+      setIsLoading(true)
+      ;(document.getElementById('update-form') as HTMLFormElement)?.requestSubmit()
+      return
+    }
+
+    setIsLoading(true)
+    ;(document.getElementById('submit-form') as HTMLFormElement)?.requestSubmit()
   }
 
   const handleDraftClick = () => {
-    setIsLoading(true);
-    (document.getElementById('draft-form') as HTMLFormElement)?.requestSubmit()
+    if (isEditMode) return
+    setIsLoading(true)
+    ;(document.getElementById('draft-form') as HTMLFormElement)?.requestSubmit()
   }
 
-  const currentError = submitState.error || draftState.error
+  const currentError = isEditMode ? updateState.error : (submitState.error || draftState.error)
 
   return (
     <div>
       {/* Hidden forms for server actions */}
-      <form id="submit-form" action={handleSubmit} className="hidden">
-        <input type="hidden" name="employeeId" value={employeeId} />
-        <input 
-          type="hidden" 
-          name="expenseItems" 
-          value={JSON.stringify(
-            expenseItems.map(item => ({
-              date: item.date,
-              itemNo: item.itemNo,
-              details: item.details,
-              currency: item.currency,
-              amount: item.amount,
-              rate: item.rate,
-              sgdAmount: item.sgdAmount,
-            }))
-          )} 
-        />
-      </form>
+      {!isEditMode && (
+        <>
+          <form id="submit-form" action={handleSubmit} className="hidden">
+            <input type="hidden" name="employeeId" value={employeeId} />
+            <input 
+              type="hidden" 
+              name="expenseItems" 
+              value={JSON.stringify(
+                expenseItems.map(item => ({
+                  date: item.date,
+                  itemNo: item.itemNo,
+                  details: item.details,
+                  currency: item.currency,
+                  amount: item.amount,
+                  rate: item.rate,
+                  sgdAmount: item.sgdAmount,
+                }))
+              )} 
+            />
+          </form>
 
-      <form id="draft-form" action={handleSaveDraft} className="hidden">
-        <input type="hidden" name="employeeId" value={employeeId} />
-        <input 
-          type="hidden" 
-          name="expenseItems" 
-          value={JSON.stringify(
-            expenseItems.map(item => ({
-              date: item.date,
-              itemNo: item.itemNo,
-              details: item.details,
-              currency: item.currency,
-              amount: item.amount,
-              rate: item.rate,
-              sgdAmount: item.sgdAmount,
-            }))
-          )} 
-        />
-      </form>
+          <form id="draft-form" action={handleSaveDraft} className="hidden">
+            <input type="hidden" name="employeeId" value={employeeId} />
+            <input 
+              type="hidden" 
+              name="expenseItems" 
+              value={JSON.stringify(
+                expenseItems.map(item => ({
+                  date: item.date,
+                  itemNo: item.itemNo,
+                  details: item.details,
+                  currency: item.currency,
+                  amount: item.amount,
+                  rate: item.rate,
+                  sgdAmount: item.sgdAmount,
+                }))
+              )} 
+            />
+          </form>
+        </>
+      )}
+
+      {isEditMode && (
+        <form id="update-form" action={updateFormAction} className="hidden">
+          <input 
+            type="hidden" 
+            name="expenseItems" 
+            value={JSON.stringify(
+              expenseItems.map(item => ({
+                date: item.date,
+                itemNo: item.itemNo,
+                details: item.details,
+                currency: item.currency,
+                amount: item.amount,
+                rate: item.rate,
+                sgdAmount: item.sgdAmount,
+              }))
+            )} 
+          />
+        </form>
+      )}
 
       {/* 费用详情表单 */}
       <ExpenseForm 
@@ -217,18 +286,20 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
         >
           Cancel
         </Button>
-        
-        <Button 
-          type="button"
-          variant="secondary"
-          size="lg"
-          onClick={handleDraftClick}
-          disabled={expenseItems.length === 0 || isLoading}
-          className="w-full sm:w-auto"
-        >
-          {isLoading && actionType === 'draft' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isLoading && actionType === 'draft' ? 'Saving...' : 'Save as Draft'}
-        </Button>
+
+        {!isEditMode && (
+          <Button 
+            type="button"
+            variant="secondary"
+            size="lg"
+            onClick={handleDraftClick}
+            disabled={expenseItems.length === 0 || isLoading}
+            className="w-full sm:w-auto"
+          >
+            {isLoading && actionType === 'draft' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && actionType === 'draft' ? 'Saving...' : 'Save as Draft'}
+          </Button>
+        )}
         
         <Button 
           type="button"
@@ -237,8 +308,11 @@ export default function ClaimForm({ itemTypes, currencies, exchangeRates, employ
           disabled={expenseItems.length === 0 || isLoading}
           className="w-full sm:w-auto"
         >
-          {isLoading && actionType === 'submit' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isLoading && actionType === 'submit' ? 'Submitting...' : 'Submit Claim'}
+          {isLoading && actionType === 'submit' && !isEditMode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isLoading && actionType === 'update' && isEditMode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isEditMode
+            ? (isLoading && actionType === 'update' ? 'Updating...' : 'Update Claim')
+            : (isLoading && actionType === 'submit' ? 'Submitting...' : 'Submit Claim')}
         </Button>
       </div>
     </div>

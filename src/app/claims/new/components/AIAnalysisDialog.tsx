@@ -72,12 +72,32 @@ export default function AIAnalysisDialog({
     return (parsedSgd / parsedAmount).toFixed(4)
   }
 
-  // 同步最新的分析结果到可编辑状态
+  // 同步最新的分析结果到可编辑状态，并补全缺失的汇率/SGD金额
   useEffect(() => {
-    setEditableData(analysisResult || {})
-    setEditableDate(parseDateString(analysisResult?.date))
+    if (!analysisResult) {
+      setEditableData({})
+      setEditableDate(null)
+      setIsEditing(false)
+      return
+    }
+
+    const nextData: ExpenseAnalysisResult = { ...analysisResult }
+
+    const matchedRate = nextData.currency ? exchangeRates[nextData.currency] : undefined
+    const hasAmount = typeof nextData.amount === 'string' && nextData.amount.trim() !== ''
+
+    if (hasAmount && typeof matchedRate === 'number' && (!nextData.forexRate || nextData.forexRate.trim() === '')) {
+      nextData.forexRate = matchedRate.toFixed(4)
+    }
+
+    if (hasAmount && nextData.forexRate && (!nextData.sgdAmount || nextData.sgdAmount.trim() === '')) {
+      nextData.sgdAmount = calculateSgdAmount(nextData.amount, nextData.forexRate)
+    }
+
+    setEditableData(nextData)
+    setEditableDate(parseDateString(nextData.date))
     setIsEditing(false)
-  }, [analysisResult])
+  }, [analysisResult, exchangeRates])
 
   const handleConfirm = () => {
     onConfirm(editableData)
@@ -265,8 +285,8 @@ export default function AIAnalysisDialog({
                   />
 
                   {/* 提示信息 */}
-                  <div className="p-2 bg-blue-50 border border-blue-200 rounded">
-                    <p className="text-xs text-blue-700">
+                  <div className="rounded border-primary bg-primary p-2">
+                    <p className="text-xs text-white font-semibold">
                       💡 Exchange rate and SGD amount will be calculated automatically based on the currency.
                     </p>
                   </div>

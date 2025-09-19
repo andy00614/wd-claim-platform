@@ -521,8 +521,8 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
       return { success: false, error: '无权编辑此申请' }
     }
 
-    if (existingClaim.status !== 'submitted') {
-      return { success: false, error: '只能编辑待审核状态的申请' }
+    if (!['submitted', 'draft'].includes(existingClaim.status)) {
+      return { success: false, error: '只能编辑待审核或草稿状态的申请' }
     }
 
     // 计算新的总金额

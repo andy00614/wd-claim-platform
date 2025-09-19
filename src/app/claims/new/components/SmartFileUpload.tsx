@@ -1,11 +1,19 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ExpenseAnalysisResult, AnalysisApiResponse } from './types'
 import AIAnalysisDialog from './AIAnalysisDialog'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Brain, Loader2 } from 'lucide-react'
+import {
+  Brain,
+  Loader2,
+  UploadCloud,
+  Camera,
+  Image as ImageIcon,
+  FileText,
+  Paperclip
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ItemTypeOption {
@@ -46,6 +54,21 @@ export default function SmartFileUpload({
   const [currentAnalyzingFile, setCurrentAnalyzingFile] = useState<File | null>(null)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
 
+  const previewUrls = useMemo(() => (
+    files.map(file => {
+      const isPreviewable = file.type.startsWith('image/') || file.type === 'application/pdf'
+      return isPreviewable ? URL.createObjectURL(file) : null
+    })
+  ), [files])
+
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(url => {
+        if (url) URL.revokeObjectURL(url)
+      })
+    }
+  }, [previewUrls])
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || [])
     addFiles(selectedFiles)
@@ -67,20 +90,16 @@ export default function SmartFileUpload({
   const addFiles = async (newFiles: File[]) => {
     const validFiles = newFiles.filter(file => {
       const maxSize = 10 * 1024 * 1024 // 10MB
-      const allowedTypes = [
-        'image/jpeg', 'image/png', 'image/jpg',
-        'application/pdf',
-        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      ]
+      const isImage = file.type.startsWith('image/')
+      const isPdf = file.type === 'application/pdf'
 
       if (file.size > maxSize) {
         toast.error(`File "${file.name}" is too large. Max size is 10MB`)
         return false
       }
 
-      if (!allowedTypes.includes(file.type)) {
-        toast.error(`File format "${file.type}" is not supported`)
+      if (!isImage && !isPdf) {
+        toast.error(`File format "${file.type || 'unknown'}" is not supported. Please upload images or PDF files.`)
         return false
       }
 
@@ -101,6 +120,24 @@ export default function SmartFileUpload({
       await analyzeFile(analyzableFile)
     }
   }
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      const items = Array.from(event.clipboardData?.items ?? [])
+      const pastedFiles = items
+        .filter(item => item.kind === 'file')
+        .map(item => item.getAsFile())
+        .filter((file): file is File => Boolean(file))
+
+      if (pastedFiles.length === 0) return
+
+      event.preventDefault()
+      void addFiles(pastedFiles)
+    }
+
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [addFiles])
 
   const analyzeFile = async (file: File) => {
     setIsAnalyzing(true)
@@ -188,20 +225,29 @@ export default function SmartFileUpload({
     <>
       <div className="bg-white border border-gray-300 p-4 mb-6">
         <h3 className="text-md font-semibold mb-4 pb-2 border-b border-gray-200 flex items-center gap-2">
-          <Brain className="h-4 w-4 text-blue-600" />
+          <Brain className="h-4 w-4 text-primary" />
           Smart File Upload with AI Analysis
         </h3>
 
         {/* 分析状态显示 */}
         {isAnalyzing && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center gap-2 text-blue-700">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm font-medium">Analyzing {currentAnalyzingFile?.name}...</span>
-            </div>
-            <div className="mt-2 space-y-2">
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-3/4" />
+          <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 text-primary">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              </span>
+              <div className="flex-1 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                  <p className="text-sm font-medium text-primary">
+                    Analyzing {currentAnalyzingFile?.name}
+                  </p>
+                  <span className="text-xs text-primary/80">This may take a few seconds…</span>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-2.5 w-full bg-primary/10" />
+                  <Skeleton className="h-2.5 w-3/4 bg-primary/5" />
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -216,23 +262,24 @@ export default function SmartFileUpload({
             ref={fileInputRef}
             type="file"
             multiple
-            accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx"
+            accept="image/*,application/pdf"
             onChange={handleFileSelect}
             className="hidden"
           />
 
-          <Brain className="h-8 w-8 text-blue-600 mx-auto mb-3" />
+          <UploadCloud className="mx-auto mb-3 h-8 w-8 text-primary" />
 
           <Button
             type="button"
+            variant="outline"
             onClick={() => fileInputRef.current?.click()}
             disabled={isAnalyzing}
             className="gap-2"
           >
             {isAnalyzing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
             ) : (
-              <Brain className="h-4 w-4" />
+              <UploadCloud className="h-4 w-4 text-primary" />
             )}
             Choose Files
           </Button>
@@ -241,12 +288,13 @@ export default function SmartFileUpload({
             or drag and drop files here
           </p>
 
-          <p className="text-xs text-gray-400 mt-1">
-            📷 Images & PDFs will be automatically analyzed by AI
+          <p className="mt-1 flex items-center justify-center gap-1 text-xs text-gray-400">
+            <Camera className="h-3.5 w-3.5 text-primary" />
+            <span>Images & PDFs will be automatically analyzed by AI</span>
           </p>
 
           <p className="text-xs text-gray-400">
-            Accepted formats: JPG, PNG, PDF, DOC, XLS (Max 10MB)
+            Accepted formats: Images (JPG, PNG, HEIC, etc.) and PDF (Max 10MB)
           </p>
         </div>
 
@@ -261,18 +309,23 @@ export default function SmartFileUpload({
                 return (
                   <div key={index} className="flex items-center justify-between p-3 border border-gray-300 rounded-lg hover:bg-gray-50">
                     <div className="flex items-center gap-3">
-                      <span className="text-base">
-                        {file.type.startsWith('image/') ? '🖼️' :
-                         file.type === 'application/pdf' ? '📄' : '📎'}
-                      </span>
+                      <div className="text-base text-primary">
+                        {file.type.startsWith('image/') ? (
+                          <ImageIcon className="h-5 w-5" />
+                        ) : file.type === 'application/pdf' ? (
+                          <FileText className="h-5 w-5" />
+                        ) : (
+                          <Paperclip className="h-5 w-5" />
+                        )}
+                      </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">{file.name}</span>
                           {isAnalyzable && (
-                            <Brain className="h-3 w-3 text-blue-600" title="AI Analyzable" />
+                            <Brain className="h-3 w-3 text-primary"/>
                           )}
                           {isCurrentlyAnalyzing && (
-                            <Loader2 className="h-3 w-3 animate-spin text-blue-600" />
+                            <Loader2 className="h-3 w-3 animate-spin text-primary" />
                           )}
                         </div>
                         <span className="text-xs text-gray-600">
@@ -282,6 +335,18 @@ export default function SmartFileUpload({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {previewUrls[index] && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          asChild
+                        >
+                          <a href={previewUrls[index] ?? undefined} target="_blank" rel="noopener noreferrer">
+                            Preview
+                          </a>
+                        </Button>
+                      )}
                       {isAnalyzable && !isCurrentlyAnalyzing && (
                         <Button
                           variant="outline"
@@ -290,7 +355,7 @@ export default function SmartFileUpload({
                           disabled={isAnalyzing}
                           className="gap-1 text-xs"
                         >
-                          <Brain className="h-3 w-3" />
+                          <Brain className="h-3 w-3 text-primary" />
                           Analyze
                         </Button>
                       )}

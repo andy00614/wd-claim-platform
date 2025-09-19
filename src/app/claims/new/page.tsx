@@ -1,4 +1,4 @@
-import { getFormInitData, getCurrentEmployee } from '@/lib/actions'
+import { getFormInitData, getCurrentEmployee, getClaimDetails } from '@/lib/actions'
 import ClaimForm from './components/ClaimForm'
 
 export interface ExpenseItem {
@@ -13,11 +13,18 @@ export interface ExpenseItem {
   attachments?: File[]
 }
 
-export default async function NewClaimPage() {
-  // 在服务器端获取初始数据和用户信息
-  const [initData, currentEmployee] = await Promise.all([
+interface NewClaimPageProps {
+  searchParams?: { [key: string]: string | string[] | undefined }
+}
+
+export default async function NewClaimPage({ searchParams }: NewClaimPageProps) {
+  const claimIdParam = typeof searchParams?.claimId === 'string' ? searchParams?.claimId : Array.isArray(searchParams?.claimId) ? searchParams?.claimId[0] : undefined
+  const claimId = claimIdParam ? parseInt(claimIdParam, 10) : null
+
+  const [initData, currentEmployee, claimDetails] = await Promise.all([
     getFormInitData(),
-    getCurrentEmployee()
+    getCurrentEmployee(),
+    claimId ? getClaimDetails(claimId) : Promise.resolve(null)
   ])
   
   if (!initData.success || !initData.data) {
@@ -45,12 +52,47 @@ export default async function NewClaimPage() {
     )
   }
 
+  let initialItems: ExpenseItem[] | undefined
+  if (claimDetails && typeof claimId === 'number') {
+    if (!claimDetails.success || !claimDetails.data) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-red-600 mb-4">Failed to load claim</h1>
+            <p className="text-gray-600">{claimDetails.error}</p>
+            <a href="/claims" className="text-blue-600 hover:underline mt-2 block">
+              Back to Claims
+            </a>
+          </div>
+        </div>
+      )
+    }
+
+    initialItems = claimDetails.data.items.map((item, index) => {
+      const itemDate = item.date ? new Date(item.date) : new Date()
+      return {
+        id: Date.now() + index,
+        date: `${(itemDate.getMonth() + 1).toString().padStart(2, '0')}/${itemDate.getDate().toString().padStart(2, '0')}`,
+        itemNo: item.itemTypeNo,
+        details: item.details || '',
+        currency: item.currencyCode,
+        amount: parseFloat(item.amount),
+        rate: parseFloat(item.rate),
+        sgdAmount: parseFloat(item.sgdAmount),
+        attachments: []
+      }
+    })
+  }
+
   return (
     <ClaimForm 
       itemTypes={initData.data.itemTypes}
       currencies={initData.data.currencies}
       exchangeRates={initData.data.exchangeRates}
       employeeId={currentEmployee.data.employee.employeeId}
+      mode={claimId ? 'edit' : 'create'}
+      initialItems={initialItems}
+      claimId={claimId ?? undefined}
     />
   )
 }

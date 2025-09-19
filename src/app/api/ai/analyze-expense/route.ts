@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // 使用 AI SDK 的 generateObject 进行多模态分析
     const result = await generateObject({
-      model: openai('gpt-4o'),
+      model: 'google/gemini-2.5-flash',
       messages: [
         {
           role: 'user',
