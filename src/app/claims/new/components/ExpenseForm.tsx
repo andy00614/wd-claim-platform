@@ -2,19 +2,14 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { ExpenseItem } from '../page'
-import ItemFileUpload from './ItemFileUpload'
+import SmartFileUpload from './SmartFileUpload'
+import { ExpenseAnalysisResult } from './types'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
 import { toast } from "sonner"
+import ExpenseDetailsFields from './ExpenseDetailsFields'
 
 interface ItemType {
   id: number
@@ -105,6 +100,64 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     }))
   }
 
+  // 处理AI分析结果 - 智能合并策略，复用现有逻辑
+  const handleAIDataExtracted = (aiData: ExpenseAnalysisResult) => {
+    console.log('AI data received:', aiData)
+
+    // 智能合并：只填充当前为空的字段，保护用户已输入的数据
+    const newFormData = { ...formData }
+    let newDate = date
+
+    // 日期优先使用AI识别的结果
+    if (aiData.date) {
+      try {
+        const [month, day] = aiData.date.split('/')
+        const currentYear = new Date().getFullYear()
+        newDate = new Date(currentYear, parseInt(month) - 1, parseInt(day))
+        setDate(newDate)
+      } catch (error) {
+        console.warn('Failed to parse AI date:', aiData.date)
+      }
+    }
+
+    // 其他字段：仅在当前为空时填充
+    if (!newFormData.itemNo && aiData.itemNo) {
+      newFormData.itemNo = aiData.itemNo
+    }
+
+    if (!newFormData.details && aiData.details) {
+      newFormData.details = aiData.details
+    }
+
+    if (!newFormData.currency && aiData.currency) {
+      newFormData.currency = aiData.currency
+    }
+
+    if (!newFormData.amount && aiData.amount) {
+      newFormData.amount = aiData.amount
+    }
+
+    // 如果AI提供了汇率和SGD金额，直接使用
+    if (aiData.forexRate) {
+      newFormData.forexRate = aiData.forexRate
+    }
+
+    if (aiData.sgdAmount) {
+      newFormData.sgdAmount = aiData.sgdAmount
+    }
+
+    // 如果AI没有提供汇率但提供了货币和金额，使用现有逻辑计算
+    if (aiData.currency && aiData.amount && !aiData.forexRate) {
+      const newRate = (exchangeRates[aiData.currency] || 1.0000).toFixed(4)
+      const sgdAmount = calculateSgdAmount(aiData.amount, newRate)
+
+      newFormData.forexRate = newRate
+      newFormData.sgdAmount = sgdAmount
+    }
+
+    setFormData(newFormData)
+  }
+
   const handleAddItem = () => {
     if (!date || !formData.itemNo || !formData.amount) {
       toast.error('请填写所有必填字段')
@@ -145,118 +198,35 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       </CardHeader>
       <CardContent className="space-y-4 sm:space-y-6">
         {/* 第一行：日期、项目类型 */}
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-          <div className="sm:col-span-3">
-            <Label className="text-sm font-semibold mb-1">Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'MM/dd/yyyy') : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(date) => date && setDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+        <ExpenseDetailsFields
+          mode="edit"
+          date={date}
+          onDateChange={(nextDate) => nextDate && setDate(nextDate)}
+          itemNo={formData.itemNo}
+          onItemNoChange={(value) => setFormData(prev => ({ ...prev, itemNo: value }))}
+          itemTypes={itemTypes}
+          currency={formData.currency}
+          onCurrencyChange={handleCurrencyChange}
+          currencies={currencies}
+          amount={formData.amount}
+          onAmountChange={handleAmountChange}
+          forexRate={formData.forexRate}
+          onForexRateChange={handleForexRateChange}
+          sgdAmount={formData.sgdAmount}
+          onSgdAmountChange={handleSgdAmountChange}
+          details={formData.details}
+          onDetailsChange={(value) => setFormData(prev => ({ ...prev, details: value }))}
+        />
 
-          <div className="sm:col-span-9">
-            <Label className="text-sm font-semibold mb-1">Item No</Label>
-            <Select value={formData.itemNo} onValueChange={(value) => setFormData({ ...formData, itemNo: value })}>
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Select item type" />
-              </SelectTrigger>
-              <SelectContent>
-                {itemTypes.map(type => (
-                  <SelectItem key={type.id} value={type.no} className="cursor-pointer">
-                    <span className="font-medium">{type.no}</span> - {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* 金额行 */}
-        <div className="grid grid-cols-2 sm:grid-cols-12 gap-4">
-          <div className="sm:col-span-2">
-            <Label className="text-sm font-semibold mb-1">Currency</Label>
-            <Select value={formData.currency} onValueChange={handleCurrencyChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {currencies.map(currency => (
-                  <SelectItem key={currency.id} value={currency.code}>
-                    {currency.code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="sm:col-span-3">
-            <Label className="text-sm font-semibold mb-1">Amount</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.amount}
-              onChange={(e) => handleAmountChange(e.target.value)}
-            />
-          </div>
-
-          <div className="col-span-2 sm:col-span-2">
-            <Label className="text-sm font-semibold mb-1">Rate</Label>
-            <Input
-              type="number"
-              step="0.0001"
-              value={formData.forexRate}
-              onChange={(e) => handleForexRateChange(e.target.value)}
-            />
-          </div>
-
-          <div className="col-span-2 sm:col-span-5">
-            <Label className="text-sm font-semibold mb-1">SGD Amount</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.sgdAmount}
-              onChange={(e) => handleSgdAmountChange(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* 详细说明 */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold mb-1">
-            <span className="hidden sm:inline">Details/Reason (Please Indicate Restaurant name or Supplier Name)</span>
-            <span className="sm:hidden">Details/Reason</span>
-          </Label>
-          <Textarea
-            placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"
-            className="resize-vertical min-h-[80px]"
-            value={formData.details}
-            onChange={(e) => setFormData({ ...formData, details: e.target.value })}
-          />
-        </div>
-
-        {/* 文件上传和添加按钮 */}
+        {/* 智能文件上传 */}
         <div className="flex-1">
-          <ItemFileUpload
+          <SmartFileUpload
             files={attachments}
             onFilesChange={setAttachments}
+            onAIDataExtracted={handleAIDataExtracted}
+            itemTypes={itemTypes}
+            currencies={currencies}
+            exchangeRates={exchangeRates}
           />
         </div>
 
