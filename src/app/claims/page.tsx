@@ -154,41 +154,62 @@ export default async function ClaimsPage() {
             {/* Desktop Table Layout */}
             <div className="hidden sm:block rounded-md border overflow-hidden">
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="text-sm">
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[100px]">Claim ID</TableHead>
-                      <TableHead className="min-w-[80px]">Date</TableHead>
-                      <TableHead className="min-w-[90px] text-right">Amount</TableHead>
-                      <TableHead className="min-w-[80px]">Status</TableHead>
-                      <TableHead className="min-w-[120px]">Admin Notes</TableHead>
-                      <TableHead className="min-w-[80px]">Actions</TableHead>
+                    <TableRow className="bg-muted/30">
+                      <TableHead className="min-w-[140px] px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Claim ID
+                      </TableHead>
+                      <TableHead className="min-w-[160px] px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Date
+                      </TableHead>
+                      <TableHead className="min-w-[140px] px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Amount
+                      </TableHead>
+                      <TableHead className="min-w-[140px] px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Status
+                      </TableHead>
+                      <TableHead className="min-w-[160px] px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Admin Notes
+                      </TableHead>
+                      <TableHead className="min-w-[100px] px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                 <TableBody>
                   {claims.length > 0 ? (
                     claims.map((claim) => (
-                      <TableRow key={claim.id}>
-                        <TableCell className="font-medium text-sm">
+                      <TableRow key={claim.id} className="hover:bg-muted/20">
+                        <TableCell className="px-5 py-4 font-medium">
                           <Link href={`/claims/${claim.id}`} className="font-mono text-blue-600 hover:text-blue-800 hover:underline">
                             CL-{claim.id.toString().padStart(4, '0')}
                           </Link>
                         </TableCell>
-                        <TableCell className="text-sm">
-                          {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
+                        <TableCell className="px-5 py-4 text-slate-600">
+                          {claim.createdAt
+                            ? `${new Date(claim.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })} · ${new Date(claim.createdAt).toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}`
+                            : 'N/A'}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-lg font-bold">
+                        <TableCell className="px-5 pr-8 py-4 text-right font-mono text-base font-semibold text-slate-800">
                           {parseFloat(claim.totalAmount).toFixed(2)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-5 pl-6 py-4">
                           {getStatusBadge(claim.status)}
                         </TableCell>
-                        <TableCell className="max-w-xs">
+                        <TableCell className="px-5 py-4 max-w-xs text-slate-600">
                           <div className="truncate" title={claim.adminNotes || ''}>
                             {claim.adminNotes || '-'}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-5 py-4 text-right">
                           <ActionButtons claim={claim} />
                         </TableCell>
                       </TableRow>

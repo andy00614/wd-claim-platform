@@ -20,7 +20,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Eye, Edit, Send, MoreHorizontal, Trash2, Undo2 } from 'lucide-react'
+import {
+  FileText,
+  PencilLine,
+  SendHorizonal,
+  MoreHorizontal,
+  Trash2,
+  RotateCcw
+} from 'lucide-react'
 import { useState } from 'react'
 import { deleteClaim, updateClaimStatus } from '@/lib/actions'
 import { useRouter } from 'next/navigation'
@@ -112,18 +119,24 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuItem asChild>
-          <Link href={`/claims/${claim.id}`} className="flex items-center gap-2 cursor-pointer">
-            <Eye className="h-4 w-4" />
+      <DropdownMenuContent align="end" className="w-48 border border-gray-200 shadow-lg">
+        <DropdownMenuItem asChild className="focus:bg-primary/10">
+          <Link
+            href={`/claims/${claim.id}`}
+            className="flex items-center gap-2 text-sm font-medium text-gray-700"
+          >
+            <FileText className="h-4 w-4 text-primary" />
             <span>View Details</span>
           </Link>
         </DropdownMenuItem>
 
         {(claim.status === 'submitted' || claim.status === 'draft') && (
-          <DropdownMenuItem asChild>
-            <Link href={`/claims/new?claimId=${claim.id}`} className="flex items-center gap-2 cursor-pointer">
-              <Edit className="h-4 w-4" />
+          <DropdownMenuItem asChild className="focus:bg-primary/10">
+            <Link
+              href={`/claims/new?claimId=${claim.id}`}
+              className="flex items-center gap-2 text-sm font-medium text-gray-700"
+            >
+              <PencilLine className="h-4 w-4 text-primary" />
               <span>Edit Claim</span>
             </Link>
           </DropdownMenuItem>
@@ -135,9 +148,9 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
               <AlertDialogTrigger asChild>
                 <DropdownMenuItem
                   onSelect={(e) => e.preventDefault()}
-                  className="flex items-center gap-2 cursor-pointer text-primary"
+                  className="flex items-center gap-2 text-sm font-medium text-amber-600 focus:bg-amber-50"
                 >
-                  <Send className="h-4 w-4" />
+                  <SendHorizonal className="h-4 w-4" />
                   <span>Submit Claim</span>
                 </DropdownMenuItem>
               </AlertDialogTrigger>
@@ -164,7 +177,10 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
             
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  onSelect={(e) => e.preventDefault()}
+                  className="flex items-center gap-2 text-sm font-medium text-destructive focus:bg-red-50"
+                >
                   <Trash2 className="h-4 w-4" />
                   <span>Delete Claim</span>
                 </DropdownMenuItem>
@@ -198,9 +214,9 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
               <AlertDialogTrigger asChild>
                 <DropdownMenuItem
                   onSelect={(e) => e.preventDefault()}
-                  className="flex items-center gap-2 cursor-pointer text-muted-foreground"
+                  className="flex items-center gap-2 text-sm font-medium text-slate-600 focus:bg-slate-100"
                 >
-                  <Undo2 className="h-4 w-4" />
+                  <RotateCcw className="h-4 w-4 text-slate-500" />
                   <span>Return to Draft</span>
                 </DropdownMenuItem>
               </AlertDialogTrigger>
