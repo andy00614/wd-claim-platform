@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Plus } from 'lucide-react'
+import { PlusCircle, Sparkles } from 'lucide-react'
 import { ExpenseItem } from '../page'
 import SmartFileUpload from './SmartFileUpload'
 import { ExpenseAnalysisResult } from './types'
@@ -230,15 +230,18 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           />
         </div>
 
-        <div className="flex justify-end">
+        <div className="border-t pt-4 mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span>Click to stash this expense in your list before you submit the claim.</span>
+          </div>
           <Button
-            variant="outline"
             onClick={handleAddItem}
-            size="sm"
-            className="gap-2 w-full sm:w-auto"
+            size="lg"
+            className="w-full sm:w-auto gap-2 px-6 font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-[1px] transition"
           >
-            <Plus className="h-4 w-4" />
-            Add to List
+            <PlusCircle className="h-5 w-5" />
+            Add Expense Item
           </Button>
         </div>
 

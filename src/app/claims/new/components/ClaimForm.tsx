@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useTransition } from 'react'
 import { useActionState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Save } from 'lucide-react'
 import { ExpenseItem } from '../page'
 import { submitClaim, uploadClaimFiles, uploadItemAttachments, saveDraft, updateClaim } from '@/lib/actions'
 import ExpenseForm from './ExpenseForm'
@@ -50,6 +50,7 @@ export default function ClaimForm({
   const [isLoading, setIsLoading] = useState(false)
   const [submitState, submitFormAction] = useActionState(submitClaim, { success: false, error: '' })
   const [draftState, draftFormAction] = useActionState(saveDraft, { success: false, error: '' })
+  const [isDraftPending, startDraftTransition] = useTransition()
   const updateActionHandler = updateClaim.bind(null, claimId ?? 0)
   const [updateState, updateFormAction] = useActionState(updateActionHandler, { success: false, error: '' })
   const router = useRouter()
@@ -67,10 +68,16 @@ export default function ClaimForm({
   }
 
   useEffect(() => {
-    if (isEditMode) {
-      setExpenseItems(initialItems)
+    if (isEditMode && initialItems.length > 0) {
+      setExpenseItems(prev => {
+        // 只有当数据真正不同时才更新
+        if (JSON.stringify(prev) !== JSON.stringify(initialItems)) {
+          return initialItems
+        }
+        return prev
+      })
     }
-  }, [isEditMode, initialItems])
+  }, [isEditMode])
 
   const removeExpenseItem = (id: number) => {
     setExpenseItems(prev => prev.filter(item => item.id !== id))
@@ -80,7 +87,7 @@ export default function ClaimForm({
   useEffect(() => {
     if (isEditMode) return
     const currentState = actionType === 'submit' ? submitState : draftState
-    
+
     if (currentState.success && currentState.data?.claimId && currentState.data?.insertedItems) {
       const handleFileUpload = async () => {
         try {
@@ -108,7 +115,7 @@ export default function ClaimForm({
           // 清空表单
           setExpenseItems([])
           setAttachedFiles([])
-          
+
           // 根据操作类型显示不同的成功消息
           if (actionType === 'submit') {
             toast.success(`费用申请提交成功！申请ID: ${currentState.data?.claimId}`)
@@ -119,7 +126,7 @@ export default function ClaimForm({
           } else if (actionType === 'draft') {
             toast.success(`草稿保存成功！草稿ID: ${currentState.data?.claimId}`)
           }
-          
+
           setActionType(null)
           setIsLoading(false)
         } catch (error) {
@@ -131,7 +138,7 @@ export default function ClaimForm({
 
       handleFileUpload()
     }
-  }, [submitState.success, draftState.success, submitState.data, draftState.data, attachedFiles, expenseItems, actionType, isEditMode])
+  }, [submitState.success, draftState.success, actionType, isEditMode])
 
   useEffect(() => {
     if (!isEditMode) return
@@ -164,7 +171,9 @@ export default function ClaimForm({
   const handleSaveDraft = async (formData: FormData) => {
     setActionType('draft')
     setIsLoading(true)
-    draftFormAction(formData)
+    startDraftTransition(() => {
+      draftFormAction(formData)
+    })
   }
 
   // 处理按钮点击
@@ -181,12 +190,28 @@ export default function ClaimForm({
   }
 
   const handleDraftClick = () => {
-    if (isEditMode) return
-    setIsLoading(true)
-    ;(document.getElementById('draft-form') as HTMLFormElement)?.requestSubmit()
+    if (isEditMode || expenseItems.length === 0 || isLoading) return
+    const formData = new FormData()
+    formData.append('employeeId', String(employeeId))
+    formData.append('expenseItems', expenseItemsPayload)
+    void handleSaveDraft(formData)
   }
 
   const currentError = isEditMode ? updateState.error : (submitState.error || draftState.error)
+
+  const expenseItemsPayload = useMemo(() => (
+    JSON.stringify(
+      expenseItems.map(item => ({
+        date: item.date,
+        itemNo: item.itemNo,
+        details: item.details,
+        currency: item.currency,
+        amount: item.amount,
+        rate: item.rate,
+        sgdAmount: item.sgdAmount,
+      }))
+    )
+  ), [expenseItems])
 
   return (
     <div>
@@ -198,38 +223,10 @@ export default function ClaimForm({
             <input 
               type="hidden" 
               name="expenseItems" 
-              value={JSON.stringify(
-                expenseItems.map(item => ({
-                  date: item.date,
-                  itemNo: item.itemNo,
-                  details: item.details,
-                  currency: item.currency,
-                  amount: item.amount,
-                  rate: item.rate,
-                  sgdAmount: item.sgdAmount,
-                }))
-              )} 
+              value={expenseItemsPayload} 
             />
           </form>
 
-          <form id="draft-form" action={handleSaveDraft} className="hidden">
-            <input type="hidden" name="employeeId" value={employeeId} />
-            <input 
-              type="hidden" 
-              name="expenseItems" 
-              value={JSON.stringify(
-                expenseItems.map(item => ({
-                  date: item.date,
-                  itemNo: item.itemNo,
-                  details: item.details,
-                  currency: item.currency,
-                  amount: item.amount,
-                  rate: item.rate,
-                  sgdAmount: item.sgdAmount,
-                }))
-              )} 
-            />
-          </form>
         </>
       )}
 
@@ -238,17 +235,7 @@ export default function ClaimForm({
           <input 
             type="hidden" 
             name="expenseItems" 
-            value={JSON.stringify(
-              expenseItems.map(item => ({
-                date: item.date,
-                itemNo: item.itemNo,
-                details: item.details,
-                currency: item.currency,
-                amount: item.amount,
-                rate: item.rate,
-                sgdAmount: item.sgdAmount,
-              }))
-            )} 
+            value={expenseItemsPayload} 
           />
         </form>
       )}
@@ -300,14 +287,23 @@ export default function ClaimForm({
         {!isEditMode && (
           <Button 
             type="button"
-            variant="secondary"
+            variant="outline"
             size="lg"
             onClick={handleDraftClick}
-            disabled={expenseItems.length === 0 || isLoading}
-            className="w-full sm:w-auto"
+            disabled={expenseItems.length === 0 || isLoading || isDraftPending}
+            className="w-full sm:w-auto gap-2 px-6 font-semibold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm hover:bg-amber-100 hover:text-amber-800 disabled:opacity-60 disabled:cursor-not-allowed transition"
           >
-            {isLoading && actionType === 'draft' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading && actionType === 'draft' ? 'Saving...' : 'Save as Draft'}
+            {(isLoading || isDraftPending) && actionType === 'draft' && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            {(isLoading || isDraftPending) && actionType === 'draft' ? (
+              'Saving...'
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                <span>Save as Draft</span>
+              </>
+            )}
           </Button>
         )}
         

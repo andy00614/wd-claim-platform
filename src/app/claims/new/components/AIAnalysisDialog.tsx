@@ -86,12 +86,22 @@ export default function AIAnalysisDialog({
     const matchedRate = nextData.currency ? exchangeRates[nextData.currency] : undefined
     const hasAmount = typeof nextData.amount === 'string' && nextData.amount.trim() !== ''
 
-    if (hasAmount && typeof matchedRate === 'number' && (!nextData.forexRate || nextData.forexRate.trim() === '')) {
-      nextData.forexRate = matchedRate.toFixed(4)
-    }
+    const rateFromExchange = typeof matchedRate === 'number' ? matchedRate.toFixed(4) : undefined
 
-    if (hasAmount && nextData.forexRate && (!nextData.sgdAmount || nextData.sgdAmount.trim() === '')) {
-      nextData.sgdAmount = calculateSgdAmount(nextData.amount, nextData.forexRate)
+    if (hasAmount) {
+      const rawRate = nextData.forexRate?.toString().trim()
+      if (!rawRate || rawRate === 'null' || rawRate === 'undefined') {
+        if (rateFromExchange) {
+          nextData.forexRate = rateFromExchange
+        }
+      }
+
+      const rawSgdAmount = nextData.sgdAmount?.toString().trim()
+      const finalRate = nextData.forexRate || rateFromExchange
+
+      if ((!rawSgdAmount || rawSgdAmount === 'null' || rawSgdAmount === 'undefined') && finalRate) {
+        nextData.sgdAmount = calculateSgdAmount(nextData.amount, finalRate)
+      }
     }
 
     setEditableData(nextData)
@@ -145,19 +155,29 @@ export default function AIAnalysisDialog({
   }
 
   const handleAmountChange = (value: string) => {
-    setEditableData(prev => ({
-      ...prev,
-      amount: value,
-      sgdAmount: calculateSgdAmount(value, prev.forexRate)
-    }))
+    setEditableData(prev => {
+      const nextRate = prev.forexRate || ''
+      const derivedSgd = nextRate ? calculateSgdAmount(value, nextRate) : ''
+
+      return {
+        ...prev,
+        amount: value,
+        sgdAmount: derivedSgd
+      }
+    })
   }
 
   const handleForexRateChange = (value: string) => {
-    setEditableData(prev => ({
-      ...prev,
-      forexRate: value,
-      sgdAmount: calculateSgdAmount(prev.amount, value)
-    }))
+    setEditableData(prev => {
+      const amount = prev.amount || ''
+      const derivedSgd = amount ? calculateSgdAmount(amount, value) : ''
+
+      return {
+        ...prev,
+        forexRate: value,
+        sgdAmount: derivedSgd
+      }
+    })
   }
 
   const handleSgdAmountChange = (value: string) => {

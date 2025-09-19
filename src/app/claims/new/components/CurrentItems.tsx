@@ -132,6 +132,14 @@ export default function CurrentItems({
   const handleFieldUpdate = (updates: Partial<EditFormState>) => {
     setFormState((prev) => {
       if (!prev) return prev
+
+      // 检查是否真的有变化，避免不必要的更新
+      const hasChanges = Object.keys(updates).some(key =>
+        prev[key as keyof EditFormState] !== updates[key as keyof EditFormState]
+      )
+
+      if (!hasChanges) return prev
+
       return {
         ...prev,
         ...updates,
@@ -196,7 +204,7 @@ export default function CurrentItems({
 
   const handleFilesChange = (files: File[]) => {
     setLocalFiles(files)
-    setFormState(prev => (prev ? { ...prev, attachments: files } : prev))
+    handleFieldUpdate({ attachments: files })
   }
 
   const applyAIData = (aiData: ExpenseAnalysisResult) => {
@@ -331,8 +339,9 @@ export default function CurrentItems({
       <Dialog
         open={isEditDialogOpen}
         onOpenChange={(open) => {
-          if (!open) handleCloseEdit()
-          else if (editingItem) setIsEditDialogOpen(true)
+          if (!open) {
+            handleCloseEdit()
+          }
         }}
       >
         <DialogContent className="sm:max-w-[960px]">

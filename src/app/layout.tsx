@@ -61,6 +61,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
+      <link rel="icon" href="/icon.png" sizes="any" />
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50`}>
         <div className="max-w-6xl mx-auto p-4 sm:p-6">
           {/* 全局 Header */}
