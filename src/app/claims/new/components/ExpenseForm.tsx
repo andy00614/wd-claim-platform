@@ -100,15 +100,15 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     }))
   }
 
-  // 处理AI分析结果 - 智能合并策略，复用现有逻辑
+  // 处理AI分析结果 - 当用户点击"Use This Data"时，优先使用AI数据覆盖现有数据
   const handleAIDataExtracted = (aiData: ExpenseAnalysisResult) => {
     console.log('AI data received:', aiData)
 
-    // 智能合并：只填充当前为空的字段，保护用户已输入的数据
+    // 创建新的表单数据，优先使用AI数据
     const newFormData = { ...formData }
     let newDate = date
 
-    // 日期优先使用AI识别的结果
+    // 日期：优先使用AI识别的结果
     if (aiData.date) {
       try {
         const [month, day] = aiData.date.split('/')
@@ -120,20 +120,20 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       }
     }
 
-    // 其他字段：仅在当前为空时填充
-    if (!newFormData.itemNo && aiData.itemNo) {
+    // 其他字段：优先使用AI数据，如果AI数据为空则保留原值
+    if (aiData.itemNo) {
       newFormData.itemNo = aiData.itemNo
     }
 
-    if (!newFormData.details && aiData.details) {
+    if (aiData.details) {
       newFormData.details = aiData.details
     }
 
-    if (!newFormData.currency && aiData.currency) {
+    if (aiData.currency) {
       newFormData.currency = aiData.currency
     }
 
-    if (!newFormData.amount && aiData.amount) {
+    if (aiData.amount) {
       newFormData.amount = aiData.amount
     }
 
