@@ -25,6 +25,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Pencil, Trash2 } from 'lucide-react'
+import SmartFileUpload from './SmartFileUpload'
+import { ExpenseAnalysisResult } from './types'
 
 interface CurrentItemsProps {
   items: ExpenseItem[]
@@ -44,6 +46,7 @@ interface EditFormState {
   amount: string
   forexRate: string
   sgdAmount: string
+  attachments: File[]
 }
 
 const calculateSgdAmount = (amount: string, rate: string) => {
@@ -92,6 +95,7 @@ export default function CurrentItems({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<ExpenseItem | null>(null)
   const [formState, setFormState] = useState<EditFormState | null>(null)
+  const [localFiles, setLocalFiles] = useState<File[]>([])
 
   useEffect(() => {
     if (!editingItem) return
@@ -103,7 +107,9 @@ export default function CurrentItems({
       amount: editingItem.amount.toFixed(2),
       forexRate: editingItem.rate.toFixed(4),
       sgdAmount: editingItem.sgdAmount.toFixed(2),
+      attachments: [...(editingItem.attachments || [])]
     })
+    setLocalFiles([...(editingItem.attachments || [])])
   }, [editingItem])
 
   const editingDate = useMemo(() => {
@@ -120,6 +126,7 @@ export default function CurrentItems({
     setIsEditDialogOpen(false)
     setEditingItem(null)
     setFormState(null)
+    setLocalFiles([])
   }
 
   const handleFieldUpdate = (updates: Partial<EditFormState>) => {
@@ -180,10 +187,66 @@ export default function CurrentItems({
       amount: parseFloat(formState.amount) || 0,
       rate: parseFloat(formState.forexRate) || 0,
       sgdAmount: parseFloat(formState.sgdAmount) || 0,
+      attachments: localFiles
     }
 
     onEditItem(updatedItem)
     handleCloseEdit()
+  }
+
+  const handleFilesChange = (files: File[]) => {
+    setLocalFiles(files)
+    setFormState(prev => (prev ? { ...prev, attachments: files } : prev))
+  }
+
+  const applyAIData = (aiData: ExpenseAnalysisResult) => {
+    setFormState(prev => {
+      if (!prev) return prev
+
+      const next = { ...prev }
+
+      if (aiData.date) {
+        next.date = aiData.date
+      }
+
+      if (aiData.itemNo) {
+        next.itemNo = aiData.itemNo
+      }
+
+      if (aiData.details) {
+        next.details = aiData.details
+      }
+
+      if (aiData.currency) {
+        next.currency = aiData.currency
+        const matchedRate = exchangeRates[aiData.currency]
+        if (typeof matchedRate === 'number') {
+          next.forexRate = matchedRate.toFixed(4)
+        }
+      }
+
+      if (aiData.amount) {
+        next.amount = aiData.amount
+        const rateToUse = aiData.forexRate || next.forexRate || '1.0000'
+        next.sgdAmount = calculateSgdAmount(aiData.amount, rateToUse)
+      }
+
+      if (aiData.forexRate) {
+        next.forexRate = aiData.forexRate
+        if (aiData.amount || next.amount) {
+          next.sgdAmount = calculateSgdAmount(aiData.amount || next.amount, aiData.forexRate)
+        }
+      }
+
+      if (aiData.sgdAmount) {
+        next.sgdAmount = aiData.sgdAmount
+        if (!aiData.forexRate && (aiData.amount || next.amount)) {
+          next.forexRate = calculateForexRate(aiData.sgdAmount, aiData.amount || next.amount)
+        }
+      }
+
+      return next
+    })
   }
 
   return (
@@ -272,7 +335,7 @@ export default function CurrentItems({
           else if (editingItem) setIsEditDialogOpen(true)
         }}
       >
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="sm:max-w-[960px]">
           <DialogHeader>
             <DialogTitle>Edit Expense Item</DialogTitle>
           </DialogHeader>
@@ -301,6 +364,18 @@ export default function CurrentItems({
               onDetailsChange={(value) => handleFieldUpdate({ details: value })}
             />
           )}
+
+          <div className="border border-gray-200 rounded-md p-4 space-y-3">
+            <h4 className="text-sm font-semibold">Smart File Upload with AI Analysis</h4>
+            <SmartFileUpload
+              files={localFiles}
+              onFilesChange={handleFilesChange}
+              onAIDataExtracted={applyAIData}
+              itemTypes={itemTypes}
+              currencies={currencies}
+              exchangeRates={exchangeRates}
+            />
+          </div>
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={handleCloseEdit}>

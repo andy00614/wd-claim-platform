@@ -95,6 +95,10 @@ export default function EditClaimForm({
     setExpenseItems(prev => [...prev, newItem])
   }
 
+  const handleEditItem = (updatedItem: ExpenseItem) => {
+    setExpenseItems(prev => prev.map(item => (item.id === updatedItem.id ? updatedItem : item)))
+  }
+
   const removeExpenseItem = (id: number) => {
     setExpenseItems(prev => prev.filter(item => item.id !== id))
   }
@@ -142,7 +146,11 @@ export default function EditClaimForm({
       <CurrentItems 
         items={expenseItems}
         onRemoveItem={removeExpenseItem}
+        onEditItem={handleEditItem}
         totalSGD={totalSGD}
+        itemTypes={itemTypes}
+        currencies={currencies}
+        exchangeRates={exchangeRates}
       />
 
       {/* 文件上传区域 */}

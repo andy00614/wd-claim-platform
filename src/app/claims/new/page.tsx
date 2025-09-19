@@ -14,11 +14,13 @@ export interface ExpenseItem {
 }
 
 interface NewClaimPageProps {
-  searchParams?: { [key: string]: string | string[] | undefined }
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
 export default async function NewClaimPage({ searchParams }: NewClaimPageProps) {
-  const claimIdParam = typeof searchParams?.claimId === 'string' ? searchParams?.claimId : Array.isArray(searchParams?.claimId) ? searchParams?.claimId[0] : undefined
+  const resolvedSearchParams = searchParams ? await searchParams : {}
+  const rawClaimId = resolvedSearchParams?.claimId
+  const claimIdParam = typeof rawClaimId === 'string' ? rawClaimId : Array.isArray(rawClaimId) ? rawClaimId[0] : undefined
   const claimId = claimIdParam ? parseInt(claimIdParam, 10) : null
 
   const [initData, currentEmployee, claimDetails] = await Promise.all([
