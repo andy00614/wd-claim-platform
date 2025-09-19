@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Plus } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 function getStatusBadge(status: string) {
   const statusConfig = {
     approved: { className: 'bg-green-100 text-green-700 hover:bg-green-100', label: 'Approved' },

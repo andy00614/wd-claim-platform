@@ -59,7 +59,7 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
         toast.success('Claim deleted successfully')
         router.refresh()
       } else {
-        toast.error(result.error || 'Failed to delete claim')
+        toast.error(('error' in result ? result.error : 'Failed to delete claim') || 'Failed to delete claim')
       }
     } catch (error) {
       toast.error('Failed to delete claim')
@@ -78,7 +78,7 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
         toast.success('Claim submitted successfully')
         router.refresh()
       } else {
-        toast.error(result.error || 'Failed to submit claim')
+        toast.error(('error' in result ? result.error : 'Failed to submit claim') || 'Failed to submit claim')
       }
     } catch (error) {
       toast.error('Failed to submit claim')
@@ -97,7 +97,7 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
         toast.success('Claim returned to draft')
         router.refresh()
       } else {
-        toast.error(result.error || 'Failed to revert claim')
+        toast.error(('error' in result ? result.error : 'Failed to revert claim') || 'Failed to revert claim')
       }
     } catch (error) {
       toast.error('Failed to revert claim')
@@ -197,7 +197,7 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
                   <AlertDialogAction
                     onClick={handleDelete}
                     disabled={actionInFlight === 'delete'}
-                    variant="destructive"
+                    className="bg-red-600 hover:bg-red-700 text-white"
                   >
                     {actionInFlight === 'delete' ? 'Deleting...' : 'Confirm Delete'}
                   </AlertDialogAction>

@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import ReportSelector from './components/ReportSelector'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ReportsPage() {
   // 验证管理员权限
   const adminCheck = await checkIsAdmin()

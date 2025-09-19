@@ -2,6 +2,8 @@ import { getClaimDetails, checkIsAdmin } from '@/lib/actions'
 import { redirect } from 'next/navigation'
 import BatchReport from '../components/BatchReport'
 
+export const dynamic = 'force-dynamic'
+
 interface BatchReportPageProps {
   searchParams: Promise<{ ids?: string }>
 }
