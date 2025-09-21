@@ -1,65 +1,68 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
+import Link from "next/link";
+import { useState } from "react";
 
 interface Claim {
-  id: number
-  employeeId: number
-  employeeName: string
-  employeeCode: number
-  status: string
-  totalAmount: string
-  createdAt: Date | null
-  adminNotes: string | null
+  id: number;
+  employeeId: number;
+  employeeName: string;
+  employeeCode: number;
+  status: string;
+  totalAmount: string;
+  createdAt: Date | null;
+  adminNotes: string | null;
 }
 
 interface ReportSelectorProps {
-  claims: Claim[]
+  claims: Claim[];
 }
 
 export default function ReportSelector({ claims }: ReportSelectorProps) {
-  const [selectedClaims, setSelectedClaims] = useState<number[]>([])
-  const [selectAll, setSelectAll] = useState(false)
+  const [selectedClaims, setSelectedClaims] = useState<number[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
 
   const handleSelectAll = () => {
     if (selectAll) {
-      setSelectedClaims([])
+      setSelectedClaims([]);
     } else {
-      setSelectedClaims(claims.map(claim => claim.id))
+      setSelectedClaims(claims.map((claim) => claim.id));
     }
-    setSelectAll(!selectAll)
-  }
+    setSelectAll(!selectAll);
+  };
 
   const handleSelectClaim = (claimId: number) => {
-    setSelectedClaims(prev => {
+    setSelectedClaims((prev) => {
       if (prev.includes(claimId)) {
-        return prev.filter(id => id !== claimId)
+        return prev.filter((id) => id !== claimId);
       } else {
-        return [...prev, claimId]
+        return [...prev, claimId];
       }
-    })
-  }
+    });
+  };
 
   const generateBatchReportUrl = () => {
-    if (selectedClaims.length === 0) return '#'
-    return `/admin/reports/batch?ids=${selectedClaims.join(',')}`
-  }
+    if (selectedClaims.length === 0) return "#";
+    return `/admin/reports/batch?ids=${selectedClaims.join(",")}`;
+  };
 
   return (
     <div className="bg-white border border-gray-300">
       <div className="p-4">
-        <h4 className="text-lg font-semibold mb-4">Select Claims for Report Generation</h4>
-        
+        <h4 className="text-lg font-semibold mb-4">
+          Select Claims for Report Generation
+        </h4>
+
         {/* 操作按钮 */}
         <div className="flex gap-4 mb-4 pb-4 border-b border-gray-200">
           <button
+            type="button"
             onClick={handleSelectAll}
             className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-sm"
           >
-            {selectAll ? 'Deselect All' : 'Select All'}
+            {selectAll ? "Deselect All" : "Select All"}
           </button>
-          
+
           {selectedClaims.length === 1 && (
             <Link
               href={`/admin/reports/${selectedClaims[0]}`}
@@ -68,7 +71,7 @@ export default function ReportSelector({ claims }: ReportSelectorProps) {
               Generate Individual Report
             </Link>
           )}
-          
+
           {selectedClaims.length > 1 && (
             <Link
               href={generateBatchReportUrl()}
@@ -80,7 +83,8 @@ export default function ReportSelector({ claims }: ReportSelectorProps) {
 
           {selectedClaims.length > 0 && (
             <span className="px-3 py-2 bg-gray-100 text-sm text-gray-600">
-              Selected: {selectedClaims.length} claim{selectedClaims.length > 1 ? 's' : ''}
+              Selected: {selectedClaims.length} claim
+              {selectedClaims.length > 1 ? "s" : ""}
             </span>
           )}
         </div>
@@ -108,7 +112,10 @@ export default function ReportSelector({ claims }: ReportSelectorProps) {
             </thead>
             <tbody>
               {claims.map((claim) => (
-                <tr key={claim.id} className="border-b border-gray-200 hover:bg-gray-50">
+                <tr
+                  key={claim.id}
+                  className="border-b border-gray-200 hover:bg-gray-50"
+                >
                   <td className="p-3">
                     <input
                       type="checkbox"
@@ -117,20 +124,31 @@ export default function ReportSelector({ claims }: ReportSelectorProps) {
                       className="rounded border-gray-300"
                     />
                   </td>
-                  <td className="p-3">CL-2024-{claim.id.toString().padStart(4, '0')}</td>
+                  <td className="p-3">
+                    CL-2024-{claim.id.toString().padStart(4, "0")}
+                  </td>
                   <td className="p-3">
                     <div>
                       <div className="font-medium">{claim.employeeName}</div>
-                      <div className="text-sm text-gray-500">EMP{claim.employeeCode.toString().padStart(3, '0')}</div>
+                      <div className="text-sm text-gray-500">
+                        EMP{claim.employeeCode.toString().padStart(3, "0")}
+                      </div>
                     </div>
                   </td>
                   <td className="p-3">
-                    {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
+                    {claim.createdAt
+                      ? new Date(claim.createdAt).toLocaleDateString()
+                      : "N/A"}
                   </td>
-                  <td className="p-3">{parseFloat(claim.totalAmount).toFixed(2)}</td>
                   <td className="p-3">
-                    <div className="max-w-xs truncate" title={claim.adminNotes || ''}>
-                      {claim.adminNotes || '-'}
+                    {parseFloat(claim.totalAmount).toFixed(2)}
+                  </td>
+                  <td className="p-3">
+                    <div
+                      className="max-w-xs truncate"
+                      title={claim.adminNotes || ""}
+                    >
+                      {claim.adminNotes || "-"}
                     </div>
                   </td>
                   <td className="p-3">
@@ -156,5 +174,5 @@ export default function ReportSelector({ claims }: ReportSelectorProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

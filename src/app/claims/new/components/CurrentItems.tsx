@@ -1,14 +1,17 @@
-'use client'
+"use client";
 
-import { useEffect, useMemo, useState } from 'react'
-import { format, parse } from 'date-fns'
-import { ExpenseItem } from '../page'
-import ExpenseDetailsFields, {
-  ExpenseCurrencyOption,
-  ExpenseItemTypeOption,
-} from './ExpenseDetailsFields'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { format, parse } from "date-fns";
+import { Pencil, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -16,68 +19,65 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Pencil, Trash2 } from 'lucide-react'
-import SmartFileUpload from './SmartFileUpload'
-import { ExpenseAnalysisResult } from './types'
+} from "@/components/ui/table";
+import type { ExpenseItem } from "../page";
+import ExpenseDetailsFields, {
+  type ExpenseCurrencyOption,
+  type ExpenseItemTypeOption,
+} from "./ExpenseDetailsFields";
+import SmartFileUpload from "./SmartFileUpload";
+import type { ExpenseAnalysisResult } from "./types";
 
 interface CurrentItemsProps {
-  items: ExpenseItem[]
-  onRemoveItem: (id: number) => void
-  onEditItem: (item: ExpenseItem) => void
-  totalSGD: number
-  itemTypes: ExpenseItemTypeOption[]
-  currencies: ExpenseCurrencyOption[]
-  exchangeRates: Record<string, number>
+  items: ExpenseItem[];
+  onRemoveItem: (id: number) => void;
+  onEditItem: (item: ExpenseItem) => void;
+  totalSGD: number;
+  itemTypes: ExpenseItemTypeOption[];
+  currencies: ExpenseCurrencyOption[];
+  exchangeRates: Record<string, number>;
 }
 
 interface EditFormState {
-  date: string
-  itemNo: string
-  details: string
-  currency: string
-  amount: string
-  forexRate: string
-  sgdAmount: string
-  attachments: File[]
+  date: string;
+  itemNo: string;
+  details: string;
+  currency: string;
+  amount: string;
+  forexRate: string;
+  sgdAmount: string;
+  attachments: File[];
 }
 
 const calculateSgdAmount = (amount: string, rate: string) => {
-  const parsedAmount = parseFloat(amount) || 0
-  const parsedRate = parseFloat(rate) || 0
-  return (parsedAmount * parsedRate).toFixed(2)
-}
+  const parsedAmount = parseFloat(amount) || 0;
+  const parsedRate = parseFloat(rate) || 0;
+  return (parsedAmount * parsedRate).toFixed(2);
+};
 
 const calculateForexRate = (sgdAmount: string, amount: string) => {
-  const parsedSgd = parseFloat(sgdAmount) || 0
-  const parsedAmount = parseFloat(amount) || 0
-  if (parsedAmount === 0) return '0.0000'
-  return (parsedSgd / parsedAmount).toFixed(4)
-}
+  const parsedSgd = parseFloat(sgdAmount) || 0;
+  const parsedAmount = parseFloat(amount) || 0;
+  if (parsedAmount === 0) return "0.0000";
+  return (parsedSgd / parsedAmount).toFixed(4);
+};
 
 const parseDateString = (value: string) => {
-  if (!value) return new Date()
+  if (!value) return new Date();
   try {
-    return parse(value, 'MM/dd', new Date())
-  } catch (error) {
-    return new Date()
+    return parse(value, "MM/dd", new Date());
+  } catch (_error) {
+    return new Date();
   }
-}
+};
 
 const formatItemDate = (value: string) => {
   try {
-    return format(parse(value, 'MM/dd', new Date()), 'MMM dd')
-  } catch (error) {
-    return value
+    return format(parse(value, "MM/dd", new Date()), "MMM dd");
+  } catch (_error) {
+    return value;
   }
-}
+};
 
 export default function CurrentItems({
   items,
@@ -88,17 +88,15 @@ export default function CurrentItems({
   currencies,
   exchangeRates,
 }: CurrentItemsProps) {
-  if (items.length === 0) {
-    return null
-  }
+  const hasItems = items.length > 0;
 
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [editingItem, setEditingItem] = useState<ExpenseItem | null>(null)
-  const [formState, setFormState] = useState<EditFormState | null>(null)
-  const [localFiles, setLocalFiles] = useState<File[]>([])
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<ExpenseItem | null>(null);
+  const [formState, setFormState] = useState<EditFormState | null>(null);
+  const [localFiles, setLocalFiles] = useState<File[]>([]);
 
   useEffect(() => {
-    if (!editingItem) return
+    if (!editingItem) return;
     setFormState({
       date: editingItem.date,
       itemNo: editingItem.itemNo,
@@ -107,84 +105,93 @@ export default function CurrentItems({
       amount: editingItem.amount.toFixed(2),
       forexRate: editingItem.rate.toFixed(4),
       sgdAmount: editingItem.sgdAmount.toFixed(2),
-      attachments: [...(editingItem.attachments || [])]
-    })
-    setLocalFiles([...(editingItem.attachments || [])])
-  }, [editingItem])
+      attachments: [...(editingItem.attachments || [])],
+    });
+    setLocalFiles([...(editingItem.attachments || [])]);
+  }, [editingItem]);
 
   const editingDate = useMemo(() => {
-    if (!formState) return null
-    return parseDateString(formState.date)
-  }, [formState])
+    if (!formState) return null;
+    return parseDateString(formState.date);
+  }, [formState]);
+
+  if (!hasItems) {
+    return null;
+  }
 
   const handleOpenEdit = (item: ExpenseItem) => {
-    setEditingItem(item)
-    setIsEditDialogOpen(true)
-  }
+    setEditingItem(item);
+    setIsEditDialogOpen(true);
+  };
 
   const handleCloseEdit = () => {
-    setIsEditDialogOpen(false)
-    setEditingItem(null)
-    setFormState(null)
-    setLocalFiles([])
-  }
+    setIsEditDialogOpen(false);
+    setEditingItem(null);
+    setFormState(null);
+    setLocalFiles([]);
+  };
 
   const handleFieldUpdate = (updates: Partial<EditFormState>) => {
     setFormState((prev) => {
-      if (!prev) return prev
+      if (!prev) return prev;
 
       // 检查是否真的有变化，避免不必要的更新
-      const hasChanges = Object.keys(updates).some(key =>
-        prev[key as keyof EditFormState] !== updates[key as keyof EditFormState]
-      )
+      const hasChanges = Object.keys(updates).some(
+        (key) =>
+          prev[key as keyof EditFormState] !==
+          updates[key as keyof EditFormState],
+      );
 
-      if (!hasChanges) return prev
+      if (!hasChanges) return prev;
 
       return {
         ...prev,
         ...updates,
-      }
-    })
-  }
+      };
+    });
+  };
 
   const handleCurrencyChange = (value: string) => {
-    const matchedRate = exchangeRates[value]
-    const nextRate = typeof matchedRate === 'number' ? matchedRate.toFixed(4) : formState?.forexRate || '1.0000'
-    const nextAmount = formState?.amount || '0'
+    const matchedRate = exchangeRates[value];
+    const nextRate =
+      typeof matchedRate === "number"
+        ? matchedRate.toFixed(4)
+        : formState?.forexRate || "1.0000";
+    const nextAmount = formState?.amount || "0";
 
     handleFieldUpdate({
       currency: value,
       forexRate: nextRate,
       sgdAmount: calculateSgdAmount(nextAmount, nextRate),
-    })
-  }
+    });
+  };
 
   const handleAmountChange = (value: string) => {
-    const rate = formState?.forexRate || '1.0000'
+    const rate = formState?.forexRate || "1.0000";
     handleFieldUpdate({
       amount: value,
       sgdAmount: calculateSgdAmount(value, rate),
-    })
-  }
+    });
+  };
 
   const handleForexRateChange = (value: string) => {
-    const amount = formState?.amount || '0'
+    const amount = formState?.amount || "0";
     handleFieldUpdate({
       forexRate: value,
       sgdAmount: calculateSgdAmount(amount, value),
-    })
-  }
+    });
+  };
 
   const handleSgdAmountChange = (value: string) => {
-    const amount = formState?.amount || '0'
+    const amount = formState?.amount || "0";
     handleFieldUpdate({
       sgdAmount: value,
       forexRate: calculateForexRate(value, amount),
-    })
-  }
+    });
+  };
 
   const handleSave = () => {
-    if (!editingItem || !formState) return
+    if (!editingItem || !formState) return;
 
     const updatedItem: ExpenseItem = {
       ...editingItem,
@@ -195,73 +202,81 @@ export default function CurrentItems({
       amount: parseFloat(formState.amount) || 0,
       rate: parseFloat(formState.forexRate) || 0,
       sgdAmount: parseFloat(formState.sgdAmount) || 0,
-      attachments: localFiles
-    }
+      attachments: localFiles,
+    };
 
-    onEditItem(updatedItem)
-    handleCloseEdit()
-  }
+    onEditItem(updatedItem);
+    handleCloseEdit();
+  };
 
   const handleFilesChange = (files: File[]) => {
-    setLocalFiles(files)
-    handleFieldUpdate({ attachments: files })
-  }
+    setLocalFiles(files);
+    handleFieldUpdate({ attachments: files });
+  };
 
   const applyAIData = (aiData: ExpenseAnalysisResult) => {
-    setFormState(prev => {
-      if (!prev) return prev
+    setFormState((prev) => {
+      if (!prev) return prev;
 
-      const next = { ...prev }
+      const next = { ...prev };
 
       if (aiData.date) {
-        next.date = aiData.date
+        next.date = aiData.date;
       }
 
       if (aiData.itemNo) {
-        next.itemNo = aiData.itemNo
+        next.itemNo = aiData.itemNo;
       }
 
       if (aiData.details) {
-        next.details = aiData.details
+        next.details = aiData.details;
       }
 
       if (aiData.currency) {
-        next.currency = aiData.currency
-        const matchedRate = exchangeRates[aiData.currency]
-        if (typeof matchedRate === 'number') {
-          next.forexRate = matchedRate.toFixed(4)
+        next.currency = aiData.currency;
+        const matchedRate = exchangeRates[aiData.currency];
+        if (typeof matchedRate === "number") {
+          next.forexRate = matchedRate.toFixed(4);
         }
       }
 
       if (aiData.amount) {
-        next.amount = aiData.amount
-        const rateToUse = aiData.forexRate || next.forexRate || '1.0000'
-        next.sgdAmount = calculateSgdAmount(aiData.amount, rateToUse)
+        next.amount = aiData.amount;
+        const rateToUse = aiData.forexRate || next.forexRate || "1.0000";
+        next.sgdAmount = calculateSgdAmount(aiData.amount, rateToUse);
       }
 
       if (aiData.forexRate) {
-        next.forexRate = aiData.forexRate
+        next.forexRate = aiData.forexRate;
         if (aiData.amount || next.amount) {
-          next.sgdAmount = calculateSgdAmount(aiData.amount || next.amount, aiData.forexRate)
+          next.sgdAmount = calculateSgdAmount(
+            aiData.amount || next.amount,
+            aiData.forexRate,
+          );
         }
       }
 
       if (aiData.sgdAmount) {
-        next.sgdAmount = aiData.sgdAmount
+        next.sgdAmount = aiData.sgdAmount;
         if (!aiData.forexRate && (aiData.amount || next.amount)) {
-          next.forexRate = calculateForexRate(aiData.sgdAmount, aiData.amount || next.amount)
+          next.forexRate = calculateForexRate(
+            aiData.sgdAmount,
+            aiData.amount || next.amount,
+          );
         }
       }
 
-      return next
-    })
-  }
+      return next;
+    });
+  };
 
   return (
     <>
       <Card className="mb-6">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Current Items ({items.length})</CardTitle>
+          <CardTitle className="text-lg">
+            Current Items ({items.length})
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="max-h-64 overflow-y-auto overflow-x-auto">
@@ -271,7 +286,9 @@ export default function CurrentItems({
                   <TableHead className="min-w-[80px]">Date</TableHead>
                   <TableHead className="min-w-[60px]">Item</TableHead>
                   <TableHead className="min-w-[150px]">Description</TableHead>
-                  <TableHead className="min-w-[80px] hidden sm:table-cell">Amount</TableHead>
+                  <TableHead className="min-w-[80px] hidden sm:table-cell">
+                    Amount
+                  </TableHead>
                   <TableHead className="min-w-[70px]">SGD</TableHead>
                   <TableHead className="min-w-[90px]">Action</TableHead>
                 </TableRow>
@@ -279,15 +296,21 @@ export default function CurrentItems({
               <TableBody>
                 {items.map((item) => (
                   <TableRow key={item.id} className="text-sm">
-                    <TableCell className="text-xs">{formatItemDate(item.date)}</TableCell>
-                    <TableCell className="text-xs font-mono">{item.itemNo}</TableCell>
+                    <TableCell className="text-xs">
+                      {formatItemDate(item.date)}
+                    </TableCell>
+                    <TableCell className="text-xs font-mono">
+                      {item.itemNo}
+                    </TableCell>
                     <TableCell>
                       <div className="max-w-[150px] sm:max-w-xs">
                         <div className="truncate text-xs" title={item.details}>
                           {item.details}
                         </div>
                         {item.attachments && item.attachments.length > 0 && (
-                          <div className="text-xs text-primary mt-1">📎 {item.attachments.length}</div>
+                          <div className="text-xs text-primary mt-1">
+                            📎 {item.attachments.length}
+                          </div>
                         )}
                       </div>
                     </TableCell>
@@ -328,9 +351,11 @@ export default function CurrentItems({
           <div className="bg-gray-50 px-3 sm:px-4 py-3 rounded-md border">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">
-                {items.length} item{items.length > 1 ? 's' : ''}
+                {items.length} item{items.length > 1 ? "s" : ""}
               </span>
-              <span className="text-lg font-semibold">Total SGD: {totalSGD.toFixed(2)}</span>
+              <span className="text-lg font-semibold">
+                Total SGD: {totalSGD.toFixed(2)}
+              </span>
             </div>
           </div>
         </CardContent>
@@ -340,7 +365,7 @@ export default function CurrentItems({
         open={isEditDialogOpen}
         onOpenChange={(open) => {
           if (!open) {
-            handleCloseEdit()
+            handleCloseEdit();
           }
         }}
       >
@@ -355,7 +380,9 @@ export default function CurrentItems({
               date={editingDate}
               dateDisplay={formState.date}
               onDateChange={(date) =>
-                handleFieldUpdate({ date: date ? format(date, 'MM/dd') : formState.date })
+                handleFieldUpdate({
+                  date: date ? format(date, "MM/dd") : formState.date,
+                })
               }
               itemNo={formState.itemNo}
               onItemNoChange={(value) => handleFieldUpdate({ itemNo: value })}
@@ -375,7 +402,9 @@ export default function CurrentItems({
           )}
 
           <div className="border border-gray-200 rounded-md p-4 space-y-3">
-            <h4 className="text-sm font-semibold">Smart File Upload with AI Analysis</h4>
+            <h4 className="text-sm font-semibold">
+              Smart File Upload with AI Analysis
+            </h4>
             <SmartFileUpload
               files={localFiles}
               onFilesChange={handleFilesChange}
@@ -397,5 +426,5 @@ export default function CurrentItems({
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

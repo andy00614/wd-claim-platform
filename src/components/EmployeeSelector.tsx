@@ -1,60 +1,65 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useTransition } from 'react'
-import { Employee } from '@/lib/employee-actions'
+import { useEffect, useState, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+} from "@/components/ui/select";
+import type { Employee } from "@/lib/employee-actions";
 
 interface EmployeeSelectorProps {
-  employees: Employee[]
-  currentBindingId?: number
-  onSubmit: (prevState: any, formData: FormData) => Promise<void>
+  employees: Employee[];
+  currentBindingId?: number;
+  onSubmit: (prevState: unknown, formData: FormData) => Promise<void>;
 }
 
-export function EmployeeSelector({ employees, currentBindingId, onSubmit }: EmployeeSelectorProps) {
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | undefined>(currentBindingId)
-  const [isPending, startTransition] = useTransition()
+export function EmployeeSelector({
+  employees,
+  currentBindingId,
+  onSubmit,
+}: EmployeeSelectorProps) {
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<
+    number | undefined
+  >(currentBindingId);
+  const [isPending, startTransition] = useTransition();
 
-  console.log({currentBindingId,selectedEmployeeId})
+  console.log({ currentBindingId, selectedEmployeeId });
 
   // 同步 currentBindingId 的变化
   useEffect(() => {
-    setSelectedEmployeeId(currentBindingId)
-  }, [currentBindingId])
+    setSelectedEmployeeId(currentBindingId);
+  }, [currentBindingId]);
 
-  const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId)
+  const selectedEmployee = employees.find(
+    (emp) => emp.id === selectedEmployeeId,
+  );
 
   const handleClick = () => {
     if (selectedEmployeeId) {
-      const formData = new FormData()
-      formData.append('employeeId', String(selectedEmployeeId))
-      console.log('按钮点击，employeeId:', formData.get('employeeId'))
-      
+      const formData = new FormData();
+      formData.append("employeeId", String(selectedEmployeeId));
+      console.log("按钮点击，employeeId:", formData.get("employeeId"));
+
       startTransition(async () => {
-        await onSubmit(null, formData)
-      })
+        await onSubmit(null, formData);
+      });
     }
-  }
+  };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-sm font-semibold">
-          {currentBindingId ? 'Change Employee Profile' : 'Select Your Employee Profile'}
+          {currentBindingId
+            ? "Change Employee Profile"
+            : "Select Your Employee Profile"}
         </CardTitle>
         <div className="border-b border-gray-200"></div>
       </CardHeader>
@@ -64,10 +69,12 @@ export function EmployeeSelector({ employees, currentBindingId, onSubmit }: Empl
             <Label htmlFor="employeeId" className="text-xs font-semibold">
               Choose Employee
             </Label>
-            <Select 
+            <Select
               name="employeeId"
-              value={selectedEmployeeId ? String(selectedEmployeeId) : ''} 
-              onValueChange={(value) => setSelectedEmployeeId(value ? parseInt(value) : undefined)}
+              value={selectedEmployeeId ? String(selectedEmployeeId) : ""}
+              onValueChange={(value) =>
+                setSelectedEmployeeId(value ? parseInt(value, 10) : undefined)
+              }
               required
             >
               <SelectTrigger className="w-full">
@@ -91,25 +98,27 @@ export function EmployeeSelector({ employees, currentBindingId, onSubmit }: Empl
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-xs font-semibold">Employee Code</Label>
-                    <Input 
-                      value={selectedEmployee.employee_code} 
+                    <Label className="text-xs font-semibold">
+                      Employee Code
+                    </Label>
+                    <Input
+                      value={selectedEmployee.employee_code}
                       disabled
                       className="bg-gray-50 text-gray-500 text-xs"
                     />
                   </div>
                   <div>
                     <Label className="text-xs font-semibold">Staff Name</Label>
-                    <Input 
-                      value={selectedEmployee.name} 
+                    <Input
+                      value={selectedEmployee.name}
                       disabled
                       className="bg-gray-50 text-gray-500 text-xs"
                     />
                   </div>
                   <div className="col-span-2">
                     <Label className="text-xs font-semibold">Department</Label>
-                    <Input 
-                      value={selectedEmployee.department} 
+                    <Input
+                      value={selectedEmployee.department}
                       disabled
                       className="bg-gray-50 text-gray-500 text-xs"
                     />
@@ -120,17 +129,21 @@ export function EmployeeSelector({ employees, currentBindingId, onSubmit }: Empl
           )}
 
           <div className="text-center mt-6">
-            <Button 
+            <Button
               type="button"
               onClick={handleClick}
               disabled={!selectedEmployeeId || isPending}
               className="bg-black text-white hover:bg-gray-800 px-6 py-3 text-sm"
             >
-              {isPending ? 'Binding...' : (currentBindingId ? 'Update Binding' : 'Confirm Binding')}
+              {isPending
+                ? "Binding..."
+                : currentBindingId
+                  ? "Update Binding"
+                  : "Confirm Binding"}
             </Button>
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

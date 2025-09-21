@@ -1,18 +1,21 @@
-'use client'
+"use client";
 
-import { useFormStatus } from 'react-dom'
+import { useFormStatus } from "react-dom";
 
 interface SubmitButtonProps {
-  hasItems: boolean
-  buttonText?: string
+  hasItems: boolean;
+  buttonText?: string;
 }
 
-export default function SubmitButton({ hasItems, buttonText = 'Submit Claim' }: SubmitButtonProps) {
-  const { pending } = useFormStatus()
+export default function SubmitButton({
+  hasItems,
+  buttonText = "Submit Claim",
+}: SubmitButtonProps) {
+  const { pending } = useFormStatus();
 
   return (
     <div className="text-center mt-6">
-      <button 
+      <button
         type="button"
         onClick={() => window.history.back()}
         className="px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 mr-4"
@@ -20,13 +23,13 @@ export default function SubmitButton({ hasItems, buttonText = 'Submit Claim' }: 
       >
         Cancel
       </button>
-      <button 
+      <button
         type="submit"
         disabled={pending || !hasItems}
         className={`px-6 py-2 text-white ${
           pending || !hasItems
-            ? 'bg-gray-400 cursor-not-allowed' 
-            : 'bg-black hover:bg-gray-800'
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-black hover:bg-gray-800"
         }`}
       >
         {pending ? (
@@ -39,5 +42,5 @@ export default function SubmitButton({ hasItems, buttonText = 'Submit Claim' }: 
         )}
       </button>
     </div>
-  )
+  );
 }

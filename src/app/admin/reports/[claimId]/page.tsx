@@ -1,36 +1,38 @@
-import { getClaimDetails, checkIsAdmin } from '@/lib/actions'
-import { redirect } from 'next/navigation'
-import ClaimReport from '../components/ClaimReport'
+import { redirect } from "next/navigation";
+import { checkIsAdmin, getClaimDetails } from "@/lib/actions";
+import ClaimReport from "../components/ClaimReport";
 
 interface ClaimReportPageProps {
-  params: Promise<{ claimId: string }>
+  params: Promise<{ claimId: string }>;
 }
 
-export default async function ClaimReportPage({ params }: ClaimReportPageProps) {
+export default async function ClaimReportPage({
+  params,
+}: ClaimReportPageProps) {
   // 验证管理员权限
-  const adminCheck = await checkIsAdmin()
-  
+  const adminCheck = await checkIsAdmin();
+
   if (!adminCheck.success || !adminCheck.data?.isAdmin) {
-    redirect('/admin')
+    redirect("/admin");
   }
 
-  const { claimId } = await params
-  const claimData = await getClaimDetails(parseInt(claimId, 10))
+  const { claimId } = await params;
+  const claimData = await getClaimDetails(parseInt(claimId, 10));
 
   if (!claimData.success || !claimData.data) {
-    redirect('/admin/reports')
+    redirect("/admin/reports");
   }
 
-  const { claim, items, attachments, employee } = claimData.data
+  const { claim, items, attachments, employee } = claimData.data;
 
   return (
     <div className="min-h-screen bg-white">
-      <ClaimReport 
+      <ClaimReport
         claim={claim}
         items={items}
         attachments={attachments}
         employee={employee}
       />
     </div>
-  )
+  );
 }
