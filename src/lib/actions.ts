@@ -6,6 +6,31 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { eq, inArray, and, desc } from 'drizzle-orm'
 
+const STORAGE_BUCKET = 'wd-attachments'
+
+function getStoragePathFromPublicUrl(urlString: string) {
+  try {
+    const parsedUrl = new URL(urlString)
+    const segments = parsedUrl.pathname.split('/')
+    const bucketIndex = segments.findIndex(segment => segment === STORAGE_BUCKET)
+
+    if (bucketIndex === -1) {
+      return null
+    }
+
+    const pathSegments = segments.slice(bucketIndex + 1)
+
+    if (pathSegments.length === 0) {
+      return null
+    }
+
+    return pathSegments.join('/')
+  } catch (error) {
+    console.error('Failed to parse storage url:', error)
+    return null
+  }
+}
+
 // 保存草稿
 export async function saveDraft(prevState: any, formData: FormData) {
   try {
@@ -324,6 +349,39 @@ export async function getCurrentEmployee() {
       return { success: false, error: '用户未登录' }
     }
 
+    const isNonEmptyString = (value: unknown): value is string =>
+      typeof value === 'string' && value.trim().length > 0
+
+    const userMetadata = (user.user_metadata ?? {}) as Record<string, unknown>
+    const metadataAvatar = [
+      userMetadata['avatar_url'],
+      userMetadata['picture'],
+      userMetadata['avatar'],
+      userMetadata['avatarUrl'],
+    ].find(isNonEmptyString)
+
+    let identityAvatar: string | undefined
+    if (Array.isArray(user.identities)) {
+      for (const identity of user.identities) {
+        const identityData = identity.identity_data as Record<string, unknown> | null
+        if (!identityData) continue
+
+        const candidate = [
+          identityData['avatar_url'],
+          identityData['picture'],
+          identityData['avatar'],
+          identityData['avatarUrl'],
+        ].find(isNonEmptyString)
+
+        if (candidate) {
+          identityAvatar = candidate
+          break
+        }
+      }
+    }
+
+    const avatarUrl = metadataAvatar ?? identityAvatar
+
     // 查询用户绑定的员工信息
     const binding = await db
       .select({
@@ -342,11 +400,16 @@ export async function getCurrentEmployee() {
       return { success: false, error: '用户未绑定员工信息' }
     }
 
+    const employee = binding[0]
+
     return {
       success: true,
       data: {
         userId: user.id,
-        employee: binding[0]
+        employee: {
+          ...employee,
+          avatarUrl,
+        }
       }
     }
   } catch (error) {
@@ -760,7 +823,7 @@ export async function uploadClaimFiles(claimId: number, files: File[]) {
 
       // 上传文件到Supabase Storage
       const { error: uploadError } = await supabase.storage
-        .from("wd-attachments")
+        .from(STORAGE_BUCKET)
         .upload(filePath, file, {
           cacheControl: "3600",
           upsert: false
@@ -775,7 +838,7 @@ export async function uploadClaimFiles(claimId: number, files: File[]) {
 
       // 获取文件的公开URL
       const { data: urlData } = supabase.storage
-        .from("wd-attachments")
+        .from(STORAGE_BUCKET)
         .getPublicUrl(filePath)
 
       // 将文件信息保存到数据库
@@ -815,7 +878,7 @@ export async function uploadClaimFiles(claimId: number, files: File[]) {
 export async function deleteClaimFile(attachmentId: number) {
   try {
     const currentEmployee = await getCurrentEmployee()
-    
+
     if (!currentEmployee.success || !currentEmployee.data) {
       return { success: false, error: "用户未登录或未绑定员工" }
     }
@@ -834,12 +897,15 @@ export async function deleteClaimFile(attachmentId: number) {
     const supabase = await createClient()
     
     // 从URL中提取文件路径
-    const url = new URL(fileRecord.url)
-    const filePath = url.pathname.split("/").slice(-3).join("/") // 获取 claims/claimId/fileName 部分
+    const filePath = getStoragePathFromPublicUrl(fileRecord.url)
+
+    if (!filePath) {
+      return { success: false, error: "无法解析文件路径" }
+    }
 
     // 从Supabase Storage删除文件
     const { error: deleteError } = await supabase.storage
-      .from("claim-attachments")
+      .from(STORAGE_BUCKET)
       .remove([filePath])
 
     if (deleteError) {
@@ -990,7 +1056,7 @@ export async function uploadItemAttachments(claimItemsData: Array<{id: number, a
 
         // 上传文件到Supabase Storage
         const { error: uploadError } = await supabase.storage
-          .from("wd-attachments")
+          .from(STORAGE_BUCKET)
           .upload(filePath, file, {
             cacheControl: "3600",
             upsert: false
@@ -1005,7 +1071,7 @@ export async function uploadItemAttachments(claimItemsData: Array<{id: number, a
 
         // 获取文件的公开URL
         const { data: urlData } = supabase.storage
-          .from("wd-attachments")
+          .from(STORAGE_BUCKET)
           .getPublicUrl(filePath)
 
         // 将文件信息保存到数据库
@@ -1070,22 +1136,22 @@ export async function deleteClaim(claimId: number) {
 
       if (attachments.length > 0) {
         const supabase = createAdminClient()
-        
-        // 从storage删除文件
+
         for (const att of attachments) {
-          const filePath = att.url.split('/').pop() // 简单提取文件路径
+          const filePath = getStoragePathFromPublicUrl(att.url)
+
           if (filePath) {
             await supabase.storage
-              .from("wd-attachments")
-              .remove([`claims/${claimId}/${filePath}`])
+              .from(STORAGE_BUCKET)
+              .remove([filePath])
+          } else {
+            console.warn('Failed to derive claim attachment path for deletion', att.id)
           }
         }
 
-        // 删除附件记录
         await tx.delete(attachment).where(eq(attachment.claimId, claimId))
       }
 
-      // 删除claim items的附件
       const itemAttachments = await tx
         .select({ id: attachment.id, url: attachment.url })
         .from(attachment)
@@ -1094,13 +1160,16 @@ export async function deleteClaim(claimId: number) {
 
       if (itemAttachments.length > 0) {
         const supabase = createAdminClient()
-        
+
         for (const att of itemAttachments) {
-          const filePath = att.url.split('/').pop()
+          const filePath = getStoragePathFromPublicUrl(att.url)
+
           if (filePath) {
             await supabase.storage
-              .from("wd-attachments")
+              .from(STORAGE_BUCKET)
               .remove([filePath])
+          } else {
+            console.warn('Failed to derive item attachment path for deletion', att.id)
           }
         }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import {
   HoverCard,
@@ -14,6 +15,7 @@ interface Employee {
   employeeCode: number
   department?: string
   role: 'admin' | 'employee'
+  avatarUrl?: string
 }
 
 interface UserProfileCardProps {
@@ -29,9 +31,9 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
       {/* 用户信息 */}
       <HoverCard>
         <HoverCardTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className={`h-8 w-8 p-0 rounded-md ${
               employee.role === 'admin'
                 ? 'hover:bg-yellow-50 text-yellow-600'
@@ -39,7 +41,15 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
             }`}
             title={employee.name}
           >
-            {employee.role === 'admin' ? (
+            {employee.avatarUrl ? (
+              <Image
+                src={employee.avatarUrl}
+                alt={`${employee.name}'s avatar`}
+                width={32}
+                height={32}
+                className="h-8 w-8 rounded-md object-cover"
+              />
+            ) : employee.role === 'admin' ? (
               <UserCheck className="h-4 w-4" />
             ) : (
               <User className="h-4 w-4" />
@@ -48,7 +58,7 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
         </HoverCardTrigger>
         <HoverCardContent className="w-72 sm:w-80 p-0" align="end">
           <div className={`relative overflow-hidden ${
-            employee.role === 'admin' 
+            employee.role === 'admin'
               ? 'bg-gradient-to-br from-yellow-50 via-white to-amber-50' 
               : 'bg-white'
           }`}>
@@ -60,18 +70,30 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
             <div className="p-4 space-y-4">
               {/* 用户头像和基本信息 */}
               <div className="flex items-start gap-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${
-                  employee.role === 'admin' 
-                    ? 'bg-gradient-to-br from-yellow-100 to-amber-200 border-2 border-yellow-300' 
-                    : 'bg-gray-50 border border-gray-200'
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm overflow-hidden ${
+                  employee.avatarUrl
+                    ? employee.role === 'admin'
+                      ? 'border-2 border-yellow-300'
+                      : 'border border-gray-200'
+                    : employee.role === 'admin'
+                      ? 'bg-gradient-to-br from-yellow-100 to-amber-200 border-2 border-yellow-300'
+                      : 'bg-gray-50 border border-gray-200'
                 }`}>
-                  {employee.role === 'admin' ? (
+                  {employee.avatarUrl ? (
+                    <Image
+                      src={employee.avatarUrl}
+                      alt={`${employee.name}'s avatar`}
+                      width={48}
+                      height={48}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : employee.role === 'admin' ? (
                     <UserCheck className="w-6 h-6 text-amber-700" />
                   ) : (
                     <User className="w-5 h-5 text-gray-600" />
                   )}
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="text-lg font-semibold text-gray-900 truncate">
