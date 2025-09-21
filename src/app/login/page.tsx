@@ -1,73 +1,84 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { getUrl } from '@/utils/environments'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2 } from 'lucide-react'
-import { TextAnimate, TypingAnimation, BlurFade } from '@/components/ui/magic-ui'
-import Image from 'next/image'
+import type { User } from "@supabase/supabase-js";
+import { Loader2 } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  BlurFade,
+  TextAnimate,
+  TypingAnimation,
+} from "@/components/ui/magic-ui";
+import { createClient } from "@/lib/supabase/client";
+import { getUrl } from "@/utils/environments";
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [user, setUser] = useState<any>(null)
-  const router = useRouter()
-  const supabase = createClient()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
     // Check if user is already logged in
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
-        setUser(user)
-        router.push('/binding') // Redirect to employee binding
+        setUser(user);
+        router.push("/binding"); // Redirect to employee binding
       }
-    }
-    getUser()
+    };
+    getUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          router.push('/binding')
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        router.push("/binding");
       }
-    )
+    });
 
-    return () => subscription.unsubscribe()
-  }, [router, supabase])
+    return () => subscription.unsubscribe();
+  }, [router, supabase]);
 
   const handleGoogleLogin = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     // 使用 getUrl() 获取动态 URL（支持 production、preview、local）
-    const redirectTo = `${getUrl()}auth/callback`
+    const redirectTo = `${getUrl()}auth/callback`;
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo: redirectTo,
           queryParams: {
             prompt: "select_account",
           },
         },
-      })
+      });
 
-      if (error) throw error
-    } catch (error: any) {
-      setError(error.message)
-      setLoading(false)
+      if (error) throw error;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to sign in. Please try again.";
+      setError(message);
+      setLoading(false);
     }
-  }
+  };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-  }
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   if (user) {
     return (
@@ -76,27 +87,18 @@ export default function LoginPage() {
           <div className="text-lg font-medium text-gray-900">
             Already signed in
           </div>
-          <p className="text-sm text-gray-600">
-            Welcome back, {user.email}
-          </p>
+          <p className="text-sm text-gray-600">Welcome back, {user.email}</p>
           <div className="space-y-3">
-            <Button
-              onClick={() => router.push('/binding')}
-              className="w-full"
-            >
+            <Button onClick={() => router.push("/binding")} className="w-full">
               Continue to Dashboard
             </Button>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="w-full"
-            >
+            <Button onClick={handleLogout} variant="outline" className="w-full">
               Sign out
             </Button>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -141,7 +143,13 @@ export default function LoginPage() {
               </>
             ) : (
               <>
-                <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
+                <svg
+                  className="mr-3 h-5 w-5"
+                  viewBox="0 0 24 24"
+                  role="img"
+                  aria-label="Google logo"
+                >
+                  <title>Google logo</title>
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -166,7 +174,9 @@ export default function LoginPage() {
 
           {error && (
             <Alert variant="destructive" className="border-red-200 bg-red-50">
-              <AlertDescription className="text-red-800">{error}</AlertDescription>
+              <AlertDescription className="text-red-800">
+                {error}
+              </AlertDescription>
             </Alert>
           )}
         </BlurFade>
@@ -178,5 +188,5 @@ export default function LoginPage() {
         </BlurFade>
       </div>
     </div>
-  )
+  );
 }

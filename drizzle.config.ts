@@ -1,11 +1,17 @@
-import { defineConfig } from 'drizzle-kit'
+import { defineConfig } from "drizzle-kit";
 
-console.log('process.env.DATABASE_URL',process.env.DATABASE_URL_FOR_DRIZZLE)
+const databaseUrl = process.env.DATABASE_URL_FOR_DRIZZLE;
+
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL_FOR_DRIZZLE is not defined");
+}
+
+console.log("process.env.DATABASE_URL", databaseUrl);
 export default defineConfig({
-    dialect: 'postgresql',
-    schema: './src/lib/db/schema.ts',
-    out: './drizzle',
-    dbCredentials: {
-        url: process.env.DATABASE_URL_FOR_DRIZZLE!,
-    },
-})
+  dialect: "postgresql",
+  schema: "./src/lib/db/schema.ts",
+  out: "./drizzle",
+  dbCredentials: {
+    url: databaseUrl,
+  },
+});

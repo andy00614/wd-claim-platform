@@ -1,25 +1,25 @@
-'use client'
+"use client";
 
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+import { LogOut, Shield, User, UserCheck } from "lucide-react";
+import Image from "next/image";
+import { logoutAction } from "@/app/binding/actions";
+import { Button } from "@/components/ui/button";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card"
-import { User, LogOut, Shield, UserCheck } from 'lucide-react'
-import { logoutAction } from '@/app/binding/actions'
+} from "@/components/ui/hover-card";
 
 interface Employee {
-  name: string
-  employeeCode: number
-  department?: string
-  role: 'admin' | 'employee'
-  avatarUrl?: string
+  name: string;
+  employeeCode: number;
+  department?: string;
+  role: "admin" | "employee";
+  avatarUrl?: string;
 }
 
 interface UserProfileCardProps {
-  employee: Employee
+  employee: Employee;
 }
 
 export function UserProfileCard({ employee }: UserProfileCardProps) {
@@ -35,9 +35,9 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
             variant="ghost"
             size="sm"
             className={`h-8 w-8 p-0 rounded-md ${
-              employee.role === 'admin'
-                ? 'hover:bg-yellow-50 text-yellow-600'
-                : 'hover:bg-gray-100 text-gray-600'
+              employee.role === "admin"
+                ? "hover:bg-yellow-50 text-yellow-600"
+                : "hover:bg-gray-100 text-gray-600"
             }`}
             title={employee.name}
           >
@@ -49,7 +49,7 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
                 height={32}
                 className="h-8 w-8 rounded-md object-cover"
               />
-            ) : employee.role === 'admin' ? (
+            ) : employee.role === "admin" ? (
               <UserCheck className="h-4 w-4" />
             ) : (
               <User className="h-4 w-4" />
@@ -57,28 +57,32 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
           </Button>
         </HoverCardTrigger>
         <HoverCardContent className="w-72 sm:w-80 p-0" align="end">
-          <div className={`relative overflow-hidden ${
-            employee.role === 'admin'
-              ? 'bg-gradient-to-br from-yellow-50 via-white to-amber-50' 
-              : 'bg-white'
-          }`}>
+          <div
+            className={`relative overflow-hidden ${
+              employee.role === "admin"
+                ? "bg-gradient-to-br from-yellow-50 via-white to-amber-50"
+                : "bg-white"
+            }`}
+          >
             {/* Admin 顶部装饰条 */}
-            {employee.role === 'admin' && (
+            {employee.role === "admin" && (
               <div className="h-1 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500"></div>
             )}
-            
+
             <div className="p-4 space-y-4">
               {/* 用户头像和基本信息 */}
               <div className="flex items-start gap-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm overflow-hidden ${
-                  employee.avatarUrl
-                    ? employee.role === 'admin'
-                      ? 'border-2 border-yellow-300'
-                      : 'border border-gray-200'
-                    : employee.role === 'admin'
-                      ? 'bg-gradient-to-br from-yellow-100 to-amber-200 border-2 border-yellow-300'
-                      : 'bg-gray-50 border border-gray-200'
-                }`}>
+                <div
+                  className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm overflow-hidden ${
+                    employee.avatarUrl
+                      ? employee.role === "admin"
+                        ? "border-2 border-yellow-300"
+                        : "border border-gray-200"
+                      : employee.role === "admin"
+                        ? "bg-gradient-to-br from-yellow-100 to-amber-200 border-2 border-yellow-300"
+                        : "bg-gray-50 border border-gray-200"
+                  }`}
+                >
                   {employee.avatarUrl ? (
                     <Image
                       src={employee.avatarUrl}
@@ -87,7 +91,7 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
                       height={48}
                       className="h-full w-full object-cover"
                     />
-                  ) : employee.role === 'admin' ? (
+                  ) : employee.role === "admin" ? (
                     <UserCheck className="w-6 h-6 text-amber-700" />
                   ) : (
                     <User className="w-5 h-5 text-gray-600" />
@@ -99,20 +103,25 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
                     <h4 className="text-lg font-semibold text-gray-900 truncate">
                       {employee.name}
                     </h4>
-                    {employee.role === 'admin' && (
+                    {employee.role === "admin" && (
                       <span className="inline-flex items-center gap-1 bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full border border-yellow-300 shadow-sm">
                         <Shield className="w-3 h-3" />
                         Administrator
                       </span>
                     )}
                   </div>
-                  
-                  <p className={`text-sm mb-0.5 ${
-                    employee.role === 'admin' ? 'text-amber-700 font-medium' : 'text-gray-600'
-                  }`}>
-                    Employee ID: EMP{employee.employeeCode.toString().padStart(3, '0')}
+
+                  <p
+                    className={`text-sm mb-0.5 ${
+                      employee.role === "admin"
+                        ? "text-amber-700 font-medium"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    Employee ID: EMP
+                    {employee.employeeCode.toString().padStart(3, "0")}
                   </p>
-                  
+
                   {employee.department && (
                     <p className="text-sm text-gray-500 flex items-center gap-1">
                       <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
@@ -122,18 +131,20 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
                 </div>
               </div>
             </div>
-            
+
             {/* 登出按钮区域 */}
-            <div className={`p-4 pt-0 ${employee.role === 'admin' ? 'bg-white/50' : ''}`}>
+            <div
+              className={`p-4 pt-0 ${employee.role === "admin" ? "bg-white/50" : ""}`}
+            >
               <div className="border-t border-gray-100 pt-3">
-                <Button 
-                  onClick={logoutAction} 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  onClick={logoutAction}
+                  variant="outline"
+                  size="sm"
                   className={`w-full transition-all duration-200 ${
-                    employee.role === 'admin'
-                      ? 'text-gray-700 border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700 hover:shadow-sm'
-                      : 'text-gray-700 border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700'
+                    employee.role === "admin"
+                      ? "text-gray-700 border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700 hover:shadow-sm"
+                      : "text-gray-700 border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700"
                   }`}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
@@ -145,5 +156,5 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
         </HoverCardContent>
       </HoverCard>
     </>
-  )
+  );
 }
