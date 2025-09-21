@@ -1,21 +1,21 @@
-import { getFormInitData, getClaimDetails } from '@/lib/actions'
-import EditClaimForm from './components/EditClaimForm'
-import Link from 'next/link'
+import Link from "next/link";
+import { getClaimDetails, getFormInitData } from "@/lib/actions";
+import EditClaimForm from "./components/EditClaimForm";
 
 interface EditClaimPageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }
 
 export default async function EditClaimPage({ params }: EditClaimPageProps) {
-  const { id } = await params
-  const claimId = parseInt(id, 10)
-  
+  const { id } = await params;
+  const claimId = parseInt(id, 10);
+
   // 获取表单初始化数据和申请详情
   const [initData, claimData] = await Promise.all([
     getFormInitData(),
-    getClaimDetails(claimId)
-  ])
-  
+    getClaimDetails(claimId),
+  ]);
+
   if (!initData.success || !initData.data) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -24,7 +24,7 @@ export default async function EditClaimPage({ params }: EditClaimPageProps) {
           <p className="text-gray-600">{initData.error}</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!claimData.success || !claimData.data) {
@@ -33,27 +33,33 @@ export default async function EditClaimPage({ params }: EditClaimPageProps) {
         <div className="text-center">
           <h1 className="text-xl font-bold text-red-600 mb-4">申请加载失败</h1>
           <p className="text-gray-600">{claimData.error}</p>
-          <Link href="/claims" className="text-blue-600 hover:underline mt-2 block">
+          <Link
+            href="/claims"
+            className="text-blue-600 hover:underline mt-2 block"
+          >
             返回申请列表
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   // 检查申请状态是否可编辑
-  if (claimData.data.claim.status !== 'submitted') {
+  if (claimData.data.claim.status !== "submitted") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-xl font-bold text-red-600 mb-4">无法编辑</h1>
           <p className="text-gray-600">只能编辑待审核状态的申请</p>
-          <Link href="/claims" className="text-blue-600 hover:underline mt-2 block">
+          <Link
+            href="/claims"
+            className="text-blue-600 hover:underline mt-2 block"
+          >
             返回申请列表
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -67,7 +73,7 @@ export default async function EditClaimPage({ params }: EditClaimPageProps) {
 
         {/* 返回按钮 */}
         <div className="mb-6">
-          <Link 
+          <Link
             href={`/claims/${claimId}`}
             className="inline-flex items-center px-4 py-2 border border-gray-300 hover:bg-gray-50"
           >
@@ -77,12 +83,22 @@ export default async function EditClaimPage({ params }: EditClaimPageProps) {
 
         {/* 状态栏 */}
         <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-200 text-sm">
-          <span>Employee: <strong>{claimData.data.employee.name} (EMP{claimData.data.employee.employeeCode.toString().padStart(3, '0')})</strong></span>
-          <span>Editing: <strong>CL-2024-{claimId.toString().padStart(4, '0')}</strong></span>
+          <span>
+            Employee:{" "}
+            <strong>
+              {claimData.data.employee.name} (EMP
+              {claimData.data.employee.employeeCode.toString().padStart(3, "0")}
+              )
+            </strong>
+          </span>
+          <span>
+            Editing:{" "}
+            <strong>CL-2024-{claimId.toString().padStart(4, "0")}</strong>
+          </span>
         </div>
 
         {/* 编辑表单组件 */}
-        <EditClaimForm 
+        <EditClaimForm
           claimId={claimId}
           itemTypes={initData.data.itemTypes}
           currencies={initData.data.currencies}
@@ -92,5 +108,5 @@ export default async function EditClaimPage({ params }: EditClaimPageProps) {
         />
       </div>
     </div>
-  )
+  );
 }

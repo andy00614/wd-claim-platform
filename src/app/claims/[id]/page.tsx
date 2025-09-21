@@ -1,24 +1,83 @@
-import { getClaimDetails } from '@/lib/actions'
-import Link from 'next/link'
-import BackButton from './components/BackButton'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
-import { FileText, Download, Eye, ArrowLeft, User, Calendar, DollarSign, Edit } from 'lucide-react'
+import {
+  ArrowLeft,
+  Calendar,
+  DollarSign,
+  Download,
+  Edit,
+  Eye,
+  FileText,
+  User,
+} from "lucide-react";
+import Link from "next/link";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { getClaimDetails } from "@/lib/actions";
+import BackButton from "./components/BackButton";
 
 interface ClaimDetailPageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }
 
+interface ClaimAttachment {
+  id: number;
+  fileName: string;
+  url: string;
+  fileType: string;
+  fileSize: string;
+  claimItemId?: number | null;
+}
 
-export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) {
-  const { id } = await params
-  const claimId = parseInt(id, 10)
-  
-  const claimData = await getClaimDetails(claimId)
+interface ClaimItem {
+  id: number;
+  date: Date | null;
+  note: string | null;
+  details: string | null;
+  evidenceNo: string | null;
+  amount: string;
+  rate: string;
+  sgdAmount: string;
+  itemTypeName: string;
+  itemTypeNo: string;
+  currencyCode: string;
+  attachments?: ClaimAttachment[] | null;
+}
+
+interface ClaimSummary {
+  id: number;
+  status: string;
+  totalAmount: string;
+  createdAt: Date | string | null;
+  employeeId: number;
+  adminNotes: string | null;
+}
+
+interface ClaimEmployee {
+  employeeId: number;
+  name: string;
+  employeeCode: number;
+  department: string | null;
+  role: string;
+  avatarUrl?: string | null;
+}
+
+export default async function ClaimDetailPage({
+  params,
+}: ClaimDetailPageProps) {
+  const { id } = await params;
+  const claimId = parseInt(id, 10);
+
+  const claimData = await getClaimDetails(claimId);
 
   if (!claimData.success || !claimData.data) {
     return (
@@ -38,27 +97,39 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
           </AlertDescription>
         </Alert>
       </div>
-    )
+    );
   }
 
-  const { claim, items, attachments, employee } = claimData.data
+  const {
+    claim: claimSummary,
+    items,
+    attachments,
+    employee,
+  } = claimData.data as {
+    claim: ClaimSummary;
+    items: ClaimItem[];
+    attachments: ClaimAttachment[] | null;
+    employee: ClaimEmployee;
+  };
+  const claim = claimSummary;
+  const claimItems = items;
+  const claimAttachments = attachments ?? [];
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      approved: { variant: 'default' as const, label: 'Approved' },
-      submitted: { variant: 'secondary' as const, label: 'Pending' },
-      draft: { variant: 'outline' as const, label: 'Draft' },
-      rejected: { variant: 'destructive' as const, label: 'Rejected' }
-    }
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || { variant: 'outline' as const, label: status }
-    
-    return (
-      <Badge variant={config.variant}>
-        {config.label}
-      </Badge>
-    )
-  }
+      approved: { variant: "default" as const, label: "Approved" },
+      submitted: { variant: "secondary" as const, label: "Pending" },
+      draft: { variant: "outline" as const, label: "Draft" },
+      rejected: { variant: "destructive" as const, label: "Rejected" },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || {
+      variant: "outline" as const,
+      label: status,
+    };
+
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
 
   return (
     <div className="space-y-6">
@@ -74,9 +145,12 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
           <h1 className="text-2xl font-semibold">Claim Details</h1>
         </div>
 
-        {(claim.status === 'draft' || claim.status === 'submitted') && (
+        {(claim.status === "draft" || claim.status === "submitted") && (
           <Button asChild variant="outline" size="sm">
-            <Link href={`/claims/new?claimId=${claim.id}`} className="flex items-center gap-2">
+            <Link
+              href={`/claims/new?claimId=${claim.id}`}
+              className="flex items-center gap-2"
+            >
               <Edit className="h-4 w-4" />
               Edit Claim
             </Link>
@@ -98,10 +172,10 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">Claim ID</div>
               <div className="font-mono text-lg font-medium">
-                CL-2024-{claim.id.toString().padStart(4, '0')}
+                CL-2024-{claim.id.toString().padStart(4, "0")}
               </div>
             </div>
-            
+
             {/* Employee */}
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -111,11 +185,11 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
               <div className="space-y-1">
                 <div className="font-medium">{employee.name}</div>
                 <div className="text-xs text-muted-foreground">
-                  EMP{employee.employeeCode.toString().padStart(3, '0')}
+                  EMP{employee.employeeCode.toString().padStart(3, "0")}
                 </div>
               </div>
             </div>
-            
+
             {/* Date */}
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -123,10 +197,12 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
                 Date
               </div>
               <div className="font-medium">
-                {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
+                {claim.createdAt
+                  ? new Date(claim.createdAt).toLocaleDateString()
+                  : "N/A"}
               </div>
             </div>
-            
+
             {/* Amount & Status */}
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -141,15 +217,15 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
               </div>
             </div>
           </div>
-          
+
           {/* Admin Notes if any */}
-          {(claim as any).adminNotes && (
+          {claim.adminNotes && (
             <>
               <Separator />
               <div className="space-y-2">
                 <div className="text-sm font-medium">Admin Notes</div>
                 <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
-                  {(claim as any).adminNotes}
+                  {claim.adminNotes}
                 </div>
               </div>
             </>
@@ -160,7 +236,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
       {/* Expense Items */}
       <Card>
         <CardHeader>
-          <CardTitle>Expense Items ({items.length})</CardTitle>
+          <CardTitle>Expense Items ({claimItems.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -179,82 +255,97 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      {item.date ? new Date(item.date).toLocaleDateString() : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium text-xs">{item.itemTypeNo}</div>
-                        <div className="text-xs text-muted-foreground">{item.itemTypeName}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      <div className="truncate" title={item.note || ''}>
-                        {item.note || '-'}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      <div className="truncate text-xs text-muted-foreground" title={item.details || ''}>
-                        {item.details || '-'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {item.currencyCode}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {parseFloat(item.amount).toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                      {parseFloat(item.rate).toFixed(4)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-medium">
-                      {parseFloat(item.sgdAmount).toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      {item.attachments && item.attachments.length > 0 ? (
+                {claimItems.map((item) => {
+                  const itemAttachments = item.attachments ?? [];
+
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        {item.date
+                          ? new Date(item.date).toLocaleDateString()
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell>
                         <div className="space-y-1">
-                          {item.attachments.map((attachment: any) => (
-                            <Button
-                              key={attachment.id}
-                              asChild
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 justify-start"
-                            >
-                              <a 
-                                href={attachment.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                title={attachment.fileName}
-                              >
-                                <FileText className="h-3 w-3 mr-1" />
-                                <span className="truncate max-w-[80px] text-xs">
-                                  {attachment.fileName}
-                                </span>
-                              </a>
-                            </Button>
-                          ))}
+                          <div className="font-medium text-xs">
+                            {item.itemTypeNo}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {item.itemTypeName}
+                          </div>
                         </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No files</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="max-w-xs">
+                        <div className="truncate" title={item.note || ""}>
+                          {item.note || "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-xs">
+                        <div
+                          className="truncate text-xs text-muted-foreground"
+                          title={item.details || ""}
+                        >
+                          {item.details || "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {item.currencyCode}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {parseFloat(item.amount).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                        {parseFloat(item.rate).toFixed(4)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-medium">
+                        {parseFloat(item.sgdAmount).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        {itemAttachments.length > 0 ? (
+                          <div className="space-y-1">
+                            {itemAttachments.map((attachment) => (
+                              <Button
+                                key={attachment.id}
+                                asChild
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 justify-start"
+                              >
+                                <a
+                                  href={attachment.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title={attachment.fileName}
+                                >
+                                  <FileText className="h-3 w-3 mr-1" />
+                                  <span className="truncate max-w-[80px] text-xs">
+                                    {attachment.fileName}
+                                  </span>
+                                </a>
+                              </Button>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            No files
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
-          
+
           <Separator className="my-4" />
-          
+
           {/* Summary */}
           <div className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">
-              {items.length} item{items.length !== 1 ? 's' : ''} total
+              {claimItems.length} item{claimItems.length !== 1 ? "s" : ""} total
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold">
@@ -266,29 +357,37 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
       </Card>
 
       {/* Supporting Documents */}
-      {attachments && attachments.length > 0 && (
+      {claimAttachments.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Supporting Documents ({attachments.length})</CardTitle>
+            <CardTitle>
+              Supporting Documents ({claimAttachments.length})
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {attachments.map((attachment: any) => (
-                <div key={attachment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+              {claimAttachments.map((attachment) => (
+                <div
+                  key={attachment.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                >
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-muted rounded-md">
                       <FileText className="h-4 w-4" />
                     </div>
                     <div className="space-y-1">
-                      <div className="font-medium text-sm">{attachment.fileName}</div>
+                      <div className="font-medium text-sm">
+                        {attachment.fileName}
+                      </div>
                       <div className="text-xs text-muted-foreground">
-                        {attachment.fileType} • {Math.round(parseFloat(attachment.fileSize) / 1024)} KB
+                        {attachment.fileType} •{" "}
+                        {Math.round(parseFloat(attachment.fileSize) / 1024)} KB
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button asChild variant="outline" size="sm">
-                      <a 
+                      <a
                         href={attachment.url}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -298,7 +397,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
                       </a>
                     </Button>
                     <Button asChild size="sm">
-                      <a 
+                      <a
                         href={attachment.url}
                         download={attachment.fileName || undefined}
                       >
@@ -314,5 +413,5 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
         </Card>
       )}
     </div>
-  )
+  );
 }

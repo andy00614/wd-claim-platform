@@ -1,40 +1,53 @@
-'use client'
+"use client";
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ExpenseAnalysisResult, AnalysisApiResponse } from './types'
-import AIAnalysisDialog from './AIAnalysisDialog'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   Brain,
-  Loader2,
-  UploadCloud,
   Camera,
-  Image as ImageIcon,
   FileText,
-  Paperclip
-} from 'lucide-react'
-import { toast } from 'sonner'
+  Image as ImageIcon,
+  Loader2,
+  Paperclip,
+  UploadCloud,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import AIAnalysisDialog from "./AIAnalysisDialog";
+import type { AnalysisApiResponse, ExpenseAnalysisResult } from "./types";
 
 interface ItemTypeOption {
-  id: number
-  name: string
-  no: string
+  id: number;
+  name: string;
+  no: string;
 }
 
 interface CurrencyOption {
-  id: number
-  name: string
-  code: string
+  id: number;
+  name: string;
+  code: string;
 }
 
 interface SmartFileUploadProps {
-  files: File[]
-  onFilesChange: (files: File[]) => void
-  onAIDataExtracted?: (data: ExpenseAnalysisResult) => void
-  itemTypes?: ItemTypeOption[]
-  currencies?: CurrencyOption[]
-  exchangeRates?: Record<string, number>
+  files: File[];
+  onFilesChange: (files: File[]) => void;
+  onAIDataExtracted?: (data: ExpenseAnalysisResult) => void;
+  itemTypes?: ItemTypeOption[];
+  currencies?: CurrencyOption[];
+  exchangeRates?: Record<string, number>;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // 返回完整的data URL格式，包含MIME类型
+      resolve(result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function SmartFileUpload({
@@ -43,183 +56,182 @@ export default function SmartFileUpload({
   onAIDataExtracted,
   itemTypes = [],
   currencies = [],
-  exchangeRates = {}
+  exchangeRates = {},
 }: SmartFileUploadProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // AI分析相关状态
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [showAnalysisDialog, setShowAnalysisDialog] = useState(false)
-  const [analysisResult, setAnalysisResult] = useState<ExpenseAnalysisResult | null>(null)
-  const [currentAnalyzingFile, setCurrentAnalyzingFile] = useState<File | null>(null)
-  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
+  const [analysisResult, setAnalysisResult] =
+    useState<ExpenseAnalysisResult | null>(null);
+  const [currentAnalyzingFile, setCurrentAnalyzingFile] = useState<File | null>(
+    null,
+  );
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  const previewUrls = useMemo(() => (
-    files.map(file => {
-      const isPreviewable = file.type.startsWith('image/') || file.type === 'application/pdf'
-      return isPreviewable ? URL.createObjectURL(file) : null
-    })
-  ), [files])
+  const previewUrls = useMemo(
+    () =>
+      files.map((file) => {
+        const isPreviewable =
+          file.type.startsWith("image/") || file.type === "application/pdf";
+        return isPreviewable ? URL.createObjectURL(file) : null;
+      }),
+    [files],
+  );
 
   useEffect(() => {
     return () => {
-      previewUrls.forEach(url => {
-        if (url) URL.revokeObjectURL(url)
-      })
-    }
-  }, [previewUrls])
+      previewUrls.forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    };
+  }, [previewUrls]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(event.target.files || [])
-    addFiles(selectedFiles)
+    const selectedFiles = Array.from(event.target.files || []);
+    addFiles(selectedFiles);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = "";
     }
-  }
+  };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    const droppedFiles = Array.from(event.dataTransfer.files)
-    addFiles(droppedFiles)
-  }
+    event.preventDefault();
+    const droppedFiles = Array.from(event.dataTransfer.files);
+    addFiles(droppedFiles);
+  };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-  }
+    event.preventDefault();
+  };
 
-  const addFiles = async (newFiles: File[]) => {
-    const validFiles = newFiles.filter(file => {
-      const maxSize = 10 * 1024 * 1024 // 10MB
-      const isImage = file.type.startsWith('image/')
-      const isPdf = file.type === 'application/pdf'
-
-      if (file.size > maxSize) {
-        toast.error(`File "${file.name}" is too large. Max size is 10MB`)
-        return false
-      }
-
-      if (!isImage && !isPdf) {
-        toast.error(`File format "${file.type || 'unknown'}" is not supported. Please upload images or PDF files.`)
-        return false
-      }
-
-      return true
-    })
-
-    if (validFiles.length === 0) return
-
-    // 添加文件到列表
-    onFilesChange([...files, ...validFiles])
-
-    // 自动分析第一个支持AI分析的文件
-    const analyzableFile = validFiles.find(file =>
-      file.type.startsWith('image/') || file.type === 'application/pdf'
-    )
-
-    if (analyzableFile) {
-      await analyzeFile(analyzableFile)
-    }
-  }
-
-  useEffect(() => {
-    const handlePaste = (event: ClipboardEvent) => {
-      const items = Array.from(event.clipboardData?.items ?? [])
-      const pastedFiles = items
-        .filter(item => item.kind === 'file')
-        .map(item => item.getAsFile())
-        .filter((file): file is File => Boolean(file))
-
-      if (pastedFiles.length === 0) return
-
-      event.preventDefault()
-      void addFiles(pastedFiles)
-    }
-
-    window.addEventListener('paste', handlePaste)
-    return () => window.removeEventListener('paste', handlePaste)
-  }, [addFiles])
-
-  const analyzeFile = async (file: File) => {
-    setIsAnalyzing(true)
-    setCurrentAnalyzingFile(file)
-    setAnalysisError(null)
-    setAnalysisResult(null)
+  const analyzeFile = useCallback(async (file: File) => {
+    setIsAnalyzing(true);
+    setCurrentAnalyzingFile(file);
+    setAnalysisError(null);
+    setAnalysisResult(null);
 
     try {
       // 将文件转换为base64
-      const base64 = await fileToBase64(file)
+      const base64 = await fileToBase64(file);
 
-      const response = await fetch('/api/ai/analyze-expense', {
-        method: 'POST',
+      const response = await fetch("/api/ai/analyze-expense", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ image: base64 }),
-      })
+      });
 
-      const data: AnalysisApiResponse = await response.json()
+      const data: AnalysisApiResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Analysis failed')
+        throw new Error(data.error || "Analysis failed");
       }
 
       if (data.success && data.data) {
-        setAnalysisResult(data.data)
-        setShowAnalysisDialog(true)
-        toast.success('AI analysis completed!')
+        setAnalysisResult(data.data);
+        setShowAnalysisDialog(true);
+        toast.success("AI analysis completed!");
       } else {
-        throw new Error('No analysis data received')
+        throw new Error("No analysis data received");
       }
-
     } catch (error) {
-      console.error('AI analysis error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      setAnalysisError(errorMessage)
-      setShowAnalysisDialog(true)
-      toast.error('AI analysis failed')
+      console.error("AI analysis error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      setAnalysisError(errorMessage);
+      setShowAnalysisDialog(true);
+      toast.error("AI analysis failed");
     } finally {
-      setIsAnalyzing(false)
+      setIsAnalyzing(false);
     }
-  }
+  }, []);
 
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const result = reader.result as string
-        // 返回完整的data URL格式，包含MIME类型
-        resolve(result)
+  const addFiles = useCallback(
+    async (newFiles: File[]) => {
+      const validFiles = newFiles.filter((file) => {
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        const isImage = file.type.startsWith("image/");
+        const isPdf = file.type === "application/pdf";
+
+        if (file.size > maxSize) {
+          toast.error(`File "${file.name}" is too large. Max size is 10MB`);
+          return false;
+        }
+
+        if (!isImage && !isPdf) {
+          toast.error(
+            `File format "${file.type || "unknown"}" is not supported. Please upload images or PDF files.`,
+          );
+          return false;
+        }
+
+        return true;
+      });
+
+      if (validFiles.length === 0) return;
+
+      // 添加文件到列表
+      onFilesChange([...files, ...validFiles]);
+
+      // 自动分析第一个支持AI分析的文件
+      const analyzableFile = validFiles.find(
+        (file) =>
+          file.type.startsWith("image/") || file.type === "application/pdf",
+      );
+
+      if (analyzableFile) {
+        await analyzeFile(analyzableFile);
       }
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
-  }
+    },
+    [analyzeFile, files, onFilesChange],
+  );
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      const items = Array.from(event.clipboardData?.items ?? []);
+      const pastedFiles = items
+        .filter((item) => item.kind === "file")
+        .map((item) => item.getAsFile())
+        .filter((file): file is File => Boolean(file));
+
+      if (pastedFiles.length === 0) return;
+
+      event.preventDefault();
+      void addFiles(pastedFiles);
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [addFiles]);
 
   const handleAnalysisConfirm = (data: ExpenseAnalysisResult) => {
     if (onAIDataExtracted) {
-      onAIDataExtracted(data)
+      onAIDataExtracted(data);
     }
-    setShowAnalysisDialog(false)
-    toast.success('Data applied to form!')
-  }
+    setShowAnalysisDialog(false);
+    toast.success("Data applied to form!");
+  };
 
   const handleAnalysisReject = () => {
-    setShowAnalysisDialog(false)
-    toast.info('AI analysis rejected')
-  }
+    setShowAnalysisDialog(false);
+    toast.info("AI analysis rejected");
+  };
 
   const removeFile = (index: number) => {
-    const newFiles = files.filter((_, i) => i !== index)
-    onFilesChange(newFiles)
-  }
+    const newFiles = files.filter((_, i) => i !== index);
+    onFilesChange(newFiles);
+  };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-  }
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${Math.round((bytes / k ** i) * 100) / 100} ${sizes[i]}`;
+  };
 
   return (
     <>
@@ -241,7 +253,9 @@ export default function SmartFileUpload({
                   <p className="text-sm font-medium text-primary">
                     Analyzing {currentAnalyzingFile?.name}
                   </p>
-                  <span className="text-xs text-primary/80">This may take a few seconds…</span>
+                  <span className="text-xs text-primary/80">
+                    This may take a few seconds…
+                  </span>
                 </div>
                 <div className="space-y-2">
                   <Skeleton className="h-2.5 w-full bg-primary/10" />
@@ -253,10 +267,11 @@ export default function SmartFileUpload({
         )}
 
         {/* 文件上传区域 */}
-        <div
+        <label
           className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-500 hover:bg-gray-50 transition-colors"
           onDrop={handleDrop}
           onDragOver={handleDragOver}
+          aria-label="Upload receipt files"
         >
           <input
             ref={fileInputRef}
@@ -296,23 +311,30 @@ export default function SmartFileUpload({
           <p className="text-xs text-gray-400">
             Accepted formats: Images (JPG, PNG, HEIC, etc.) and PDF (Max 10MB)
           </p>
-        </div>
+        </label>
 
         {/* 已上传文件列表 */}
         {files.length > 0 && (
           <div className="mt-4">
             <div className="space-y-2">
               {files.map((file, index) => {
-                const isAnalyzable = file.type.startsWith('image/') || file.type === 'application/pdf'
-                const isCurrentlyAnalyzing = isAnalyzing && currentAnalyzingFile?.name === file.name
+                const fileKey = `${file.name}-${file.lastModified}-${file.size}`;
+                const isAnalyzable =
+                  file.type.startsWith("image/") ||
+                  file.type === "application/pdf";
+                const isCurrentlyAnalyzing =
+                  isAnalyzing && currentAnalyzingFile?.name === file.name;
 
                 return (
-                  <div key={index} className="flex items-center justify-between p-3 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  <div
+                    key={fileKey}
+                    className="flex items-center justify-between p-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="text-base text-primary">
-                        {file.type.startsWith('image/') ? (
+                        {file.type.startsWith("image/") ? (
                           <ImageIcon className="h-5 w-5" />
-                        ) : file.type === 'application/pdf' ? (
+                        ) : file.type === "application/pdf" ? (
                           <FileText className="h-5 w-5" />
                         ) : (
                           <Paperclip className="h-5 w-5" />
@@ -320,9 +342,11 @@ export default function SmartFileUpload({
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{file.name}</span>
+                          <span className="font-medium text-sm">
+                            {file.name}
+                          </span>
                           {isAnalyzable && (
-                            <Brain className="h-3 w-3 text-primary"/>
+                            <Brain className="h-3 w-3 text-primary" />
                           )}
                           {isCurrentlyAnalyzing && (
                             <Loader2 className="h-3 w-3 animate-spin text-primary" />
@@ -342,7 +366,11 @@ export default function SmartFileUpload({
                           className="text-xs"
                           asChild
                         >
-                          <a href={previewUrls[index] ?? undefined} target="_blank" rel="noopener noreferrer">
+                          <a
+                            href={previewUrls[index] ?? undefined}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
                             Preview
                           </a>
                         </Button>
@@ -370,7 +398,7 @@ export default function SmartFileUpload({
                       </Button>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -392,5 +420,5 @@ export default function SmartFileUpload({
         exchangeRates={exchangeRates}
       />
     </>
-  )
+  );
 }

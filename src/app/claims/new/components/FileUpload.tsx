@@ -1,71 +1,75 @@
-'use client'
+"use client";
 
-import { useRef } from 'react'
+import { useRef } from "react";
 
 interface FileUploadProps {
-  files: File[]
-  onFilesChange: (files: File[]) => void
+  files: File[];
+  onFilesChange: (files: File[]) => void;
 }
 
 export default function FileUpload({ files, onFilesChange }: FileUploadProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(event.target.files || [])
-    addFiles(selectedFiles)
+    const selectedFiles = Array.from(event.target.files || []);
+    addFiles(selectedFiles);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = "";
     }
-  }
+  };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    const droppedFiles = Array.from(event.dataTransfer.files)
-    addFiles(droppedFiles)
-  }
+    event.preventDefault();
+    const droppedFiles = Array.from(event.dataTransfer.files);
+    addFiles(droppedFiles);
+  };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-  }
+    event.preventDefault();
+  };
 
   const addFiles = (newFiles: File[]) => {
-    const validFiles = newFiles.filter(file => {
-      const maxSize = 10 * 1024 * 1024 // 10MB
+    const validFiles = newFiles.filter((file) => {
+      const maxSize = 10 * 1024 * 1024; // 10MB
       const allowedTypes = [
-        'image/jpeg', 'image/png', 'image/jpg',
-        'application/pdf',
-        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      ]
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ];
 
       if (file.size > maxSize) {
-        alert(`文件 "${file.name}" 过大，最大支持10MB`)
-        return false
+        alert(`文件 "${file.name}" 过大，最大支持10MB`);
+        return false;
       }
 
       if (!allowedTypes.includes(file.type)) {
-        alert(`文件 "${file.name}" 格式不支持`)
-        return false
+        alert(`文件 "${file.name}" 格式不支持`);
+        return false;
       }
 
-      return true
-    })
+      return true;
+    });
 
-    onFilesChange([...files, ...validFiles])
-  }
+    onFilesChange([...files, ...validFiles]);
+  };
 
   const removeFile = (index: number) => {
-    const newFiles = files.filter((_, i) => i !== index)
-    onFilesChange(newFiles)
-  }
+    const newFiles = files.filter((_, i) => i !== index);
+    onFilesChange(newFiles);
+  };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-  }
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${Math.round((bytes / k ** i) * 100) / 100} ${sizes[i]}`;
+  };
 
   return (
     <div className="bg-white border border-gray-300 p-4 mb-6">
@@ -74,10 +78,11 @@ export default function FileUpload({ files, onFilesChange }: FileUploadProps) {
       </h3>
 
       {/* 文件上传区域 */}
-      <div
+      <label
         className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-500 hover:bg-gray-50 transition-colors"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        aria-label="Upload files"
       >
         <input
           ref={fileInputRef}
@@ -87,7 +92,7 @@ export default function FileUpload({ files, onFilesChange }: FileUploadProps) {
           onChange={handleFileSelect}
           className="hidden"
         />
-        
+
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -95,40 +100,50 @@ export default function FileUpload({ files, onFilesChange }: FileUploadProps) {
         >
           Choose Files
         </button>
-        
+
         <p className="mt-2 text-sm text-gray-600">
           or drag and drop files here
         </p>
-        
+
         <p className="text-xs text-gray-400 mt-1">
           Accepted formats: JPG, PNG, PDF, DOC, XLS (Max 10MB)
         </p>
-      </div>
+      </label>
 
       {/* 已上传文件列表 */}
       {files.length > 0 && (
         <div className="mt-4">
           <div className="space-y-2">
-            {files.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-2 border border-gray-300 hover:bg-gray-50">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">📄</span>
-                  <div>
-                    <span className="font-medium text-sm">{file.name}</span>
-                    <span className="text-xs text-gray-600 ml-2">({formatFileSize(file.size)})</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => removeFile(index)}
-                  className="px-2 py-1 text-xs border border-gray-300 hover:bg-gray-100"
+            {files.map((file, index) => {
+              const key = `${file.name}-${file.lastModified}-${file.size}`;
+
+              return (
+                <div
+                  key={key}
+                  className="flex items-center justify-between p-2 border border-gray-300 hover:bg-gray-50"
                 >
-                  Remove
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📄</span>
+                    <div>
+                      <span className="font-medium text-sm">{file.name}</span>
+                      <span className="text-xs text-gray-600 ml-2">
+                        ({formatFileSize(file.size)})
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    className="px-2 py-1 text-xs border border-gray-300 hover:bg-gray-100"
+                  >
+                    Remove
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

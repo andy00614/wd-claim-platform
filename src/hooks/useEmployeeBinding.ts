@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Employee {
@@ -23,10 +23,10 @@ export function useEmployeeBinding(userId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // 获取所有员工数据
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("employees")
@@ -39,11 +39,14 @@ export function useEmployeeBinding(userId: string | null) {
       console.error("获取员工数据失败:", err);
       setError("获取员工数据失败");
     }
-  };
+  }, [supabase]);
 
   // 检查用户是否已经绑定员工
-  const checkCurrentBinding = async () => {
-    if (!userId) return;
+  const checkCurrentBinding = useCallback(async () => {
+    if (!userId) {
+      setCurrentBinding(null);
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -74,7 +77,7 @@ export function useEmployeeBinding(userId: string | null) {
       console.error("检查绑定状态失败:", err);
       setError("检查绑定状态失败");
     }
-  };
+  }, [supabase, userId]);
 
   // 绑定员工
   const bindEmployee = async (employeeId: number) => {
@@ -131,8 +134,13 @@ export function useEmployeeBinding(userId: string | null) {
       setLoading(false);
     };
 
-    loadData();
-  }, [userId]);
+    void loadData();
+  }, [checkCurrentBinding, fetchEmployees]);
+
+  const refetch = useCallback(() => {
+    void fetchEmployees();
+    void checkCurrentBinding();
+  }, [checkCurrentBinding, fetchEmployees]);
 
   return {
     employees,
@@ -140,9 +148,6 @@ export function useEmployeeBinding(userId: string | null) {
     loading,
     error,
     bindEmployee,
-    refetch: () => {
-      fetchEmployees();
-      checkCurrentBinding();
-    },
+    refetch,
   };
 }

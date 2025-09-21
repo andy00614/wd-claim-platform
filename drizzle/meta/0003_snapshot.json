@@ -65,12 +65,8 @@
           "name": "attachments_claim_item_id_claim_items_id_fk",
           "tableFrom": "attachments",
           "tableTo": "claim_items",
-          "columnsFrom": [
-            "claim_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["claim_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -178,12 +174,8 @@
           "name": "claim_items_claim_id_claims_id_fk",
           "tableFrom": "claim_items",
           "tableTo": "claims",
-          "columnsFrom": [
-            "claim_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["claim_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -191,12 +183,8 @@
           "name": "claim_items_type_item_type_id_fk",
           "tableFrom": "claim_items",
           "tableTo": "item_type",
-          "columnsFrom": [
-            "type"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["type"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -204,12 +192,8 @@
           "name": "claim_items_currency_id_currency_id_fk",
           "tableFrom": "claim_items",
           "tableTo": "currency",
-          "columnsFrom": [
-            "currency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["currency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -217,12 +201,8 @@
           "name": "claim_items_employee_id_employees_id_fk",
           "tableFrom": "claim_items",
           "tableTo": "employees",
-          "columnsFrom": [
-            "employee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["employee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -290,12 +270,8 @@
           "name": "claims_employee_id_employees_id_fk",
           "tableFrom": "claims",
           "tableTo": "employees",
-          "columnsFrom": [
-            "employee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["employee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -336,9 +312,7 @@
         "currency_code_unique": {
           "name": "currency_code_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "code"
-          ]
+          "columns": ["code"]
         }
       },
       "policies": {},
@@ -404,9 +378,7 @@
         "employees_employee_code_unique": {
           "name": "employees_employee_code_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "employee_code"
-          ]
+          "columns": ["employee_code"]
         }
       },
       "policies": {},
@@ -443,9 +415,7 @@
         "item_type_no_unique": {
           "name": "item_type_no_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "no"
-          ]
+          "columns": ["no"]
         }
       },
       "policies": {},
@@ -495,12 +465,8 @@
           "name": "user_employee_bindings_employee_id_employees_id_fk",
           "tableFrom": "user_employee_bindings",
           "tableTo": "employees",
-          "columnsFrom": [
-            "employee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["employee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -510,9 +476,7 @@
         "user_employee_bindings_user_id_unique": {
           "name": "user_employee_bindings_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         }
       },
       "policies": {},
@@ -524,12 +488,7 @@
     "public.claim_status": {
       "name": "claim_status",
       "schema": "public",
-      "values": [
-        "draft",
-        "submitted",
-        "approved",
-        "rejected"
-      ]
+      "values": ["draft", "submitted", "approved", "rejected"]
     },
     "public.department": {
       "name": "department",
@@ -546,10 +505,7 @@
     "public.employee_role": {
       "name": "employee_role",
       "schema": "public",
-      "values": [
-        "employee",
-        "admin"
-      ]
+      "values": ["employee", "admin"]
     }
   },
   "schemas": {},

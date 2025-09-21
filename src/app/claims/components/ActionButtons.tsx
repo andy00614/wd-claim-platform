@@ -1,14 +1,17 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu'
+  FileText,
+  MoreHorizontal,
+  PencilLine,
+  RotateCcw,
+  SendHorizonal,
+  Trash2,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,107 +22,118 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
-  FileText,
-  PencilLine,
-  SendHorizonal,
-  MoreHorizontal,
-  Trash2,
-  RotateCcw
-} from 'lucide-react'
-import { useState } from 'react'
-import { deleteClaim, updateClaimStatus } from '@/lib/actions'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { deleteClaim, updateClaimStatus } from "@/lib/actions";
 
 interface Claim {
-  id: number
-  status: string
-  totalAmount: string
-  createdAt: Date | null
+  id: number;
+  status: string;
+  totalAmount: string;
+  createdAt: Date | null;
 }
 
 interface ActionButtonsProps {
-  claim: Claim
+  claim: Claim;
 }
 
 export default function ActionButtons({ claim }: ActionButtonsProps) {
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false)
-  const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false)
-  const [actionInFlight, setActionInFlight] = useState<null | 'delete' | 'submit' | 'revert'>(null)
-  const router = useRouter()
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false);
+  const [actionInFlight, setActionInFlight] = useState<
+    null | "delete" | "submit" | "revert"
+  >(null);
+  const router = useRouter();
 
   const handleDelete = async () => {
     try {
-      setActionInFlight('delete')
-      const result = await deleteClaim(claim.id)
+      setActionInFlight("delete");
+      const result = await deleteClaim(claim.id);
       if (result.success) {
-        toast.success('Claim deleted successfully')
-        router.refresh()
+        toast.success("Claim deleted successfully");
+        router.refresh();
       } else {
-        toast.error(('error' in result ? result.error : 'Failed to delete claim') || 'Failed to delete claim')
+        toast.error(
+          ("error" in result ? result.error : "Failed to delete claim") ||
+            "Failed to delete claim",
+        );
       }
     } catch (error) {
-      toast.error('Failed to delete claim')
-      console.error(error)
+      toast.error("Failed to delete claim");
+      console.error(error);
     } finally {
-      setActionInFlight(null)
-      setIsDeleteDialogOpen(false)
+      setActionInFlight(null);
+      setIsDeleteDialogOpen(false);
     }
-  }
+  };
 
   const handleSubmitClaim = async () => {
     try {
-      setActionInFlight('submit')
-      const result = await updateClaimStatus(claim.id, 'submitted')
+      setActionInFlight("submit");
+      const result = await updateClaimStatus(claim.id, "submitted");
       if (result.success) {
-        toast.success('Claim submitted successfully')
-        router.refresh()
+        toast.success("Claim submitted successfully");
+        router.refresh();
       } else {
-        toast.error(('error' in result ? result.error : 'Failed to submit claim') || 'Failed to submit claim')
+        toast.error(
+          ("error" in result ? result.error : "Failed to submit claim") ||
+            "Failed to submit claim",
+        );
       }
     } catch (error) {
-      toast.error('Failed to submit claim')
-      console.error(error)
+      toast.error("Failed to submit claim");
+      console.error(error);
     } finally {
-      setActionInFlight(null)
-      setIsSubmitDialogOpen(false)
+      setActionInFlight(null);
+      setIsSubmitDialogOpen(false);
     }
-  }
+  };
 
   const handleRevertClaim = async () => {
     try {
-      setActionInFlight('revert')
-      const result = await updateClaimStatus(claim.id, 'draft')
+      setActionInFlight("revert");
+      const result = await updateClaimStatus(claim.id, "draft");
       if (result.success) {
-        toast.success('Claim returned to draft')
-        router.refresh()
+        toast.success("Claim returned to draft");
+        router.refresh();
       } else {
-        toast.error(('error' in result ? result.error : 'Failed to revert claim') || 'Failed to revert claim')
+        toast.error(
+          ("error" in result ? result.error : "Failed to revert claim") ||
+            "Failed to revert claim",
+        );
       }
     } catch (error) {
-      toast.error('Failed to revert claim')
-      console.error(error)
+      toast.error("Failed to revert claim");
+      console.error(error);
     } finally {
-      setActionInFlight(null)
-      setIsRevertDialogOpen(false)
+      setActionInFlight(null);
+      setIsRevertDialogOpen(false);
     }
-  }
+  };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="sm"
           className="h-7 w-7 p-0 hover:bg-gray-100"
         >
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48 border border-gray-200 shadow-lg">
+      <DropdownMenuContent
+        align="end"
+        className="w-48 border border-gray-200 shadow-lg"
+      >
         <DropdownMenuItem asChild className="focus:bg-primary/10">
           <Link
             href={`/claims/${claim.id}`}
@@ -130,7 +144,7 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
           </Link>
         </DropdownMenuItem>
 
-        {(claim.status === 'submitted' || claim.status === 'draft') && (
+        {(claim.status === "submitted" || claim.status === "draft") && (
           <DropdownMenuItem asChild className="focus:bg-primary/10">
             <Link
               href={`/claims/new?claimId=${claim.id}`}
@@ -142,9 +156,12 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
           </DropdownMenuItem>
         )}
 
-        {claim.status === 'draft' && (
+        {claim.status === "draft" && (
           <>
-            <AlertDialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
+            <AlertDialog
+              open={isSubmitDialogOpen}
+              onOpenChange={setIsSubmitDialogOpen}
+            >
               <AlertDialogTrigger asChild>
                 <DropdownMenuItem
                   onSelect={(e) => e.preventDefault()}
@@ -158,24 +175,30 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Submit Claim</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Ready to submit this claim for approval? You can still make changes until it is approved.
+                    Ready to submit this claim for approval? You can still make
+                    changes until it is approved.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleSubmitClaim}
-                    disabled={actionInFlight === 'submit'}
+                    disabled={actionInFlight === "submit"}
                   >
-                    {actionInFlight === 'submit' ? 'Submitting...' : 'Confirm Submit'}
+                    {actionInFlight === "submit"
+                      ? "Submitting..."
+                      : "Confirm Submit"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            
+
             <DropdownMenuSeparator />
-            
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+
+            <AlertDialog
+              open={isDeleteDialogOpen}
+              onOpenChange={setIsDeleteDialogOpen}
+            >
               <AlertDialogTrigger asChild>
                 <DropdownMenuItem
                   onSelect={(e) => e.preventDefault()}
@@ -189,17 +212,21 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete this claim? This action cannot be undone and all related data and attachments will be permanently removed.
+                    Are you sure you want to delete this claim? This action
+                    cannot be undone and all related data and attachments will
+                    be permanently removed.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDelete}
-                    disabled={actionInFlight === 'delete'}
+                    disabled={actionInFlight === "delete"}
                     className="bg-red-600 hover:bg-red-700 text-white"
                   >
-                    {actionInFlight === 'delete' ? 'Deleting...' : 'Confirm Delete'}
+                    {actionInFlight === "delete"
+                      ? "Deleting..."
+                      : "Confirm Delete"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -207,10 +234,13 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
           </>
         )}
 
-        {claim.status === 'submitted' && (
+        {claim.status === "submitted" && (
           <>
             <DropdownMenuSeparator />
-            <AlertDialog open={isRevertDialogOpen} onOpenChange={setIsRevertDialogOpen}>
+            <AlertDialog
+              open={isRevertDialogOpen}
+              onOpenChange={setIsRevertDialogOpen}
+            >
               <AlertDialogTrigger asChild>
                 <DropdownMenuItem
                   onSelect={(e) => e.preventDefault()}
@@ -224,16 +254,17 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Return Claim to Draft</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will move the claim back to draft so you can make more changes. Continue?
+                    This will move the claim back to draft so you can make more
+                    changes. Continue?
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleRevertClaim}
-                    disabled={actionInFlight === 'revert'}
+                    disabled={actionInFlight === "revert"}
                   >
-                    {actionInFlight === 'revert' ? 'Reverting...' : 'Confirm'}
+                    {actionInFlight === "revert" ? "Reverting..." : "Confirm"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -242,5 +273,5 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
         )}
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
