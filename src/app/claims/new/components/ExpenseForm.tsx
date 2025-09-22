@@ -1,15 +1,15 @@
 'use client'
 
-import { useState } from 'react'
 import { format } from 'date-fns'
 import { PlusCircle, Sparkles } from 'lucide-react'
-import { ExpenseItem } from '../page'
-import SmartFileUpload from './SmartFileUpload'
-import { ExpenseAnalysisResult } from './types'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from "sonner"
 import ExpenseDetailsFields from './ExpenseDetailsFields'
+import SmartFileUpload from './SmartFileUpload'
+import type { ExpenseItem } from '../page'
+import type { ExpenseAnalysisResult } from './types'
 
 interface ItemType {
   id: number
@@ -113,9 +113,13 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       try {
         const [month, day] = aiData.date.split('/')
         const currentYear = new Date().getFullYear()
-        newDate = new Date(currentYear, parseInt(month) - 1, parseInt(day))
+        const monthNumber = Number.parseInt(month, 10)
+        const dayNumber = Number.parseInt(day, 10)
+        if (!Number.isNaN(monthNumber) && !Number.isNaN(dayNumber)) {
+          newDate = new Date(currentYear, monthNumber - 1, dayNumber)
+        }
         setDate(newDate)
-      } catch (error) {
+      } catch (_error) {
         console.warn('Failed to parse AI date:', aiData.date)
       }
     }
@@ -172,7 +176,8 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       amount: parseFloat(formData.amount),
       rate: parseFloat(formData.forexRate),
       sgdAmount: parseFloat(formData.sgdAmount),
-      attachments: [...attachments]
+      attachments: [...attachments],
+      existingAttachments: []
     }
 
     onAddItem(item)

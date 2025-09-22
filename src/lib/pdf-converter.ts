@@ -7,7 +7,8 @@ let pdfjsLib: any = null
 if (typeof window !== 'undefined') {
   import('pdfjs-dist').then((module) => {
     pdfjsLib = module
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+    // Use local worker file instead of CDN
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
   })
 }
 
@@ -38,7 +39,7 @@ export async function convertPdfToImages(
 
     // Set up worker if not already set
     if (!pdfjsModule.GlobalWorkerOptions.workerSrc) {
-      pdfjsModule.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsModule.version}/pdf.worker.min.js`
+      pdfjsModule.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
     }
 
     const { url, maxPages = 5, scale = 1.5 } = options

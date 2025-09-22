@@ -87,31 +87,28 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
   const renderFilePreview = (attachment: any) => {
     if (isImageFile(attachment.fileType, attachment.fileName)) {
       return (
-        <div className="p-3">
-          <img
-            src={attachment.url}
-            alt={attachment.fileName}
-            className="attachment-preview w-full max-h-64 object-contain bg-white rounded border"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-              const fallback = document.createElement('div')
-              fallback.className = 'p-4 bg-gray-200 text-center text-sm text-gray-500 rounded'
-              fallback.textContent = 'Preview not available'
-              target.parentNode?.appendChild(fallback)
-            }}
-          />
-        </div>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={attachment.url}
+          alt={attachment.fileName}
+          className="max-w-none h-auto"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement
+            target.style.display = 'none'
+            const fallback = document.createElement('div')
+            fallback.className = 'p-4 bg-gray-200 text-center text-sm text-gray-500 rounded'
+            fallback.textContent = 'Preview not available'
+            target.parentNode?.appendChild(fallback)
+          }}
+        />
       )
     } else if (isPdfFile(attachment.fileType, attachment.fileName)) {
       return (
-        <div className="p-3">
-          <PdfPreview
-            url={attachment.url}
-            fileName={attachment.fileName}
-            maxPages={3}
-          />
-        </div>
+        <PdfPreview
+          url={attachment.url}
+          fileName={attachment.fileName}
+          maxPages={3}
+        />
       )
     } else {
       return (
@@ -370,87 +367,58 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
                     </div>
                   </div>
 
-                  {/* Item Content */}
-                  <div className="item-content grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
-                    {/* Left: Item Details */}
-                    <div className="item-details space-y-4">
-                      <div className="grid grid-cols-1 gap-3">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm font-medium text-gray-600">Date:</span>
-                          <span className="text-sm">
-                            {item.date ? new Date(item.date).toLocaleDateString('en-SG') : 'N/A'}
-                          </span>
-                        </div>
+                  {/* Item Details */}
+                  <div className="item-details p-6">
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium text-gray-600">Date:</span>
+                        <span className="text-sm">
+                          {item.date ? new Date(item.date).toLocaleDateString('en-SG') : 'N/A'}
+                        </span>
+                      </div>
 
+                      <div className="flex items-start gap-2">
+                        <Receipt className="h-4 w-4 text-gray-500 mt-0.5" />
+                        <span className="text-sm font-medium text-gray-600">Evidence No:</span>
+                        <span className="text-sm">{item.evidenceNo || 'N/A'}</span>
+                      </div>
+
+                      {item.details && (
                         <div className="flex items-start gap-2">
-                          <Receipt className="h-4 w-4 text-gray-500 mt-0.5" />
-                          <span className="text-sm font-medium text-gray-600">Evidence No:</span>
-                          <span className="text-sm">{item.evidenceNo || 'N/A'}</span>
+                          <FileText className="h-4 w-4 text-gray-500 mt-0.5" />
+                          <span className="text-sm font-medium text-gray-600">Details:</span>
+                          <span className="text-sm">{item.details}</span>
                         </div>
+                      )}
 
-                        {item.details && (
-                          <div className="flex items-start gap-2">
-                            <FileText className="h-4 w-4 text-gray-500 mt-0.5" />
-                            <span className="text-sm font-medium text-gray-600">Details:</span>
-                            <span className="text-sm">{item.details}</span>
+                      <div className="bg-gray-50 p-3 rounded">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="font-medium text-gray-600">Original Currency:</span>
+                            <div className="font-mono">{item.currencyCode} {parseFloat(item.amount).toFixed(2)}</div>
                           </div>
-                        )}
-
-                        <div className="bg-gray-50 p-3 rounded">
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="font-medium text-gray-600">Original Currency:</span>
-                              <div className="font-mono">{item.currencyCode} {parseFloat(item.amount).toFixed(2)}</div>
-                            </div>
-                            <div>
-                              <span className="font-medium text-gray-600">Exchange Rate:</span>
-                              <div className="font-mono">{parseFloat(item.rate).toFixed(4)}</div>
-                            </div>
+                          <div>
+                            <span className="font-medium text-gray-600">Exchange Rate:</span>
+                            <div className="font-mono">{parseFloat(item.rate).toFixed(4)}</div>
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Right: Attachments */}
-                    <div className="item-attachments">
-                      <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <Image className="h-4 w-4" />
-                        Supporting Documents
-                      </h5>
-
-                      {item.attachments && item.attachments.length > 0 ? (
-                        <div className="space-y-3">
-                          {item.attachments.map((attachment) => (
-                            <div key={attachment.id} className="border rounded-lg overflow-hidden bg-gray-50">
-                              <div className="p-3 border-b bg-white">
-                                <div className="flex items-center gap-2">
-                                  {isImageFile(attachment.fileType, attachment.fileName) ? (
-                                    <Image className="h-4 w-4 text-blue-500" />
-                                  ) : isPdfFile(attachment.fileType, attachment.fileName) ? (
-                                    <FileText className="h-4 w-4 text-red-500" />
-                                  ) : (
-                                    <FileText className="h-4 w-4 text-gray-500" />
-                                  )}
-                                  <span className="text-sm font-medium truncate">{attachment.fileName}</span>
-                                </div>
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {Math.round(parseFloat(attachment.fileSize) / 1024)} KB
-                                </div>
-                              </div>
-
-                              {renderFilePreview(attachment)}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center p-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-                          <FileText className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                          <p className="text-sm">No supporting documents</p>
-                        </div>
-                      )}
-                    </div>
                   </div>
+
+                  {/* Attachments - moved to bottom */}
+                  {item.attachments && item.attachments.length > 0 && (
+                    <div className="item-attachments p-6 pt-0">
+                      <div className="space-y-6">
+                        {item.attachments.map((attachment) => (
+                          <div key={attachment.id}>
+                            {renderFilePreview(attachment)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>

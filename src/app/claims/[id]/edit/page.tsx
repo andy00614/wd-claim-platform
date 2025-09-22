@@ -108,12 +108,13 @@ export default async function EditClaimPage({ params }: EditClaimPageProps) {
         </div>
 
         {/* 编辑表单组件 */}
-        <EditClaimForm 
+        <EditClaimForm
           claimId={claimId}
           itemTypes={initData.data.itemTypes}
           currencies={initData.data.currencies}
           exchangeRates={initData.data.exchangeRates}
           existingItems={claimData.data.items}
+          existingAttachments={claimData.data.attachments || []}
           employeeId={claimData.data.employee.employeeId}
         />
       </div>

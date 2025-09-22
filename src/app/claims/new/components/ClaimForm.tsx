@@ -1,17 +1,16 @@
 'use client'
 
-import { useState, useEffect, useMemo, useTransition } from 'react'
-import { useActionState } from 'react'
 import { Loader2, Save } from 'lucide-react'
-import { ExpenseItem } from '../page'
-import { submitClaim, uploadClaimFiles, uploadItemAttachments, saveDraft, updateClaim } from '@/lib/actions'
-import { formatClaimId } from '@/lib/utils'
-import ExpenseForm from './ExpenseForm'
-import CurrentItems from './CurrentItems'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useActionState, useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from "sonner"
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { saveDraft, submitClaim, updateClaim, uploadClaimFiles, uploadItemAttachments } from '@/lib/actions'
+import { formatClaimId } from '@/lib/utils'
+import type { ClaimAttachment, ExpenseItem } from '../page'
+import CurrentItems from './CurrentItems'
+import ExpenseForm from './ExpenseForm'
 
 interface ItemType {
   id: number
@@ -33,6 +32,7 @@ interface ClaimFormProps {
   mode?: 'create' | 'edit'
   initialItems?: ExpenseItem[]
   claimId?: number
+  existingAttachments?: ClaimAttachment[]
 }
 
 export default function ClaimForm({
@@ -42,7 +42,8 @@ export default function ClaimForm({
   employeeId,
   mode = 'create',
   initialItems = [],
-  claimId
+  claimId,
+  existingAttachments = []
 }: ClaimFormProps) {
   const isEditMode = mode === 'edit' && typeof claimId === 'number'
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>(initialItems)
@@ -101,10 +102,21 @@ export default function ClaimForm({
           }
 
           // 2. 上传item级别的附件
-          const itemsWithAttachments = currentState.data.insertedItems.map((insertedItem: any, index: number) => ({
-            id: insertedItem.id,
-            attachments: expenseItems[index]?.attachments || []
-          })).filter(item => item.attachments.length > 0)
+          const insertedItems = Array.isArray(currentState.data.insertedItems)
+            ? currentState.data.insertedItems as Array<{ id: number }>
+            : []
+
+          const itemsWithAttachments = insertedItems
+            .map((insertedItem, index) => {
+              const itemAttachments = (expenseItems[index]?.attachments || []).filter(
+                (attachment): attachment is File => attachment instanceof File
+              )
+              return {
+                id: insertedItem.id,
+                attachments: itemAttachments
+              }
+            })
+            .filter(item => item.attachments.length > 0)
 
           if (itemsWithAttachments.length > 0) {
             const itemUploadResult = await uploadItemAttachments(itemsWithAttachments)
@@ -250,7 +262,7 @@ export default function ClaimForm({
       />
 
       {/* 当前项目列表 */}
-      <CurrentItems 
+      <CurrentItems
         items={expenseItems}
         onRemoveItem={removeExpenseItem}
         onEditItem={handleEditItem}
@@ -258,6 +270,8 @@ export default function ClaimForm({
         itemTypes={itemTypes}
         currencies={currencies}
         exchangeRates={exchangeRates}
+        existingAttachments={existingAttachments}
+        isEditMode={isEditMode}
       />
 
       {/* 错误提示 */}

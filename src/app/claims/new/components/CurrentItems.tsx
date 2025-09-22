@@ -1,12 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
 import { format, parse } from 'date-fns'
-import { ExpenseItem } from '../page'
-import ExpenseDetailsFields, {
-  ExpenseCurrencyOption,
-  ExpenseItemTypeOption,
-} from './ExpenseDetailsFields'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -24,9 +19,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Paperclip, Pencil, Trash2 } from 'lucide-react'
+import type { ExpenseItem } from '../page'
+import ExpenseDetailsFields from './ExpenseDetailsFields'
+import ExistingAttachments from './ExistingAttachments'
 import SmartFileUpload from './SmartFileUpload'
-import { ExpenseAnalysisResult } from './types'
+import type { ExpenseCurrencyOption, ExpenseItemTypeOption } from './ExpenseDetailsFields'
+import type { ExpenseAnalysisResult } from './types'
+
+interface Attachment {
+  id: number
+  claimId: number | null
+  claimItemId: number | null
+  fileName: string
+  url: string
+  fileSize: string
+  fileType: string
+  createdAt: Date | string | null
+  updatedAt: Date | string | null
+}
 
 interface CurrentItemsProps {
   items: ExpenseItem[]
@@ -36,6 +47,8 @@ interface CurrentItemsProps {
   itemTypes: ExpenseItemTypeOption[]
   currencies: ExpenseCurrencyOption[]
   exchangeRates: Record<string, number>
+  existingAttachments?: Attachment[]
+  isEditMode?: boolean
 }
 
 interface EditFormState {
@@ -60,6 +73,11 @@ const calculateForexRate = (sgdAmount: string, amount: string) => {
   const parsedAmount = parseFloat(amount) || 0
   if (parsedAmount === 0) return '0.0000'
   return (parsedSgd / parsedAmount).toFixed(4)
+}
+
+const truncateAttachmentName = (value: string) => {
+  if (!value) return 'Attachment'
+  return value.length > 24 ? `${value.slice(0, 21)}...` : value
 }
 
 const parseDateString = (value: string) => {
@@ -87,6 +105,8 @@ export default function CurrentItems({
   itemTypes,
   currencies,
   exchangeRates,
+  existingAttachments = [],
+  isEditMode = false,
 }: CurrentItemsProps) {
   if (items.length === 0) {
     return null
@@ -99,6 +119,11 @@ export default function CurrentItems({
 
   useEffect(() => {
     if (!editingItem) return
+
+    const existingFiles = (editingItem.attachments || []).filter(
+      (attachment): attachment is File => attachment instanceof File
+    )
+
     setFormState({
       date: editingItem.date,
       itemNo: editingItem.itemNo,
@@ -107,9 +132,9 @@ export default function CurrentItems({
       amount: editingItem.amount.toFixed(2),
       forexRate: editingItem.rate.toFixed(4),
       sgdAmount: editingItem.sgdAmount.toFixed(2),
-      attachments: [...(editingItem.attachments || [])]
+      attachments: existingFiles
     })
-    setLocalFiles([...(editingItem.attachments || [])])
+    setLocalFiles(existingFiles)
   }, [editingItem])
 
   const editingDate = useMemo(() => {
@@ -195,7 +220,8 @@ export default function CurrentItems({
       amount: parseFloat(formState.amount) || 0,
       rate: parseFloat(formState.forexRate) || 0,
       sgdAmount: parseFloat(formState.sgdAmount) || 0,
-      attachments: localFiles
+      attachments: localFiles,
+      existingAttachments: editingItem.existingAttachments
     }
 
     onEditItem(updatedItem)
@@ -273,6 +299,7 @@ export default function CurrentItems({
                   <TableHead className="min-w-[150px]">Description</TableHead>
                   <TableHead className="min-w-[80px] hidden sm:table-cell">Amount</TableHead>
                   <TableHead className="min-w-[70px]">SGD</TableHead>
+                  <TableHead className="min-w-[140px]">Attachments</TableHead>
                   <TableHead className="min-w-[90px]">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -286,9 +313,6 @@ export default function CurrentItems({
                         <div className="truncate text-xs" title={item.details}>
                           {item.details}
                         </div>
-                        {item.attachments && item.attachments.length > 0 && (
-                          <div className="text-xs text-primary mt-1">📎 {item.attachments.length}</div>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-xs">
@@ -296,6 +320,49 @@ export default function CurrentItems({
                     </TableCell>
                     <TableCell className="text-xs font-mono font-semibold">
                       {item.sgdAmount.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="align-top">
+                      {(() => {
+                        const existing = item.existingAttachments || []
+                        const pending = item.attachments || []
+                        const hasAttachments = existing.length > 0 || pending.length > 0
+
+                        if (!hasAttachments) {
+                          return <span className="text-xs text-muted-foreground">—</span>
+                        }
+
+                        return (
+                          <div className="space-y-1">
+                            {existing.map((attachment) => (
+                              <a
+                                key={`existing-${attachment.id}`}
+                                href={attachment.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 text-xs text-primary hover:underline max-w-[180px]"
+                                title={attachment.fileName}
+                              >
+                                <Paperclip className="h-3 w-3 flex-shrink-0" />
+                                <span className="block truncate">{truncateAttachmentName(attachment.fileName)}</span>
+                              </a>
+                            ))}
+
+                            {pending.map((file, index) => {
+                              const fileName = typeof file.name === 'string' ? file.name : ''
+                              return (
+                                <div
+                                  key={`pending-${item.id}-${index}`}
+                                  className="flex items-center gap-1.5 text-xs text-muted-foreground max-w-[180px]"
+                                  title={fileName || 'Attachment'}
+                                >
+                                  <Paperclip className="h-3 w-3 flex-shrink-0" />
+                                  <span className="block truncate">{truncateAttachmentName(fileName)}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )
+                      })()}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -335,6 +402,13 @@ export default function CurrentItems({
           </div>
         </CardContent>
       </Card>
+
+      {isEditMode && (
+        <ExistingAttachments
+          attachments={existingAttachments}
+          title="Current Attachments"
+        />
+      )}
 
       <Dialog
         open={isEditDialogOpen}

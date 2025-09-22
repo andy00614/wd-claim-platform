@@ -7,6 +7,7 @@ import { formatClaimId } from '@/lib/utils'
 import ExpenseForm from '@/app/claims/new/components/ExpenseForm'
 import CurrentItems from '@/app/claims/new/components/CurrentItems'
 import FileUpload from '@/app/claims/new/components/FileUpload'
+import ExistingAttachments from '@/app/claims/new/components/ExistingAttachments'
 import SubmitButton from '@/app/claims/new/components/SubmitButton'
 import { useRouter } from 'next/navigation'
 
@@ -32,6 +33,19 @@ interface ExistingItem {
   itemTypeName: string
   itemTypeNo: string
   currencyCode: string
+  attachments?: Attachment[]
+}
+
+interface Attachment {
+  id: number
+  claimId: number | null
+  claimItemId: number | null
+  fileName: string
+  url: string
+  fileSize: string
+  fileType: string
+  createdAt: Date | null
+  updatedAt: Date | null
 }
 
 interface ExpenseItem {
@@ -52,19 +66,21 @@ interface EditClaimFormProps {
   currencies: Currency[]
   exchangeRates: Record<string, number>
   existingItems: ExistingItem[]
+  existingAttachments: Attachment[]
   employeeId: number
 }
 
-export default function EditClaimForm({ 
+export default function EditClaimForm({
   claimId,
-  itemTypes, 
-  currencies, 
-  exchangeRates, 
+  itemTypes,
+  currencies,
+  exchangeRates,
   existingItems,
-  employeeId 
+  existingAttachments,
+  employeeId
 }: EditClaimFormProps) {
   const router = useRouter()
-  
+
   // 将现有项目转换为表单格式
   const convertedItems: ExpenseItem[] = existingItems.map((item, index) => {
     const itemDate = item.date ? new Date(item.date) : new Date()
@@ -144,7 +160,7 @@ export default function EditClaimForm({
       />
 
       {/* 当前项目列表 */}
-      <CurrentItems 
+      <CurrentItems
         items={expenseItems}
         onRemoveItem={removeExpenseItem}
         onEditItem={handleEditItem}
@@ -154,8 +170,14 @@ export default function EditClaimForm({
         exchangeRates={exchangeRates}
       />
 
+      {/* 现有附件显示 */}
+      <ExistingAttachments
+        attachments={existingAttachments}
+        title="Current Attachments"
+      />
+
       {/* 文件上传区域 */}
-      <FileUpload 
+      <FileUpload
         files={attachedFiles}
         onFilesChange={setAttachedFiles}
       />

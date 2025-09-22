@@ -1,5 +1,17 @@
-import { getFormInitData, getCurrentEmployee, getClaimDetails } from '@/lib/actions'
+import { getClaimDetails, getCurrentEmployee, getFormInitData } from '@/lib/actions'
 import ClaimForm from './components/ClaimForm'
+
+export interface ClaimAttachment {
+  id: number
+  claimId: number | null
+  claimItemId: number | null
+  fileName: string
+  url: string
+  fileSize: string
+  fileType: string
+  createdAt: Date | string | null
+  updatedAt: Date | string | null
+}
 
 export interface ExpenseItem {
   id: number
@@ -11,6 +23,7 @@ export interface ExpenseItem {
   rate: number
   sgdAmount: number
   attachments?: File[]
+  existingAttachments?: ClaimAttachment[]
 }
 
 interface NewClaimPageProps {
@@ -81,13 +94,14 @@ export default async function NewClaimPage({ searchParams }: NewClaimPageProps) 
         amount: parseFloat(item.amount),
         rate: parseFloat(item.rate),
         sgdAmount: parseFloat(item.sgdAmount),
-        attachments: []
+        attachments: [],
+        existingAttachments: item.attachments || []
       }
     })
   }
 
   return (
-    <ClaimForm 
+    <ClaimForm
       itemTypes={initData.data.itemTypes}
       currencies={initData.data.currencies}
       exchangeRates={initData.data.exchangeRates}
@@ -95,6 +109,7 @@ export default async function NewClaimPage({ searchParams }: NewClaimPageProps) 
       mode={claimId ? 'edit' : 'create'}
       initialItems={initialItems}
       claimId={claimId ?? undefined}
+      existingAttachments={claimDetails?.success ? claimDetails.data?.attachments || [] : []}
     />
   )
 }

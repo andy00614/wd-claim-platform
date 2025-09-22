@@ -21,15 +21,12 @@ interface PdfPage {
 
 export default function PdfPreview({ url, fileName, maxPages = 3, className = '' }: PdfPreviewProps) {
   const [pages, setPages] = useState<PdfPage[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showPreview, setShowPreview] = useState(false)
 
   useEffect(() => {
-    if (showPreview && pages.length === 0) {
-      loadPdfPages()
-    }
-  }, [showPreview])
+    loadPdfPages()
+  }, [])
 
   const loadPdfPages = async () => {
     setLoading(true)
@@ -39,7 +36,7 @@ export default function PdfPreview({ url, fileName, maxPages = 3, className = ''
       const convertedPages = await convertPdfToImages({
         url,
         maxPages,
-        scale: 1.2
+        scale: 2.0
       })
       setPages(convertedPages)
     } catch (err) {
@@ -50,49 +47,13 @@ export default function PdfPreview({ url, fileName, maxPages = 3, className = ''
     }
   }
 
-  if (!showPreview) {
-    return (
-      <div className={`bg-red-50 border border-red-200 rounded-lg p-4 ${className}`}>
-        <div className="flex items-center justify-center mb-3">
-          <FileText className="h-12 w-12 text-red-500" />
-        </div>
-        <div className="text-center">
-          <p className="text-sm font-medium text-gray-900 mb-2">PDF Document</p>
-          <p className="text-xs text-gray-600 mb-3 truncate">{fileName}</p>
-          <div className="flex gap-2 justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={() => setShowPreview(true)}
-            >
-              <FileText className="h-3 w-3 mr-1" />
-              Preview
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={() => window.open(url, '_blank')}
-            >
-              <FileText className="h-3 w-3 mr-1" />
-              Open PDF
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   if (loading) {
     return (
-      <div className={`bg-red-50 border border-red-200 rounded-lg p-4 ${className}`}>
-        <div className="flex items-center justify-center mb-3">
-          <Loader2 className="h-8 w-8 text-red-500 animate-spin" />
-        </div>
-        <div className="text-center">
-          <p className="text-sm font-medium text-gray-900">Loading PDF preview...</p>
-          <p className="text-xs text-gray-600 mt-1">Converting to images</p>
+      <div className={`py-8 ${className}`}>
+        <div className="flex flex-col items-center justify-center">
+          <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-3" />
+          <p className="text-sm text-gray-600">Loading PDF...</p>
         </div>
       </div>
     )
@@ -100,21 +61,17 @@ export default function PdfPreview({ url, fileName, maxPages = 3, className = ''
 
   if (error) {
     return (
-      <div className={`bg-red-50 border border-red-200 rounded-lg p-4 ${className}`}>
-        <div className="flex items-center justify-center mb-3">
-          <AlertCircle className="h-8 w-8 text-red-500" />
-        </div>
-        <div className="text-center">
-          <p className="text-sm font-medium text-gray-900 mb-2">Preview Error</p>
-          <p className="text-xs text-gray-600 mb-3">{error}</p>
+      <div className={`py-4 ${className}`}>
+        <div className="flex flex-col items-center justify-center text-center">
+          <AlertCircle className="h-6 w-6 text-red-500 mb-2" />
+          <p className="text-sm text-red-600 mb-3">{error}</p>
           <Button
             variant="outline"
             size="sm"
-            className="text-xs"
             onClick={() => window.open(url, '_blank')}
           >
-            <FileText className="h-3 w-3 mr-1" />
-            Open Original
+            <FileText className="h-4 w-4 mr-2" />
+            Open PDF
           </Button>
         </div>
       </div>
@@ -122,48 +79,15 @@ export default function PdfPreview({ url, fileName, maxPages = 3, className = ''
   }
 
   return (
-    <div className={`space-y-3 ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium text-gray-900">PDF Preview</p>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-xs"
-          onClick={() => setShowPreview(false)}
-        >
-          Hide Preview
-        </Button>
-      </div>
-
+    <div className={`space-y-4 ${className}`}>
       {pages.map((page) => (
-        <div key={page.pageNumber} className="border rounded-lg overflow-hidden bg-white">
-          <div className="p-2 bg-gray-50 border-b text-xs text-gray-600">
-            Page {page.pageNumber}
-          </div>
-          <div className="p-3">
-            <img
-              src={page.imageDataUrl}
-              alt={`${fileName} - Page ${page.pageNumber}`}
-              className="w-full max-h-64 object-contain bg-gray-100 rounded border"
-              style={{ maxWidth: '100%', height: 'auto' }}
-            />
-          </div>
-        </div>
+        <img
+          key={page.pageNumber}
+          src={page.imageDataUrl}
+          alt={`${fileName} - Page ${page.pageNumber}`}
+          className="w-full h-auto"
+        />
       ))}
-
-      {pages.length > 0 && (
-        <div className="text-center pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs"
-            onClick={() => window.open(url, '_blank')}
-          >
-            <FileText className="h-3 w-3 mr-1" />
-            View Full PDF
-          </Button>
-        </div>
-      )}
     </div>
   )
 }
