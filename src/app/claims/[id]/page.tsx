@@ -2,10 +2,10 @@ import { getClaimDetails } from '@/lib/actions'
 import { formatClaimId } from '@/lib/utils'
 import Link from 'next/link'
 import BackButton from './components/BackButton'
+import ExpenseItemsTable from '@/components/claims/ExpenseItemsTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { FileText, Download, Eye, ArrowLeft, User, Calendar, DollarSign, Edit } from 'lucide-react'
@@ -43,8 +43,6 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
   }
 
   const { claim, items, attachments, employee } = claimData.data
-
-  console.log('claimData.data',claimData.data)
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -166,91 +164,29 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
           <CardTitle>Expense Items ({items.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Item Type</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Details</TableHead>
-                  <TableHead>Currency</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Rate</TableHead>
-                  <TableHead className="text-right">SGD Amount</TableHead>
-                  <TableHead>Attachments</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      {item.date ? new Date(item.date).toLocaleDateString() : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium text-xs">{item.itemTypeNo}</div>
-                        <div className="text-xs text-muted-foreground">{item.itemTypeName}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      <div className="truncate" title={item.note || ''}>
-                        {item.note || '-'}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      <div className="truncate text-xs text-muted-foreground" title={item.details || ''}>
-                        {item.details || '-'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {item.currencyCode}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {parseFloat(item.amount).toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                      {parseFloat(item.rate).toFixed(4)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-medium">
-                      {parseFloat(item.sgdAmount).toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      {item.attachments && item.attachments.length > 0 ? (
-                        <div className="space-y-1">
-                          {item.attachments.map((attachment: any) => (
-                            <Button
-                              key={attachment.id}
-                              asChild
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 justify-start"
-                            >
-                              <a 
-                                href={attachment.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                title={attachment.fileName}
-                              >
-                                <FileText className="h-3 w-3 mr-1" />
-                                <span className="truncate max-w-[80px] text-xs">
-                                  {attachment.fileName}
-                                </span>
-                              </a>
-                            </Button>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No files</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <ExpenseItemsTable
+            items={items.map((item) => ({
+              id: item.id,
+              date: item.date ? new Date(item.date) : null,
+              itemCode: item.itemTypeNo,
+              itemName: item.itemTypeName,
+              description: item.note,
+              details: item.details,
+              currencyCode: item.currencyCode,
+              amount: item.amount,
+              rate: item.rate,
+              sgdAmount: item.sgdAmount,
+              existingAttachments: Array.isArray(item.attachments)
+                ? item.attachments.map((attachment: any) => ({
+                    id: attachment.id,
+                    fileName: attachment.fileName,
+                    url: attachment.url,
+                    fileSize: attachment.fileSize,
+                    fileType: attachment.fileType,
+                  }))
+                : [],
+            }))}
+          />
           
           <Separator className="my-4" />
           

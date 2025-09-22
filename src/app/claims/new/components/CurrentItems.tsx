@@ -2,16 +2,9 @@
 
 import { format, parse } from 'date-fns'
 import { useEffect, useMemo, useState } from 'react'
+import ExpenseItemsTable, { type ExpenseItemsTableItemBase } from '@/components/claims/ExpenseItemsTable'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -19,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Paperclip, Pencil, Trash2 } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import type { ExpenseItem } from '../page'
 import ExpenseDetailsFields from './ExpenseDetailsFields'
 import ExistingAttachments from './ExistingAttachments'
@@ -60,6 +53,10 @@ interface EditFormState {
   forexRate: string
   sgdAmount: string
   attachments: File[]
+}
+
+type PreparedExpenseItem = ExpenseItemsTableItemBase & ExpenseItem & {
+  originalItem: ExpenseItem
 }
 
 const calculateSgdAmount = (amount: string, rate: string) => {
@@ -116,6 +113,28 @@ export default function CurrentItems({
   const [editingItem, setEditingItem] = useState<ExpenseItem | null>(null)
   const [formState, setFormState] = useState<EditFormState | null>(null)
   const [localFiles, setLocalFiles] = useState<File[]>([])
+
+  const itemTypeLabelMap = useMemo(() => {
+    return new Map(itemTypes.map((type) => [type.no, type.name]))
+  }, [itemTypes])
+
+  const tableItems = useMemo<PreparedExpenseItem[]>(() => {
+    return items.map((item) => ({
+      ...item,
+      originalItem: item,
+      date: formatItemDate(item.date),
+      itemCode: item.itemNo,
+      itemName: itemTypeLabelMap.get(item.itemNo) ?? undefined,
+      description: '',
+      details: item.details,
+      currencyCode: item.currency,
+      amount: item.amount,
+      rate: item.rate,
+      sgdAmount: item.sgdAmount,
+      existingAttachments: item.existingAttachments ?? [],
+      pendingAttachments: item.attachments ?? [],
+    }))
+  }, [items, itemTypeLabelMap])
 
   useEffect(() => {
     if (!editingItem) return
@@ -290,107 +309,13 @@ export default function CurrentItems({
           <CardTitle className="text-lg">Current Items ({items.length})</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="max-h-64 overflow-y-auto overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[80px]">Date</TableHead>
-                  <TableHead className="min-w-[60px]">Item</TableHead>
-                  <TableHead className="min-w-[150px]">Description</TableHead>
-                  <TableHead className="min-w-[80px] hidden sm:table-cell">Amount</TableHead>
-                  <TableHead className="min-w-[70px]">SGD</TableHead>
-                  <TableHead className="min-w-[140px]">Attachments</TableHead>
-                  <TableHead className="min-w-[90px]">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.id} className="text-sm">
-                    <TableCell className="text-xs">{formatItemDate(item.date)}</TableCell>
-                    <TableCell className="text-xs font-mono">{item.itemNo}</TableCell>
-                    <TableCell>
-                      <div className="max-w-[150px] sm:max-w-xs">
-                        <div className="truncate text-xs" title={item.details}>
-                          {item.details}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell text-xs">
-                      {item.currency} {item.amount.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-xs font-mono font-semibold">
-                      {item.sgdAmount.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="align-top">
-                      {(() => {
-                        const existing = item.existingAttachments || []
-                        const pending = item.attachments || []
-                        const hasAttachments = existing.length > 0 || pending.length > 0
-
-                        if (!hasAttachments) {
-                          return <span className="text-xs text-muted-foreground">—</span>
-                        }
-
-                        return (
-                          <div className="space-y-1">
-                            {existing.map((attachment) => (
-                              <a
-                                key={`existing-${attachment.id}`}
-                                href={attachment.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1.5 text-xs text-primary hover:underline max-w-[180px]"
-                                title={attachment.fileName}
-                              >
-                                <Paperclip className="h-3 w-3 flex-shrink-0" />
-                                <span className="block truncate">{truncateAttachmentName(attachment.fileName)}</span>
-                              </a>
-                            ))}
-
-                            {pending.map((file, index) => {
-                              const fileName = typeof file.name === 'string' ? file.name : ''
-                              return (
-                                <div
-                                  key={`pending-${item.id}-${index}`}
-                                  className="flex items-center gap-1.5 text-xs text-muted-foreground max-w-[180px]"
-                                  title={fileName || 'Attachment'}
-                                >
-                                  <Paperclip className="h-3 w-3 flex-shrink-0" />
-                                  <span className="block truncate">{truncateAttachmentName(fileName)}</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )
-                      })()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => handleOpenEdit(item)}
-                          variant="outline"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                          title="Edit item"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          onClick={() => onRemoveItem(item.id)}
-                          variant="outline"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
-                          title="Remove item"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <ExpenseItemsTable
+            className="max-h-64 overflow-y-auto overflow-x-auto"
+            items={tableItems}
+            actionColumnLabel="Action"
+            onEdit={(item) => handleOpenEdit(item.originalItem)}
+            onDelete={(item) => onRemoveItem(item.originalItem.id)}
+          />
 
           <div className="bg-gray-50 px-3 sm:px-4 py-3 rounded-md border">
             <div className="flex justify-between items-center">
@@ -459,6 +384,29 @@ export default function CurrentItems({
               exchangeRates={exchangeRates}
             />
           </div>
+
+          {editingItem?.existingAttachments && editingItem.existingAttachments.length > 0 && (
+            <div className="border border-gray-200 rounded-md p-4 space-y-2">
+              <h4 className="text-sm font-semibold">Existing Attachments</h4>
+              <div className="space-y-1">
+                {editingItem.existingAttachments.map((attachment) => (
+                  <a
+                    key={attachment.id}
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    title={attachment.fileName}
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="truncate max-w-[240px]">
+                      {truncateAttachmentName(attachment.fileName)}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={handleCloseEdit}>
