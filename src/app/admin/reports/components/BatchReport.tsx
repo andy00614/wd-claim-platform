@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatClaimId } from '@/lib/utils'
 
 interface ClaimData {
   claim: {
@@ -178,7 +179,7 @@ export default function BatchReport({ claims }: BatchReportProps) {
             <tbody>
               {claims.map((claimData) => (
                 <tr key={claimData.claim.id}>
-                  <td className="border border-black p-3">CL-2024-{claimData.claim.id.toString().padStart(4, '0')}</td>
+                  <td className="border border-black p-3">{formatClaimId(claimData.claim.id)}</td>
                   <td className="border border-black p-3">
                     {claimData.employee.name}
                     <br />
@@ -213,7 +214,7 @@ export default function BatchReport({ claims }: BatchReportProps) {
                 {/* 单个申请头部 */}
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-300">
                   <div>
-                    <h4 className="text-xl font-bold">Claim CL-2024-{claimData.claim.id.toString().padStart(4, '0')}</h4>
+                    <h4 className="text-xl font-bold">Claim {formatClaimId(claimData.claim.id)}</h4>
                     <p className="text-gray-600">{claimData.employee.name} (EMP{claimData.employee.employeeCode.toString().padStart(3, '0')})</p>
                   </div>
                   <div className="text-right">

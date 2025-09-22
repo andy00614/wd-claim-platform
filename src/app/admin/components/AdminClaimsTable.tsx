@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { updateClaimStatus } from '@/lib/actions'
+import { formatClaimId } from '@/lib/utils'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -99,7 +100,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                     href={`/claims/${claim.id}`}
                     className="text-blue-600 hover:underline font-mono font-medium text-sm"
                   >
-                    CL-2024-{claim.id.toString().padStart(4, '0')}
+                    {formatClaimId(claim.id)}
                   </Link>
                   <div className="text-xs text-gray-500 mt-1">
                     {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
@@ -198,12 +199,18 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                           View Report
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleEdit(claim)}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <Pencil className="h-4 w-4 text-gray-500" />
                         Edit Status
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/claims/${claim.id}/edit`} className="flex items-center gap-2 cursor-pointer">
+                          <Pencil className="h-4 w-4 text-blue-500" />
+                          Edit Claim Details
+                        </Link>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -241,7 +248,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                     href={`/claims/${claim.id}`}
                     className="text-blue-600 hover:underline"
                   >
-                    CL-2024-{claim.id.toString().padStart(4, '0')}
+                    {formatClaimId(claim.id)}
                   </Link>
                 </TableCell>
                 <TableCell>
@@ -334,12 +341,18 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                             View Report
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleEdit(claim)}
                           className="flex items-center gap-2 cursor-pointer"
                         >
                           <Pencil className="h-4 w-4 text-gray-500" />
                           Edit Status
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/claims/${claim.id}/edit`} className="flex items-center gap-2 cursor-pointer">
+                            <Pencil className="h-4 w-4 text-blue-500" />
+                            Edit Claim Details
+                          </Link>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

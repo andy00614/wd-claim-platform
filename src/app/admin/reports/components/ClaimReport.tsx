@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatClaimId } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -93,7 +94,7 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Claim Report - CL-2024-${claim.id.toString().padStart(4, '0')}</title>
+    <title>Expense Claim Report - ${formatClaimId(claim.id)}</title>
     <style>
         ${getReportStyles()}
     </style>
@@ -109,7 +110,7 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `Expense_Claim_Report_CL-2024-${claim.id.toString().padStart(4, '0')}.html`
+    link.download = `Expense_Claim_Report_${formatClaimId(claim.id)}.html`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -147,7 +148,7 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">Expense Claim Report</h1>
               <p className="text-sm text-gray-600 mt-1">
-                CL-2024-{claim.id.toString().padStart(4, '0')}</p>
+                {formatClaimId(claim.id)}</p>
             </div>
             <div className="flex gap-2">
               <Button

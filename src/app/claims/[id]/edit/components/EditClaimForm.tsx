@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useActionState } from 'react'
 import { updateClaim } from '@/lib/actions'
+import { formatClaimId } from '@/lib/utils'
 import ExpenseForm from '@/app/claims/new/components/ExpenseForm'
 import CurrentItems from '@/app/claims/new/components/CurrentItems'
 import FileUpload from '@/app/claims/new/components/FileUpload'
@@ -106,7 +107,7 @@ export default function EditClaimForm({
   // 处理更新成功后的逻辑
   useEffect(() => {
     if (state.success && state.data?.claimId) {
-      alert(`申请更新成功！申请ID: CL-2024-${state.data.claimId.toString().padStart(4, '0')}`)
+      alert(`申请更新成功！申请ID: ${formatClaimId(state.data.claimId)}`)
       // 跳转回详情页
       router.push(`/claims/${claimId}`)
     }

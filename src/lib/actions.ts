@@ -531,6 +531,22 @@ export async function getClaimDetails(claimId: number) {
 
     const claimAttachments = claimAttachmentsResult.success ? claimAttachmentsResult.data : []
     
+    // 获取claim所有者的员工信息
+    const [claimOwner] = await db
+      .select({
+        employeeId: employees.id,
+        name: employees.name,
+        employeeCode: employees.employeeCode,
+        department: employees.departmentEnum
+      })
+      .from(employees)
+      .where(eq(employees.id, claim.employeeId))
+      .limit(1)
+
+    if (!claimOwner) {
+      return { success: false, error: '无法找到申请所有者信息' }
+    }
+
     // 为每个item添加其对应的附件
     const itemsWithAttachments = claimItemsResult.map(item => ({
       ...item,
@@ -543,7 +559,7 @@ export async function getClaimDetails(claimId: number) {
         claim,
         items: itemsWithAttachments,
         attachments: claimAttachments,
-        employee: currentEmployee.data.employee
+        employee: claimOwner
       }
     }
   } catch (error) {
@@ -562,6 +578,7 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
     }
 
     const employeeId = currentEmployee.data.employee.employeeId
+    const isAdmin = currentEmployee.data.employee.role === 'admin'
     const expenseItemsJson = formData.get('expenseItems') as string
     const expenseItems = JSON.parse(expenseItemsJson)
 
@@ -569,7 +586,7 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
       return { success: false, error: '缺少费用项目数据' }
     }
 
-    // 验证申请存在且属于当前用户
+    // 验证申请存在
     const [existingClaim] = await db
       .select({ employeeId: claims.employeeId, status: claims.status })
       .from(claims)
@@ -580,11 +597,13 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
       return { success: false, error: '申请不存在' }
     }
 
-    if (existingClaim.employeeId !== employeeId) {
+    // 权限检查：管理员可以编辑任何申请，普通用户只能编辑自己的申请
+    if (!isAdmin && existingClaim.employeeId !== employeeId) {
       return { success: false, error: '无权编辑此申请' }
     }
 
-    if (!['submitted', 'draft'].includes(existingClaim.status)) {
+    // 状态检查：管理员可以编辑任何状态，普通用户只能编辑submitted和draft状态
+    if (!isAdmin && !['submitted', 'draft'].includes(existingClaim.status)) {
       return { success: false, error: '只能编辑待审核或草稿状态的申请' }
     }
 

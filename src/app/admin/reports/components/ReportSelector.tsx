@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatClaimId } from '@/lib/utils'
 import Link from 'next/link'
 
 interface Claim {
@@ -117,7 +118,7 @@ export default function ReportSelector({ claims }: ReportSelectorProps) {
                       className="rounded border-gray-300"
                     />
                   </td>
-                  <td className="p-3">CL-2024-{claim.id.toString().padStart(4, '0')}</td>
+                  <td className="p-3">{formatClaimId(claim.id)}</td>
                   <td className="p-3">
                     <div>
                       <div className="font-medium">{claim.employeeName}</div>

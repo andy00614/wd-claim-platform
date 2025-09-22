@@ -1,4 +1,5 @@
 import { getClaimDetails } from '@/lib/actions'
+import { formatClaimId } from '@/lib/utils'
 import Link from 'next/link'
 import BackButton from './components/BackButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,6 +43,8 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
   }
 
   const { claim, items, attachments, employee } = claimData.data
+
+  console.log('claimData.data',claimData.data)
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -98,7 +101,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">Claim ID</div>
               <div className="font-mono text-lg font-medium">
-                CL-2024-{claim.id.toString().padStart(4, '0')}
+                {formatClaimId(claim.id)}
               </div>
             </div>
             

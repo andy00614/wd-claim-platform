@@ -90,3 +90,31 @@ export async function getCurrentBinding(userId: string): Promise<UserBinding | n
     employees: employeeData
   } as UserBinding
 }
+
+// 获取当前用户的员工信息（包括role）
+export async function getCurrentEmployee(): Promise<{employee: Employee & {role: string}, isAdmin: boolean} | null> {
+  const supabase = await createClient()
+  const user = await getCurrentUser()
+
+  const binding = await getCurrentBinding(user.id)
+  if (!binding) {
+    return null
+  }
+
+  // 获取员工信息包括role
+  const { data: employeeData, error } = await supabase
+    .from('employees')
+    .select('*, role')
+    .eq('id', binding.employee_id)
+    .single()
+
+  if (error || !employeeData) {
+    console.error('获取员工信息失败:', error)
+    return null
+  }
+
+  return {
+    employee: employeeData,
+    isAdmin: employeeData.role === 'admin'
+  }
+}

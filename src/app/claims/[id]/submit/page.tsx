@@ -1,4 +1,5 @@
 import { loadDraft } from '@/lib/actions'
+import { formatClaimId } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import SubmitDraftForm from './components/SubmitDraftForm'
 
@@ -31,7 +32,7 @@ export default async function SubmitDraftPage({ params }: SubmitDraftPageProps) 
         <div className="bg-white border border-gray-300 p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4">Draft Information</h3>
           <div className="text-sm space-y-2">
-            <div><strong>Draft ID:</strong> CL-2024-{draft.id.toString().padStart(4, '0')}</div>
+            <div><strong>Draft ID:</strong> {formatClaimId(draft.id)}</div>
             <div><strong>Created:</strong> {draft.createdAt ? new Date(draft.createdAt).toLocaleDateString() : 'N/A'}</div>
             <div><strong>Last Updated:</strong> {draft.updatedAt ? new Date(draft.updatedAt).toLocaleDateString() : 'N/A'}</div>
             <div><strong>Total Amount:</strong> SGD {parseFloat(draft.totalAmount).toFixed(2)}</div>
