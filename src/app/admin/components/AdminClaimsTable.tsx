@@ -186,30 +186,30 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                         <MoreHorizontal className="h-4 w-4 text-gray-500" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuContent align="end" className="w-48">
                       <DropdownMenuItem asChild>
-                        <Link href={`/claims/${claim.id}`} className="flex items-center gap-2 cursor-pointer">
-                          <Eye className="h-4 w-4 text-gray-500" />
-                          View Details
+                        <Link href={`/claims/${claim.id}`} className="flex items-center gap-3 cursor-pointer py-2.5 px-3">
+                          <Eye className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-gray-700">View Details</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/reports/${claim.id}`} className="flex items-center gap-2 cursor-pointer">
-                          <BarChart3 className="h-4 w-4 text-gray-500" />
-                          View Report
+                        <Link href={`/admin/reports/${claim.id}`} className="flex items-center gap-3 cursor-pointer py-2.5 px-3">
+                          <BarChart3 className="h-4 w-4 text-green-600" />
+                          <span className="text-sm font-medium text-gray-700">View Report</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleEdit(claim)}
-                        className="flex items-center gap-2 cursor-pointer"
+                        className="flex items-center gap-3 cursor-pointer py-2.5 px-3"
                       >
-                        <Pencil className="h-4 w-4 text-gray-500" />
-                        Edit Status
+                        <Pencil className="h-4 w-4 text-orange-600" />
+                        <span className="text-sm font-medium text-gray-700">Edit Status</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/claims/${claim.id}/edit`} className="flex items-center gap-2 cursor-pointer">
-                          <Pencil className="h-4 w-4 text-blue-500" />
-                          Edit Claim Details
+                        <Link href={`/claims/${claim.id}/edit`} className="flex items-center gap-3 cursor-pointer py-2.5 px-3">
+                          <Pencil className="h-4 w-4 text-purple-600" />
+                          <span className="text-sm font-medium text-gray-700">Edit Claim Details</span>
                         </Link>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -328,30 +328,30 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                           <MoreHorizontal className="h-4 w-4 text-gray-500" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuItem asChild>
-                          <Link href={`/claims/${claim.id}`} className="flex items-center gap-2 cursor-pointer">
-                            <Eye className="h-4 w-4 text-gray-500" />
-                            View Details
+                          <Link href={`/claims/${claim.id}`} className="flex items-center gap-3 cursor-pointer py-2.5 px-3">
+                            <Eye className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-gray-700">View Details</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/reports/${claim.id}`} className="flex items-center gap-2 cursor-pointer">
-                            <BarChart3 className="h-4 w-4 text-gray-500" />
-                            View Report
+                          <Link href={`/admin/reports/${claim.id}`} className="flex items-center gap-3 cursor-pointer py-2.5 px-3">
+                            <BarChart3 className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium text-gray-700">View Report</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleEdit(claim)}
-                          className="flex items-center gap-2 cursor-pointer"
+                          className="flex items-center gap-3 cursor-pointer py-2.5 px-3"
                         >
-                          <Pencil className="h-4 w-4 text-gray-500" />
-                          Edit Status
+                          <Pencil className="h-4 w-4 text-orange-600" />
+                          <span className="text-sm font-medium text-gray-700">Edit Status</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/claims/${claim.id}/edit`} className="flex items-center gap-2 cursor-pointer">
-                            <Pencil className="h-4 w-4 text-blue-500" />
-                            Edit Claim Details
+                          <Link href={`/claims/new?claimId=${claim.id}`} className="flex items-center gap-3 cursor-pointer py-2.5 px-3">
+                            <Pencil className="h-4 w-4 text-purple-600" />
+                            <span className="text-sm font-medium text-gray-700">Edit Claim Details</span>
                           </Link>
                         </DropdownMenuItem>
                       </DropdownMenuContent>

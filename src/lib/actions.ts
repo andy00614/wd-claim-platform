@@ -773,7 +773,7 @@ export async function getAllClaims() {
       return { success: false, error: "权限不足：仅管理员可访问" }
     }
 
-    // 查询所有申请记录，连接员工信息
+    // 查询所有申请记录，连接员工信息 (排除draft状态)
     const allClaims = await db
       .select({
         id: claims.id,
@@ -788,6 +788,7 @@ export async function getAllClaims() {
       })
       .from(claims)
       .innerJoin(employees, eq(claims.employeeId, employees.id))
+      .where(inArray(claims.status, ['submitted', 'approved', 'rejected']))
       .orderBy(desc(claims.createdAt))
 
     // 计算统计信息
