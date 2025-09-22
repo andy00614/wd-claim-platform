@@ -157,10 +157,52 @@ export default function ClaimForm({
     if (!isEditMode) return
 
     if (updateState.success && updateState.data?.claimId) {
-      toast.success(`Claim updated! ID: ${formatClaimId(updateState.data.claimId)}`)
-      setIsLoading(false)
-      setActionType(null)
-      router.push(`/claims/${updateState.data.claimId}`)
+      const handlePostUpdate = async () => {
+        try {
+          // 1. 上传claim级别的附件（如果有）
+          if (attachedFiles.length > 0) {
+            const claimUploadResult = await uploadClaimFiles(updateState.data.claimId, attachedFiles)
+            if (!claimUploadResult.success) {
+              toast.error(`申请文件上传失败: ${claimUploadResult.error}`)
+            }
+          }
+
+          // 2. 上传item级别的新附件
+          const insertedItems = Array.isArray(updateState.data.insertedItems)
+            ? updateState.data.insertedItems as Array<{ id: number }>
+            : []
+
+          const itemsWithAttachments = insertedItems
+            .map((insertedItem, index) => {
+              const itemAttachments = (expenseItems[index]?.attachments || []).filter(
+                (attachment): attachment is File => attachment instanceof File
+              )
+              return {
+                id: insertedItem.id,
+                attachments: itemAttachments
+              }
+            })
+            .filter(item => item.attachments.length > 0)
+
+          if (itemsWithAttachments.length > 0) {
+            const itemUploadResult = await uploadItemAttachments(itemsWithAttachments)
+            if (!itemUploadResult.success) {
+              toast.error(`项目附件上传失败: ${itemUploadResult.error}`)
+            }
+          }
+
+          toast.success(`Claim updated! ID: ${formatClaimId(updateState.data.claimId)}`)
+          router.push(`/claims/${updateState.data.claimId}`)
+        } catch (error) {
+          console.error('Update uploads failed:', error)
+          toast.error('文件上传失败')
+        } finally {
+          setIsLoading(false)
+          setActionType(null)
+        }
+      }
+
+      void handlePostUpdate()
       return
     }
 
@@ -169,7 +211,16 @@ export default function ClaimForm({
       setIsLoading(false)
       setActionType(null)
     }
-  }, [isEditMode, updateState.success, updateState.data?.claimId, updateState.error, router])
+  }, [
+    isEditMode,
+    updateState.success,
+    updateState.data?.claimId,
+    updateState.data?.insertedItems,
+    updateState.error,
+    attachedFiles,
+    expenseItems,
+    router
+  ])
 
   const totalSGD = expenseItems.reduce((sum, item) => sum + item.sgdAmount, 0)
 
@@ -222,6 +273,12 @@ export default function ClaimForm({
         amount: item.amount,
         rate: item.rate,
         sgdAmount: item.sgdAmount,
+        existingAttachments: (item.existingAttachments || []).map(attachment => ({
+          fileName: attachment.fileName,
+          url: attachment.url,
+          fileSize: attachment.fileSize,
+          fileType: attachment.fileType,
+        })),
       }))
     )
   ), [expenseItems])

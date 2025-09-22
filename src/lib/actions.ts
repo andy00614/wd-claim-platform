@@ -699,12 +699,42 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
         }
       })
 
-      await tx.insert(claimItems).values(claimItemsData)
+      const insertedItems = await tx
+        .insert(claimItems)
+        .values(claimItemsData)
+        .returning({ id: claimItems.id })
+
+      const attachmentsToRestore = insertedItems.flatMap((insertedItem, index) => {
+        const expenseItem = expenseItems[index]
+        if (!expenseItem) return []
+
+        const existingAttachments = Array.isArray(expenseItem.existingAttachments)
+          ? expenseItem.existingAttachments
+          : []
+
+        return existingAttachments
+          .filter((attachmentData: any) => attachmentData?.fileName && attachmentData?.url)
+          .map((attachmentData: any) => ({
+            claimId,
+            claimItemId: insertedItem.id,
+            fileName: attachmentData.fileName,
+            url: attachmentData.url,
+            fileSize: typeof attachmentData.fileSize === 'number'
+              ? attachmentData.fileSize.toString()
+              : (attachmentData.fileSize ?? '0'),
+            fileType: attachmentData.fileType || 'application/octet-stream'
+          }))
+      })
+
+      if (attachmentsToRestore.length > 0) {
+        await tx.insert(attachment).values(attachmentsToRestore)
+      }
 
       return {
         claimId,
         itemsCount: claimItemsData.length,
-        totalAmount
+        totalAmount,
+        insertedItems
       }
     })
 
