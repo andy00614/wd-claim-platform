@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner"
 import { getCurrentEmployee } from '@/lib/actions'
 import { headers } from 'next/headers'
@@ -9,16 +8,6 @@ import { Plus, Receipt, UserCog } from 'lucide-react'
 import DynamicTitle from '@/components/DynamicTitle'
 import { UserProfileCard } from '@/components/UserProfileCard'
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Wild Dynasty - Intelligent Expense Claims",
@@ -51,7 +40,7 @@ export default async function RootLayout({
   if (pathname.includes('/login')) {
     return (
       <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <body className="font-sans antialiased">
           {children}
           <Toaster />
         </body>
@@ -62,7 +51,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <link rel="icon" href="/icon.png" sizes="any" />
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50`}>
+      <body className="font-sans antialiased min-h-screen bg-gray-50">
         <div className="max-w-6xl mx-auto p-4 sm:p-6">
           {/* 全局 Header */}
           <div className="flex justify-between items-center mb-6 sm:mb-8 pb-3 sm:pb-4 border-b border-gray-200">
