@@ -8,8 +8,8 @@ interface Attachment {
   url: string
   fileSize: string
   fileType: string
-  createdAt: Date | null
-  updatedAt: Date | null
+  createdAt: Date | string | null
+  updatedAt: Date | string | null
 }
 
 interface ExistingAttachmentsProps {

@@ -7,7 +7,6 @@ import { formatClaimId } from '@/lib/utils'
 import ExpenseForm from '@/app/claims/new/components/ExpenseForm'
 import CurrentItems from '@/app/claims/new/components/CurrentItems'
 import FileUpload from '@/app/claims/new/components/FileUpload'
-import ExistingAttachments from '@/app/claims/new/components/ExistingAttachments'
 import SubmitButton from '@/app/claims/new/components/SubmitButton'
 import { useRouter } from 'next/navigation'
 
@@ -44,8 +43,8 @@ interface Attachment {
   url: string
   fileSize: string
   fileType: string
-  createdAt: Date | null
-  updatedAt: Date | null
+  createdAt: Date | string | null
+  updatedAt: Date | string | null
 }
 
 interface ExpenseItem {
@@ -58,6 +57,7 @@ interface ExpenseItem {
   rate: number
   sgdAmount: number
   attachments?: File[]
+  existingAttachments?: Attachment[]
 }
 
 interface EditClaimFormProps {
@@ -93,7 +93,8 @@ export default function EditClaimForm({
       amount: parseFloat(item.amount),
       rate: parseFloat(item.rate),
       sgdAmount: parseFloat(item.sgdAmount),
-      attachments: []
+      attachments: [],
+      existingAttachments: item.attachments || []
     }
   })
 
@@ -168,12 +169,8 @@ export default function EditClaimForm({
         itemTypes={itemTypes}
         currencies={currencies}
         exchangeRates={exchangeRates}
-      />
-
-      {/* 现有附件显示 */}
-      <ExistingAttachments
-        attachments={existingAttachments}
-        title="Current Attachments"
+        existingAttachments={existingAttachments}
+        isEditMode
       />
 
       {/* 文件上传区域 */}
