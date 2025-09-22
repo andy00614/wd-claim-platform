@@ -58,6 +58,7 @@ interface ExpenseItem {
   rate: number
   sgdAmount: number
   attachments?: File[]
+  existingAttachments?: Attachment[]
 }
 
 interface EditClaimFormProps {
@@ -93,7 +94,8 @@ export default function EditClaimForm({
       amount: parseFloat(item.amount),
       rate: parseFloat(item.rate),
       sgdAmount: parseFloat(item.sgdAmount),
-      attachments: []
+      attachments: [],
+      existingAttachments: item.attachments || []
     }
   })
 
