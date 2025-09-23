@@ -54,7 +54,7 @@ export default async function RootLayout({
       <body className="font-sans antialiased min-h-screen bg-gray-50">
         <div className="max-w-6xl mx-auto p-4 sm:p-6">
           {/* 全局 Header */}
-          <div className="flex justify-between items-center mb-6 sm:mb-8 pb-3 sm:pb-4 border-b border-gray-200">
+          <div className="flex justify-between items-center mb-6 sm:mb-8 pb-3 sm:pb-4 border-b border-gray-200 no-print">
             <DynamicTitle />
             <div className="flex items-center gap-1">
               {/* 导航按钮组 */}
