@@ -207,7 +207,14 @@ export default function AIAnalysisDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto py-4">
+      <DialogContent
+        className="overflow-y-auto py-4"
+        style={{
+          maxWidth: '95vw',
+          maxHeight: '85vh',
+          width: '64rem'
+        }}
+      >
         <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center gap-2 text-lg">
             {isError ? (

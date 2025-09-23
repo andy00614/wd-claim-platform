@@ -199,8 +199,9 @@ export default function ExpenseDetailsFields({
       </div>
 
       {/* Amount row */}
-      <div className="grid grid-cols-2 sm:grid-cols-12 gap-4">
-        <div className="sm:col-span-2">
+      <div className="overflow-x-auto">
+        <div className="min-w-[600px] grid grid-cols-12 gap-4">
+        <div className="col-span-2">
           <Label className="text-sm font-semibold mb-1">Currency</Label>
           {mode === 'edit' ? (
             <Select value={currency || ''} onValueChange={(value) => onCurrencyChange?.(value)}>
@@ -222,7 +223,7 @@ export default function ExpenseDetailsFields({
           )}
         </div>
 
-        <div className="sm:col-span-3">
+        <div className="col-span-3">
           <Label className="text-sm font-semibold mb-1">Amount</Label>
           {mode === 'edit' ? (
             <Input
@@ -238,7 +239,7 @@ export default function ExpenseDetailsFields({
           )}
         </div>
 
-        <div className="col-span-2 sm:col-span-2">
+        <div className="col-span-2">
           <Label className="text-sm font-semibold mb-1">Rate</Label>
           {mode === 'edit' ? (
             <Input
@@ -254,7 +255,7 @@ export default function ExpenseDetailsFields({
           )}
         </div>
 
-        <div className="col-span-2 sm:col-span-5">
+        <div className="col-span-5">
           <Label className="text-sm font-semibold mb-1">SGD Amount</Label>
           {mode === 'edit' ? (
             <Input
@@ -268,6 +269,7 @@ export default function ExpenseDetailsFields({
               {formatAmount(sgdAmount)}
             </p>
           )}
+        </div>
         </div>
       </div>
 
