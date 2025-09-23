@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { updateClaimStatus } from '@/lib/actions'
 import { formatClaimId } from '@/lib/utils'
 import Link from 'next/link'
+import dayjs from 'dayjs'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
@@ -103,7 +104,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                     {formatClaimId(claim.id)}
                   </Link>
                   <div className="text-xs text-gray-500 mt-1">
-                    {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
+                    {claim.createdAt ? dayjs(claim.createdAt).format('YYYY-MM-DD HH:mm') : 'N/A'}
                   </div>
                 </div>
                 <div className="text-right">
@@ -260,7 +261,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
+                  {claim.createdAt ? dayjs(claim.createdAt).format('YYYY-MM-DD HH:mm') : 'N/A'}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="font-mono font-bold text-lg">

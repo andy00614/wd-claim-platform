@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { formatClaimId } from '@/lib/utils'
+import dayjs from 'dayjs'
 
 interface ClaimData {
   claim: {
@@ -155,7 +156,7 @@ export default function BatchReport({ claims }: BatchReportProps) {
           <h1 className="text-2xl font-bold mb-2">Wild Dynasty Pte Ltd</h1>
           <h2 className="text-lg">Batch Expense Claims Audit Report</h2>
           <p className="text-sm text-gray-600 mt-2">
-            Generated on: {new Date().toLocaleDateString('en-SG')} at {new Date().toLocaleTimeString('en-SG')}
+            Generated on: {dayjs().format('YYYY-MM-DD HH:mm')}
           </p>
           <p className="text-sm text-gray-600">
             Total Claims: {claims.length} | Total Amount: SGD {totalAmount.toFixed(2)}
@@ -187,7 +188,7 @@ export default function BatchReport({ claims }: BatchReportProps) {
                   </td>
                   <td className="border border-black p-3">{claimData.employee.department || 'N/A'}</td>
                   <td className="border border-black p-3">
-                    {claimData.claim.createdAt ? new Date(claimData.claim.createdAt).toLocaleDateString('en-SG') : 'N/A'}
+                    {claimData.claim.createdAt ? dayjs(claimData.claim.createdAt).format('YYYY-MM-DD HH:mm') : 'N/A'}
                   </td>
                   <td className="border border-black p-3 text-center">{claimData.items.length}</td>
                   <td className="border border-black p-3 text-right font-medium">{parseFloat(claimData.claim.totalAmount).toFixed(2)}</td>
@@ -238,7 +239,7 @@ export default function BatchReport({ claims }: BatchReportProps) {
                   <tbody>
                     {claimData.items.map((item) => (
                       <tr key={item.id}>
-                        <td className="border border-gray-300 p-2 text-sm">{item.date ? new Date(item.date).toLocaleDateString('en-SG') : 'N/A'}</td>
+                        <td className="border border-gray-300 p-2 text-sm">{item.date ? dayjs(item.date).format('YYYY-MM-DD HH:mm') : 'N/A'}</td>
                         <td className="border border-gray-300 p-2 text-sm">{item.itemTypeNo}</td>
                         <td className="border border-gray-300 p-2 text-sm">{item.note || 'N/A'}</td>
                         <td className="border border-gray-300 p-2 text-sm">{item.currencyCode}</td>

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { FileText, Info, Paperclip, Pencil, Trash2 } from "lucide-react"
+import dayjs from "dayjs"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -101,7 +102,12 @@ const formatDate = (value: ExpenseItemsTableItemBase["date"]) => {
     if (Number.isNaN(value.getTime())) {
       return "N/A"
     }
-    return value.toLocaleDateString()
+    return dayjs(value).format('YYYY-MM-DD HH:mm')
+  }
+
+  if (typeof value === 'string') {
+    const parsed = dayjs(value)
+    return parsed.isValid() ? parsed.format('YYYY-MM-DD HH:mm') : value
   }
 
   return value

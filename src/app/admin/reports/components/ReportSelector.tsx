@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { formatClaimId } from '@/lib/utils'
 import Link from 'next/link'
+import dayjs from 'dayjs'
 
 interface Claim {
   id: number
@@ -126,7 +127,7 @@ export default function ReportSelector({ claims }: ReportSelectorProps) {
                     </div>
                   </td>
                   <td className="p-3">
-                    {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
+                    {claim.createdAt ? dayjs(claim.createdAt).format('YYYY-MM-DD HH:mm') : 'N/A'}
                   </td>
                   <td className="p-3">{parseFloat(claim.totalAmount).toFixed(2)}</td>
                   <td className="p-3">

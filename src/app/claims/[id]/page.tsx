@@ -1,6 +1,7 @@
 import { getClaimDetails } from '@/lib/actions'
 import { formatClaimId } from '@/lib/utils'
 import Link from 'next/link'
+import dayjs from 'dayjs'
 import BackButton from './components/BackButton'
 import ExpenseItemsTable from '@/components/claims/ExpenseItemsTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -124,7 +125,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
                 Date
               </div>
               <div className="font-medium">
-                {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}
+                {claim.createdAt ? dayjs(claim.createdAt).format('YYYY-MM-DD HH:mm') : 'N/A'}
               </div>
             </div>
             

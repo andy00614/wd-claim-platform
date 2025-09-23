@@ -1,6 +1,7 @@
 import { getAllClaims, checkIsAdmin } from '@/lib/actions'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import dayjs from 'dayjs'
 import ReportSelector from './components/ReportSelector'
 
 export const dynamic = 'force-dynamic'
@@ -78,7 +79,7 @@ export default async function ReportsPage() {
                   <span className="text-gray-600">Date Range:</span>
                   <span className="ml-2 font-medium">
                     {approvedClaims.length > 0 && approvedClaims[0].createdAt
-                      ? `${new Date(Math.min(...approvedClaims.map(c => c.createdAt ? new Date(c.createdAt).getTime() : 0))).toLocaleDateString()} - ${new Date(Math.max(...approvedClaims.map(c => c.createdAt ? new Date(c.createdAt).getTime() : 0))).toLocaleDateString()}`
+                      ? `${dayjs(Math.min(...approvedClaims.map(c => c.createdAt ? new Date(c.createdAt).getTime() : 0))).format('YYYY-MM-DD')} - ${dayjs(Math.max(...approvedClaims.map(c => c.createdAt ? new Date(c.createdAt).getTime() : 0))).format('YYYY-MM-DD')}`
                       : 'N/A'
                     }
                   </span>

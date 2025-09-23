@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Plus } from 'lucide-react'
+import dayjs from 'dayjs'
 
 export const dynamic = 'force-dynamic'
 
@@ -190,14 +191,7 @@ export default async function ClaimsPage() {
                         </TableCell>
                         <TableCell className="px-5 py-4 text-slate-600">
                           {claim.createdAt
-                            ? `${new Date(claim.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
-                              })} · ${new Date(claim.createdAt).toLocaleTimeString('en-US', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}`
+                            ? dayjs(claim.createdAt).format('YYYY-MM-DD HH:mm')
                             : 'N/A'}
                         </TableCell>
                         <TableCell className="px-5 pr-8 py-4 text-right font-mono text-base font-semibold text-slate-800">
