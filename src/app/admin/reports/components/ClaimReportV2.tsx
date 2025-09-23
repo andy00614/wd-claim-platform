@@ -5,8 +5,9 @@ import { format } from 'date-fns'
 import { formatClaimId } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import dynamic from 'next/dynamic'
-import { ArrowLeft, Printer, FileDown, FileText, FileSpreadsheet } from 'lucide-react'
+import { ArrowLeft, Printer, FileDown, FileText, FileSpreadsheet, Info } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 
 // Dynamic import for client-side only component
@@ -912,7 +913,26 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
                           </tr>
                           <tr>
                             <td colSpan={4} className={descriptionCellClass}>
-                              {item.note || item.details || '—'}
+                              <div className="flex items-start gap-2">
+                                {(item.note || item.details) && (
+                                  <HoverCard>
+                                    <HoverCardTrigger asChild>
+                                      <Info className="mt-0.5 h-3 w-3 text-slate-400 hover:text-slate-600 cursor-help flex-shrink-0" />
+                                    </HoverCardTrigger>
+                                    <HoverCardContent className="w-80 p-3" side="bottom" align="start">
+                                      <div className="space-y-2">
+                                        <h4 className="text-sm font-semibold">Item Details</h4>
+                                        <div className="text-sm text-slate-600 whitespace-pre-wrap">
+                                          {item.note || item.details}
+                                        </div>
+                                      </div>
+                                    </HoverCardContent>
+                                  </HoverCard>
+                                )}
+                                <span className="flex-1">
+                                  {item.note || item.details || '—'}
+                                </span>
+                              </div>
                             </td>
                           </tr>
                         </Fragment>
@@ -1002,7 +1022,7 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
               </div>
             </DialogHeader>
 
-            <div className="flex-1 overflow-auto p-6 max-w-[60vw]">
+            <div className="flex-1 overflow-auto p-6 max-w-[700px]">
               <div className="overflow-hidden rounded-xl border">
                 <div className="max-h-[calc(95vh-200px)] overflow-auto">
                   <table className="w-full min-w-[2400px] border-collapse">
