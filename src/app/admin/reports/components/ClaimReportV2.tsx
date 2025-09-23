@@ -102,11 +102,18 @@ type EditableRow = {
   invoiceNumber: string
   invoiceDate: string
   dueDate: string
+  total: string
+  inventoryItemCode: string
   description: string
   quantity: string
   unitAmount: string
   accountCode: string
   taxType: string
+  taxAmount: string
+  trackingName1: string
+  trackingOption1: string
+  trackingName2: string
+  trackingOption2: string
   currency: string
 }
 
@@ -210,11 +217,18 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
       invoiceNumber: item.evidenceNo || formatClaimId(claim.id),
       invoiceDate: toDateInputValue(item.date),
       dueDate: toDateInputValue(item.date),
+      total: item.sgdAmount ? Number.parseFloat(item.sgdAmount).toFixed(2) : '',
+      inventoryItemCode: '#VALUE!',
       description: item.details || item.note || item.itemTypeName,
       quantity: '1',
       unitAmount: item.sgdAmount ? Number.parseFloat(item.sgdAmount).toFixed(2) : '',
       accountCode: item.itemTypeNo,
       taxType: 'No Tax',
+      taxAmount: '',
+      trackingName1: '',
+      trackingOption1: '',
+      trackingName2: '',
+      trackingOption2: '',
       currency: item.currencyCode,
     }))
   }, [items, employee.name, claim.id])
@@ -366,11 +380,18 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
       '*InvoiceNumber',
       '*InvoiceDate',
       '*DueDate',
+      'Total',
+      'InventoryItemCode',
       'Description',
       '*Quantity',
       '*UnitAmount',
       '*AccountCode',
       '*TaxType',
+      'TaxAmount',
+      'TrackingName1',
+      'TrackingOption1',
+      'TrackingName2',
+      'TrackingOption2',
       'Currency'
     ]
 
@@ -381,11 +402,18 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
         `"${row.invoiceNumber}"`,
         `"${row.invoiceDate}"`,
         `"${row.dueDate}"`,
+        `"${row.total}"`,
+        `"${row.inventoryItemCode}"`,
         `"${row.description}"`,
         `"${row.quantity}"`,
         `"${row.unitAmount}"`,
         `"${row.accountCode}"`,
         `"${row.taxType}"`,
+        `"${row.taxAmount}"`,
+        `"${row.trackingName1}"`,
+        `"${row.trackingOption1}"`,
+        `"${row.trackingName2}"`,
+        `"${row.trackingOption2}"`,
         `"${row.currency}"`
       ].join(','))
     ]
@@ -974,10 +1002,10 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
               </div>
             </DialogHeader>
 
-            <div className="flex-1 overflow-auto p-6">
+            <div className="flex-1 overflow-auto p-6 max-w-[60vw]">
               <div className="overflow-hidden rounded-xl border">
                 <div className="max-h-[calc(95vh-200px)] overflow-auto">
-                  <table className="w-full min-w-[1200px] border-collapse">
+                  <table className="w-full min-w-[2400px] border-collapse">
                     <thead className="sticky top-0 z-10 bg-gray-50">
                       <tr>
                         <th className="w-12 border border-gray-300 px-2 py-2 text-left text-xs font-medium">#</th>
@@ -985,11 +1013,18 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
                         <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*InvoiceNumber</th>
                         <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*InvoiceDate</th>
                         <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*DueDate</th>
+                        <th className="min-w-[100px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">Total</th>
+                        <th className="min-w-[140px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">InventoryItemCode</th>
                         <th className="min-w-[200px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">Description</th>
                         <th className="min-w-[80px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*Quantity</th>
                         <th className="min-w-[100px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*UnitAmount</th>
                         <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*AccountCode</th>
                         <th className="min-w-[100px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*TaxType</th>
+                        <th className="min-w-[100px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">TaxAmount</th>
+                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">TrackingName1</th>
+                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">TrackingOption1</th>
+                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">TrackingName2</th>
+                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">TrackingOption2</th>
                         <th className="min-w-[80px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">Currency</th>
                       </tr>
                     </thead>
@@ -1028,6 +1063,23 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
                               type="date"
                               value={row.dueDate}
                               onChange={(e) => handleCsvRowChange(index, 'dueDate', e.target.value)}
+                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </td>
+                          <td className="border border-gray-300 p-0">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={row.total}
+                              onChange={(e) => handleCsvRowChange(index, 'total', e.target.value)}
+                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </td>
+                          <td className="border border-gray-300 p-0">
+                            <input
+                              type="text"
+                              value={row.inventoryItemCode}
+                              onChange={(e) => handleCsvRowChange(index, 'inventoryItemCode', e.target.value)}
                               className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                             />
                           </td>
@@ -1074,6 +1126,47 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
                               <option value="GST">GST</option>
                               <option value="VAT">VAT</option>
                             </select>
+                          </td>
+                          <td className="border border-gray-300 p-0">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={row.taxAmount}
+                              onChange={(e) => handleCsvRowChange(index, 'taxAmount', e.target.value)}
+                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </td>
+                          <td className="border border-gray-300 p-0">
+                            <input
+                              type="text"
+                              value={row.trackingName1}
+                              onChange={(e) => handleCsvRowChange(index, 'trackingName1', e.target.value)}
+                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </td>
+                          <td className="border border-gray-300 p-0">
+                            <input
+                              type="text"
+                              value={row.trackingOption1}
+                              onChange={(e) => handleCsvRowChange(index, 'trackingOption1', e.target.value)}
+                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </td>
+                          <td className="border border-gray-300 p-0">
+                            <input
+                              type="text"
+                              value={row.trackingName2}
+                              onChange={(e) => handleCsvRowChange(index, 'trackingName2', e.target.value)}
+                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </td>
+                          <td className="border border-gray-300 p-0">
+                            <input
+                              type="text"
+                              value={row.trackingOption2}
+                              onChange={(e) => handleCsvRowChange(index, 'trackingOption2', e.target.value)}
+                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
                           </td>
                           <td className="border border-gray-300 p-0">
                             <input

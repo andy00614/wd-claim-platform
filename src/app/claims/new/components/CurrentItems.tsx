@@ -328,13 +328,6 @@ export default function CurrentItems({
         </CardContent>
       </Card>
 
-      {isEditMode && (
-        <ExistingAttachments
-          attachments={existingAttachments}
-          title="Current Attachments"
-        />
-      )}
-
       <Dialog
         open={isEditDialogOpen}
         onOpenChange={(open) => {

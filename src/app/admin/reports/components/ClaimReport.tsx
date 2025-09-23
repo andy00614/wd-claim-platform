@@ -496,36 +496,6 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
                             </div>
                           )}
                         </div>
-
-                        <div className="item-attachments space-y-3">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Supporting Documents</p>
-                          {itemAttachments.length > 0 ? (
-                            <div className="item-attachment-grid grid gap-4 md:grid-cols-2">
-                              {itemAttachments.map((attachment) => (
-                                <div key={attachment.id} className="attachment-card rounded-lg border border-slate-200 overflow-hidden bg-white">
-                                  <div className="attachment-card-header flex items-center justify-between gap-3 px-4 py-2 bg-slate-100 text-xs font-semibold text-slate-600">
-                                    <span className="flex items-center gap-2 min-w-0">
-                                      {isImage(attachment) ? (
-                                        <Image className="h-4 w-4 text-blue-500" />
-                                      ) : isPdfFile(attachment.fileType, attachment.fileName) ? (
-                                        <FileText className="h-4 w-4 text-rose-500" />
-                                      ) : (
-                                        <FileText className="h-4 w-4 text-slate-500" />
-                                      )}
-                                      <span className="truncate">{attachment.fileName}</span>
-                                    </span>
-                                    <span className="shrink-0 text-[11px] text-slate-500">{formatFileSize(attachment.fileSize)}</span>
-                                  </div>
-                                  <div className="attachment-card-body bg-white p-3">
-                                    {renderFilePreview(attachment)}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="preview-placeholder border border-dashed border-blue-200 rounded-xl bg-blue-50/60 p-6 text-center text-sm text-slate-500">No attachments uploaded for this item.</div>
-                          )}
-                        </div>
                       </article>
                     )
                   })
