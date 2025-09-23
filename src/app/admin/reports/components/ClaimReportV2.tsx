@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import { formatClaimId } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import dynamic from 'next/dynamic'
 import { ArrowLeft, Printer, FileDown, FileText, FileSpreadsheet, Info } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
@@ -902,7 +902,10 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
                               [{item.itemTypeNo}] {item.itemTypeName}
                             </td>
                             <td className={tableMonoCellClass}>
-                              {item.currencyCode} {Number.parseFloat(item.amount || '0').toFixed(2)}
+                              {item.currencyCode === 'SGD'
+                                ? `SGD ${Number.parseFloat(item.sgdAmount || '0').toFixed(2)}`
+                                : `${item.currencyCode} ${Number.parseFloat(item.amount || '0').toFixed(2)}`
+                              }
                             </td>
                             <td className={tableMonoCellClass}>
                               {Number.parseFloat(item.rate || '0').toFixed(4)}
@@ -915,19 +918,19 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
                             <td colSpan={4} className={descriptionCellClass}>
                               <div className="flex items-start gap-2">
                                 {(item.note || item.details) && (
-                                  <HoverCard>
-                                    <HoverCardTrigger asChild>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
                                       <Info className="mt-0.5 h-3 w-3 text-slate-400 hover:text-slate-600 cursor-help flex-shrink-0" />
-                                    </HoverCardTrigger>
-                                    <HoverCardContent className="w-80 p-3" side="bottom" align="start">
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-80 p-3 bg-slate-900 text-white">
                                       <div className="space-y-2">
-                                        <h4 className="text-sm font-semibold">Item Details</h4>
-                                        <div className="text-sm text-slate-600 whitespace-pre-wrap">
+                                        <div className="text-xs font-semibold">Item Details</div>
+                                        <div className="text-xs whitespace-pre-wrap">
                                           {item.note || item.details}
                                         </div>
                                       </div>
-                                    </HoverCardContent>
-                                  </HoverCard>
+                                    </TooltipContent>
+                                  </Tooltip>
                                 )}
                                 <span className="flex-1">
                                   {item.note || item.details || '—'}
@@ -1013,18 +1016,18 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
       </div>
 
       <Dialog open={showCsvDialog} onOpenChange={setShowCsvDialog}>
-        <DialogContent className="h-[80vh] max-w-[90vw] overflow-hidden p-0 sm:max-w-5xl">
+        <DialogContent className="h-[85vh] max-w-[95vw] overflow-hidden p-0">
           <div className="flex h-full flex-col">
-            <DialogHeader className="border-b px-6 py-4">
+            <DialogHeader className="border-b px-6 py-4 flex-shrink-0">
               <DialogTitle>Export CSV Data</DialogTitle>
               <div className="text-sm text-gray-600">
                 Review and edit the data before exporting to CSV. You can modify any field as needed.
               </div>
             </DialogHeader>
 
-            <div className="flex-1 overflow-auto p-6 max-w-[700px]">
-              <div className="overflow-hidden rounded-xl border">
-                <div className="max-h-[calc(95vh-200px)] overflow-auto">
+            <div className="flex-1 overflow-hidden p-6">
+              <div className="overflow-hidden rounded-xl border h-full">
+                <div className="h-full overflow-auto">
                   <table className="w-full min-w-[2400px] border-collapse">
                     <thead className="sticky top-0 z-10 bg-gray-50">
                       <tr>
@@ -1204,7 +1207,7 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
               </div>
             </div>
 
-            <div className="border-t bg-gray-50 px-6 py-4">
+            <div className="border-t bg-gray-50 px-6 py-4 flex-shrink-0">
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"

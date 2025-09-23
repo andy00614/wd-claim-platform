@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { FileText, Paperclip, Pencil, Trash2 } from "lucide-react"
+import { FileText, Info, Paperclip, Pencil, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 export interface ExpenseItemsTableAttachment {
@@ -167,7 +168,7 @@ export default function ExpenseItemsTable<
             <TableHead>Date</TableHead>
             <TableHead>Item Type</TableHead>
             <TableHead>Details</TableHead>
-            <TableHead className="text-right">Amount (≈ SGD)</TableHead>
+            <TableHead className="text-right">Amount (SGD)</TableHead>
             <TableHead className="text-right">Rate</TableHead>
             <TableHead className="text-center">Attachments</TableHead>
             {hasActions && <TableHead className="text-right">{actionColumnLabel}</TableHead>}
@@ -194,6 +195,11 @@ export default function ExpenseItemsTable<
               const formattedSgdAmount = formatAmount(item.sgdAmount)
               const currencySuffix = item.currencyCode ? ` ${item.currencyCode}` : ""
               const combinedAmountLabel = (() => {
+                // If original currency is SGD, just show SGD amount
+                if (item.currencyCode === 'SGD' && formattedSgdAmount !== "—") {
+                  return `${formattedSgdAmount} SGD`
+                }
+
                 if (formattedAmount !== "—" && formattedSgdAmount !== "—") {
                   return `${formattedAmount}${currencySuffix} ≈ ${formattedSgdAmount} SGD`
                 }
@@ -227,12 +233,28 @@ export default function ExpenseItemsTable<
                     )}
                   </TableCell>
                   <TableCell className="max-w-xs">
-                    <div
-                      className="truncate text-xs text-muted-foreground"
-                      title={item.details ?? undefined}
-                    >
-                      {item.details ? item.details : "—"}
-                    </div>
+                    {item.details ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-start gap-2 cursor-help w-full">
+                            <Info className="mt-0.5 h-3 w-3 text-muted-foreground hover:text-foreground flex-shrink-0" />
+                            <div className="truncate text-xs text-muted-foreground flex-1">
+                              {item.details}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-80 p-3 bg-slate-900 text-white">
+                          <div className="space-y-2">
+                            <div className="text-xs font-semibold">Item Details</div>
+                            <div className="text-xs whitespace-pre-wrap">
+                              {item.details}
+                            </div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <div className="text-xs text-muted-foreground">—</div>
+                    )}
                   </TableCell>
                   <TableCell className="text-right font-mono">
                     <span className="whitespace-nowrap">{combinedAmountLabel}</span>
@@ -265,7 +287,7 @@ export default function ExpenseItemsTable<
                                   title={title || attachment.fileName}
                                 >
                                   <FileText className="mr-1 h-3 w-3" />
-                                  <span className="truncate max-w-[140px] text-xs">{label}</span>
+                                  <span className="truncate max-w-[100px] text-xs">{label}</span>
                                 </a>
                               </Button>
                             )

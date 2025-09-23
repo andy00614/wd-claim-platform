@@ -265,6 +265,9 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
             size="lg"
             disabled={!isFormValid}
             className="w-full sm:w-auto gap-2 px-6 font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-[1px] transition disabled:opacity-60 disabled:shadow-none disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+            style={{
+              animation: !isFormValid ? 'none' : 'subtle-bounce 2s ease-in-out infinite'
+            }}
           >
             <PlusCircle className="h-5 w-5" />
             Add Expense Item
