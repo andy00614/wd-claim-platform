@@ -22,6 +22,18 @@ const PdfPreview = dynamic(() => import('@/components/ui/pdf-preview'), {
   )
 })
 
+type Attachment = {
+  id: number
+  fileName: string
+  url: string
+  fileType: string
+  fileSize: string
+  claimId?: number | null
+  claimItemId?: number | null
+  createdAt?: Date | null
+  updatedAt?: Date | null
+}
+
 interface ClaimReportProps {
   claim: {
     id: number
@@ -42,25 +54,9 @@ interface ClaimReportProps {
     rate: string
     sgdAmount: string
     evidenceNo: string | null
-    attachments?: Array<{
-      id: number
-      fileName: string
-      url: string
-      fileType: string
-      fileSize: string
-    }>
+    attachments?: Attachment[]
   }>
-  attachments: Array<{
-    id: number
-    fileName: string
-    url: string
-    fileType: string
-    fileSize: string
-    claimId?: number | null
-    claimItemId?: number | null
-    createdAt?: Date | null
-    updatedAt?: Date | null
-  }> | undefined
+  attachments: Attachment[] | undefined
   employee: {
     name: string
     employeeCode: number
@@ -113,12 +109,9 @@ const formatFileSize = (value?: string | null) => {
 }
 
 export default function ClaimReport({ claim, items, attachments, employee }: ClaimReportProps) {
-  const [selectedItemId, setSelectedItemId] = useState<number | null>(items[0]?.id ?? null)
   const [editableRows, setEditableRows] = useState<EditableRow[]>([])
 
   useEffect(() => {
-    setSelectedItemId(items[0]?.id ?? null)
-
     const nextRows: EditableRow[] = items.map((item) => ({
       contactName: employee.name ?? '',
       invoiceNumber: item.evidenceNo || formatClaimId(claim.id),
@@ -135,11 +128,6 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
     setEditableRows(nextRows)
   }, [items, employee.name, claim.id])
 
-  const selectedItem = useMemo(() => {
-    if (!items || items.length === 0) return null
-    return items.find((item) => item.id === selectedItemId) ?? items[0]
-  }, [items, selectedItemId])
-
   const totalSgdAmount = useMemo(() => {
     return items.reduce((sum, item) => {
       const parsed = Number.parseFloat(item.sgdAmount || '0')
@@ -147,23 +135,36 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
     }, 0)
   }, [items])
 
-  const previewAttachments = useMemo(() => {
-    if (selectedItem?.attachments && selectedItem.attachments.length > 0) {
-      return selectedItem.attachments
-    }
+  const attachmentsByItemId = useMemo(() => {
+    const map = new Map<number, Attachment[]>()
 
-    if (attachments && attachments.length > 0) {
-      if (selectedItem) {
-        const matching = attachments.filter((attachment) => attachment.claimItemId === selectedItem.id)
-        if (matching.length > 0) {
-          return matching
-        }
+    items.forEach((item) => {
+      const combined: Attachment[] = []
+
+      if (item.attachments && item.attachments.length > 0) {
+        combined.push(...item.attachments)
       }
-      return attachments
-    }
 
-    return []
-  }, [attachments, selectedItem])
+      if (attachments && attachments.length > 0) {
+        attachments.forEach((attachment) => {
+          if (attachment.claimItemId === item.id && !combined.some((existing) => existing.id === attachment.id)) {
+            combined.push(attachment)
+          }
+        })
+      }
+
+      map.set(item.id, combined)
+    })
+
+    return map
+  }, [attachments, items])
+
+  const claimLevelAttachments = useMemo(() => {
+    if (!attachments || attachments.length === 0) {
+      return []
+    }
+    return attachments.filter((attachment) => !attachment.claimItemId)
+  }, [attachments])
 
   const statusLabel = claim.status ? `${claim.status.charAt(0).toUpperCase()}${claim.status.slice(1)}` : '—'
   const postingDateDisplay = formatDateValue(claim.createdAt) || 'dd/mm/yyyy'
@@ -303,6 +304,7 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
     body { font-family: Arial, sans-serif; margin: 0; padding: 24px; background: #f5f6f8; color: #111827; }
     .report-container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
     .section-card { background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; padding: 24px; box-sizing: border-box; }
+    .report-section { break-inside: avoid; page-break-inside: avoid; }
     .claim-header-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
     .claim-header-table { border: 2px solid #000; border-radius: 10px; overflow: hidden; }
     .claim-header-title { font-weight: 700; text-align: center; padding: 14px; border-bottom: 2px solid #000; font-size: 20px; background: #f3f4f6; }
@@ -316,18 +318,20 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
     .ref-panel-title { font-weight: 700; padding: 12px 14px; border-bottom: 2px solid #000; font-size: 18px; }
     .ref-panel-value { padding: 18px 14px; font-family: 'Courier New', monospace; font-size: 18px; font-weight: 600; }
     .ref-panel-status { padding: 12px 14px; border-top: 1px solid #000; font-size: 14px; }
-    .items-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-    .item-selector { display: flex; flex-direction: column; gap: 12px; }
-    .item-row { border: 1px solid #d1d5db; border-radius: 10px; padding: 12px 16px; display: grid; grid-template-columns: 60px 1fr 120px; gap: 12px; align-items: center; background: #f9fafb; cursor: pointer; transition: border-color 0.2s ease, background 0.2s ease; }
-    .item-row-active { border-color: #2563eb; background: #eff6ff; }
-    .item-row-number { font-weight: 700; font-size: 14px; }
-    .item-row-details { font-size: 13px; }
-    .item-row-details strong { display: block; margin-bottom: 4px; }
-    .item-row-amount { text-align: right; font-family: 'Courier New', monospace; font-size: 14px; font-weight: 600; }
-    .preview-panel { border: 1px solid #d1d5db; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 16px; background: #f9fbff; }
-    .preview-attachments { display: flex; flex-direction: column; gap: 16px; }
-    .preview-attachment { border: 1px solid #d1d5db; border-radius: 10px; overflow: hidden; background: #ffffff; }
-    .preview-attachment-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f3f4f6; font-size: 12px; font-weight: 600; }
+    .item-card { border: 1px solid #d1d5db; border-radius: 12px; padding: 20px; background: #ffffff; display: flex; flex-direction: column; gap: 16px; break-inside: avoid; page-break-inside: avoid; }
+    .item-card-header { display: flex; flex-direction: column; gap: 12px; }
+    .item-metadata-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .item-metadata-label { font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .item-metadata-value { font-size: 13px; font-weight: 500; color: #111827; }
+    .item-metadata-note { grid-column: 1 / -1; }
+    .item-attachments { display: flex; flex-direction: column; gap: 12px; }
+    .item-attachment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .attachment-card { border: 1px solid #d1d5db; border-radius: 10px; overflow: hidden; background: #ffffff; break-inside: avoid; page-break-inside: avoid; }
+    .attachment-card-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; background: #f3f4f6; font-size: 12px; font-weight: 600; color: #374151; }
+    .attachment-card-header span { display: inline-flex; align-items: center; gap: 8px; }
+    .attachment-card-header .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .attachment-card-body { padding: 12px; background: #ffffff; }
+    .avoid-break { break-inside: avoid; page-break-inside: avoid; }
     .preview-placeholder { border: 1px dashed #c3dafe; border-radius: 12px; background: #f8fafc; padding: 28px; text-align: center; font-size: 13px; color: #6b7280; }
     .editable-table-wrapper { overflow-x: auto; }
     .editable-table { width: 100%; border-collapse: collapse; min-width: 900px; }
@@ -337,20 +341,17 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
     .editable-input:focus { outline: 1px solid #2563eb; }
     @media (max-width: 768px) {
       .claim-header-grid { grid-template-columns: 1fr; }
-      .items-grid { grid-template-columns: 1fr; }
-      .item-row { grid-template-columns: 50px 1fr; }
-      .item-row-amount { text-align: left; }
+      .item-metadata-grid { grid-template-columns: 1fr; }
+      .item-attachment-grid { grid-template-columns: 1fr; }
     }
     @media print {
       body { background: #fff; padding: 12px; font-size: 12px; }
       .no-print { display: none !important; }
       .section-card { box-shadow: none; border: 1px solid #d1d5db; }
+      .item-card { box-shadow: none; border: 1px solid #d1d5db; }
+      .attachment-card { box-shadow: none; border: 1px solid #d1d5db; }
     }
   `
-
-  const baseItemRowClasses = 'item-row grid grid-cols-[60px_1fr] xl:grid-cols-[60px_1fr_120px] gap-3 items-center border border-slate-200 rounded-xl px-4 py-3 text-left transition-colors duration-150 shadow-sm focus:outline-none'
-  const activeItemRowClasses = 'item-row-active border-blue-500 bg-blue-100 shadow-md'
-  const inactiveItemRowClasses = 'bg-slate-50 hover:border-blue-300 hover:bg-blue-50/60'
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -393,7 +394,7 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
       <div className="max-w-6xl mx-auto px-6 py-6">
         <div id="report-content" className="report-wrapper space-y-6">
           {/* Top: Claim Header Block */}
-          <section className="section-card claim-header-section bg-white border border-slate-200 shadow-sm rounded-xl p-6 sm:p-8">
+          <section className="section-card report-section claim-header-section bg-white border border-slate-200 shadow-sm rounded-xl p-6 sm:p-8">
             <div className="claim-header-grid gap-6 grid grid-cols-1 lg:grid-cols-[2fr_1fr]">
               <div>
                 <div className="claim-header-table border-2 border-black rounded-lg overflow-hidden">
@@ -433,112 +434,141 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
             </div>
           </section>
 
-          {/* Middle: Per-Item Details and Invoice Preview */}
-          <section className="section-card bg-white border border-slate-200 shadow-sm rounded-xl p-6 sm:p-8">
-            <div className="flex flex-col gap-6">
+          {/* Middle: Itemised Details and Attachments */}
+          <section className="section-card report-section bg-white border border-slate-200 shadow-sm rounded-xl p-6 sm:p-8">
+            <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <h3 className="text-lg font-semibold text-slate-900">Per-Item Claim Details</h3>
-                <p className="text-sm text-slate-500">Select an item to review its key information and invoice preview.</p>
+                <h3 className="text-lg font-semibold text-slate-900">Itemised Claim Breakdown</h3>
+                <p className="text-sm text-slate-500">All expense items are displayed below with their supporting information and documents for easy review and printing.</p>
               </div>
 
-              <div className="items-grid grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <div className="item-selector flex flex-col gap-3">
-                  {items.length === 0 ? (
-                    <div className="preview-placeholder border border-dashed border-blue-200 rounded-xl bg-blue-50/60 p-6 text-center text-sm text-slate-500">No expense items available.</div>
-                  ) : (
-                    items.map((item, index) => {
-                      const isActive = selectedItem?.id === item.id
-                      const rowClass = isActive ? `${baseItemRowClasses} ${activeItemRowClasses}` : `${baseItemRowClasses} ${inactiveItemRowClasses}`
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setSelectedItemId(item.id)}
-                          className={rowClass}
-                        >
-                          <span className="item-row-number text-sm font-semibold text-slate-600">{String(index + 1).padStart(2, '0')}</span>
-                          <div className="item-row-details text-sm text-slate-700">
-                            <strong>{item.itemTypeNo} – {item.itemTypeName}</strong>
-                            <span className="block text-xs text-slate-500">Invoice: {item.evidenceNo || '—'} · Date: {formatDateValue(item.date) || 'N/A'}</span>
-                          </div>
-                          <div className="item-row-amount text-right font-mono text-sm font-semibold text-slate-700">
-                            SGD {Number.parseFloat(item.sgdAmount || '0').toFixed(2)}
-                          </div>
-                        </button>
-                      )
-                    })
-                  )}
-                </div>
+              <div className="space-y-6">
+                {items.length === 0 ? (
+                  <div className="preview-placeholder border border-dashed border-blue-200 rounded-xl bg-blue-50/60 p-6 text-center text-sm text-slate-500">No expense items available.</div>
+                ) : (
+                  items.map((item, index) => {
+                    const itemAttachments = attachmentsByItemId.get(item.id) ?? []
+                    const isImage = (attachment: Attachment) => isImageFile(attachment.fileType, attachment.fileName)
+                    const descriptionText = item.note || item.details || 'No additional details provided.'
+                    const additionalNotes = item.details && item.note && item.details !== item.note ? item.details : null
 
-                <div className="preview-panel border border-slate-200 rounded-xl bg-slate-50/70 p-4 sm:p-6 space-y-4">
-                  {selectedItem ? (
-                    <>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex flex-col gap-1">
-                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Selected Item</p>
-                          <h3 className="text-lg font-semibold text-slate-900">
-                            {selectedItem.itemTypeNo} – {selectedItem.itemTypeName}
-                          </h3>
-                          <p className="text-sm text-slate-600">{selectedItem.note || selectedItem.details || 'No additional details provided.'}</p>
-                        </div>
-                        <div className="flex flex-wrap items-end gap-6">
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase">Invoice Date</p>
-                            <p className="text-sm font-mono">{formatDateValue(selectedItem.date) || 'N/A'}</p>
+                    return (
+                      <article key={item.id} className="item-card avoid-break rounded-xl border border-slate-200 bg-white shadow-sm p-5 sm:p-6 space-y-5 print:shadow-none">
+                        <div className="item-card-header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Item {String(index + 1).padStart(2, '0')}</p>
+                            <h4 className="text-lg font-semibold text-slate-900">
+                              {item.itemTypeNo} – {item.itemTypeName}
+                            </h4>
+                            <p className="text-sm text-slate-600 mt-1">{descriptionText}</p>
                           </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase">Currency</p>
-                            <p className="text-sm font-mono">{selectedItem.currencyCode} {Number.parseFloat(selectedItem.amount || '0').toFixed(2)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase">Rate</p>
-                            <p className="text-sm font-mono">{Number.parseFloat(selectedItem.rate || '0').toFixed(4)}</p>
-                          </div>
-                          <div className="ml-auto">
-                            <p className="text-xs font-semibold text-slate-500 uppercase text-right">SGD Amount</p>
-                            <p className="text-xl font-semibold text-emerald-600 font-mono">SGD {Number.parseFloat(selectedItem.sgdAmount || '0').toFixed(2)}</p>
+                          <div className="sm:text-right">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">SGD Amount</p>
+                            <p className="text-xl font-semibold text-emerald-600 font-mono">SGD {Number.parseFloat(item.sgdAmount || '0').toFixed(2)}</p>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="preview-attachments space-y-4">
-                        {previewAttachments.length > 0 ? (
-                          previewAttachments.map((attachment) => {
-                            const isImage = isImageFile(attachment.fileType, attachment.fileName)
-                            return (
-                              <div key={attachment.id} className="preview-attachment border border-slate-200 rounded-lg overflow-hidden bg-white">
-                                <div className="preview-attachment-header flex items-center justify-between px-4 py-2 bg-slate-100 text-xs font-semibold text-slate-600">
-                                  <span className="flex items-center gap-2">
-                                    {isImage ? (
-                                      <Image className="h-4 w-4 text-blue-500" />
-                                    ) : (
-                                      <FileText className="h-4 w-4 text-slate-500" />
-                                    )}
-                                    <span className="truncate max-w-[240px]">{attachment.fileName}</span>
-                                  </span>
-                                  <span className="text-xs text-slate-500">{formatFileSize(attachment.fileSize)}</span>
+                        <div className="item-metadata-grid grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                          <div>
+                            <p className="item-metadata-label text-xs font-semibold uppercase tracking-wide text-slate-500">Invoice Number</p>
+                            <p className="item-metadata-value text-sm font-mono text-slate-800">{item.evidenceNo || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="item-metadata-label text-xs font-semibold uppercase tracking-wide text-slate-500">Invoice Date</p>
+                            <p className="item-metadata-value text-sm font-mono text-slate-800">{formatDateValue(item.date) || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="item-metadata-label text-xs font-semibold uppercase tracking-wide text-slate-500">Currency</p>
+                            <p className="item-metadata-value text-sm font-mono text-slate-800">{item.currencyCode} {Number.parseFloat(item.amount || '0').toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <p className="item-metadata-label text-xs font-semibold uppercase tracking-wide text-slate-500">Exchange Rate</p>
+                            <p className="item-metadata-value text-sm font-mono text-slate-800">{Number.parseFloat(item.rate || '0').toFixed(4)}</p>
+                          </div>
+                          <div>
+                            <p className="item-metadata-label text-xs font-semibold uppercase tracking-wide text-slate-500">Account Code</p>
+                            <p className="item-metadata-value text-sm font-mono text-slate-800">{item.itemTypeNo}</p>
+                          </div>
+                          {additionalNotes && (
+                            <div className="item-metadata-note xl:col-span-3">
+                              <p className="item-metadata-label text-xs font-semibold uppercase tracking-wide text-slate-500">Additional Notes</p>
+                              <p className="item-metadata-value text-sm text-slate-700">{additionalNotes}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="item-attachments space-y-3">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Supporting Documents</p>
+                          {itemAttachments.length > 0 ? (
+                            <div className="item-attachment-grid grid gap-4 md:grid-cols-2">
+                              {itemAttachments.map((attachment) => (
+                                <div key={attachment.id} className="attachment-card rounded-lg border border-slate-200 overflow-hidden bg-white">
+                                  <div className="attachment-card-header flex items-center justify-between gap-3 px-4 py-2 bg-slate-100 text-xs font-semibold text-slate-600">
+                                    <span className="flex items-center gap-2 min-w-0">
+                                      {isImage(attachment) ? (
+                                        <Image className="h-4 w-4 text-blue-500" />
+                                      ) : isPdfFile(attachment.fileType, attachment.fileName) ? (
+                                        <FileText className="h-4 w-4 text-rose-500" />
+                                      ) : (
+                                        <FileText className="h-4 w-4 text-slate-500" />
+                                      )}
+                                      <span className="truncate">{attachment.fileName}</span>
+                                    </span>
+                                    <span className="shrink-0 text-[11px] text-slate-500">{formatFileSize(attachment.fileSize)}</span>
+                                  </div>
+                                  <div className="attachment-card-body bg-white p-3">
+                                    {renderFilePreview(attachment)}
+                                  </div>
                                 </div>
-                                <div className="bg-white p-3">
-                                  {renderFilePreview(attachment)}
-                                </div>
-                              </div>
-                            )
-                          })
-                        ) : (
-                          <div className="preview-placeholder border border-dashed border-blue-200 rounded-xl bg-blue-50/60 p-6 text-center text-sm text-slate-500">No attachments uploaded for this item.</div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="preview-placeholder border border-dashed border-blue-200 rounded-xl bg-blue-50/60 p-6 text-center text-sm text-slate-500">Select an item to see its invoice preview.</div>
-                  )}
-                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="preview-placeholder border border-dashed border-blue-200 rounded-xl bg-blue-50/60 p-6 text-center text-sm text-slate-500">No attachments uploaded for this item.</div>
+                          )}
+                        </div>
+                      </article>
+                    )
+                  })
+                )}
               </div>
             </div>
           </section>
 
+          {claimLevelAttachments.length > 0 && (
+            <section className="section-card report-section bg-white border border-slate-200 shadow-sm rounded-xl p-6 sm:p-8">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-lg font-semibold text-slate-900">General Attachments</h3>
+                  <p className="text-sm text-slate-500">These documents are linked to the claim as a whole and are included for completeness.</p>
+                </div>
+                <div className="item-attachment-grid grid gap-4 md:grid-cols-2">
+                  {claimLevelAttachments.map((attachment) => (
+                    <div key={attachment.id} className="attachment-card rounded-lg border border-slate-200 overflow-hidden bg-white">
+                      <div className="attachment-card-header flex items-center justify-between gap-3 px-4 py-2 bg-slate-100 text-xs font-semibold text-slate-600">
+                        <span className="flex items-center gap-2 min-w-0">
+                          {isImageFile(attachment.fileType, attachment.fileName) ? (
+                            <Image className="h-4 w-4 text-blue-500" />
+                          ) : isPdfFile(attachment.fileType, attachment.fileName) ? (
+                            <FileText className="h-4 w-4 text-rose-500" />
+                          ) : (
+                            <FileText className="h-4 w-4 text-slate-500" />
+                          )}
+                          <span className="truncate">{attachment.fileName}</span>
+                        </span>
+                        <span className="shrink-0 text-[11px] text-slate-500">{formatFileSize(attachment.fileSize)}</span>
+                      </div>
+                      <div className="attachment-card-body bg-white p-3">
+                        {renderFilePreview(attachment)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Bottom: Editable Table */}
-          <section className="section-card bg-white border border-slate-200 shadow-sm rounded-xl p-6 sm:p-8">
+          <section className="section-card report-section bg-white border border-slate-200 shadow-sm rounded-xl p-6 sm:p-8">
             <div className="flex flex-col gap-2">
               <h3 className="text-lg font-semibold text-slate-900">Editable Accounting Table</h3>
               <p className="text-sm text-slate-500">Adjust the export-ready table below. Required Xero columns are prefilled where possible.</p>
