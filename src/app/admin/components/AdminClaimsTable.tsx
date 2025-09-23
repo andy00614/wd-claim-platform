@@ -336,7 +336,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/reports/${claim.id}`} className="flex items-center gap-3 cursor-pointer py-2.5 px-3">
+                          <Link href={`/admin/reports/v2/${claim.id}`} className="flex items-center gap-3 cursor-pointer py-2.5 px-3">
                             <BarChart3 className="h-4 w-4 text-green-600" />
                             <span className="text-sm font-medium text-gray-700">View Report</span>
                           </Link>
