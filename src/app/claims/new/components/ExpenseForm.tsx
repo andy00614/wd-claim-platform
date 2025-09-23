@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns'
 import { PlusCircle, Sparkles } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from "sonner"
@@ -42,6 +42,26 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
   })
 
   const [attachments, setAttachments] = useState<File[]>([])
+
+  const isFormValid = useMemo(() => {
+    const hasValidDate = date instanceof Date && !Number.isNaN(date.getTime())
+
+    const trimmedItemNo = formData.itemNo?.trim() ?? ''
+    const trimmedCurrency = formData.currency?.trim() ?? ''
+    const trimmedAmount = formData.amount?.trim() ?? ''
+    const trimmedRate = formData.forexRate?.trim() ?? ''
+    const trimmedSgdAmount = formData.sgdAmount?.trim() ?? ''
+
+    if (!hasValidDate) return false
+    if (!trimmedItemNo || !trimmedCurrency || !trimmedAmount || !trimmedRate || !trimmedSgdAmount) {
+      return false
+    }
+
+    const numericFields = [trimmedAmount, trimmedRate, trimmedSgdAmount]
+    const hasValidNumbers = numericFields.every((value) => !Number.isNaN(Number.parseFloat(value)))
+
+    return hasValidNumbers
+  }, [date, formData])
 
   // 计算SGD金额
   const calculateSgdAmount = (amount: string, rate: string) => {
@@ -163,7 +183,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
   }
 
   const handleAddItem = () => {
-    if (!date || !formData.itemNo || !formData.amount) {
+    if (!isFormValid) {
       toast.error('请填写所有必填字段')
       return
     }
@@ -243,7 +263,8 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           <Button
             onClick={handleAddItem}
             size="lg"
-            className="w-full sm:w-auto gap-2 px-6 font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-[1px] transition"
+            disabled={!isFormValid}
+            className="w-full sm:w-auto gap-2 px-6 font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-[1px] transition disabled:opacity-60 disabled:shadow-none disabled:hover:translate-y-0 disabled:cursor-not-allowed"
           >
             <PlusCircle className="h-5 w-5" />
             Add Expense Item

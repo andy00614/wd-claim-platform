@@ -3,7 +3,6 @@
 import type { ReactNode } from "react"
 import { FileText, Paperclip, Pencil, Trash2 } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -121,7 +120,7 @@ export default function ExpenseItemsTable<
   renderActions,
 }: ExpenseItemsTableProps<TItem>) {
   const hasActions = Boolean(onEdit || onDelete || renderActions)
-  const columnCount = 9 + (hasActions ? 1 : 0)
+  const columnCount = 6 + (hasActions ? 1 : 0)
 
   const buildActions = (item: TItem) => {
     if (renderActions) {
@@ -167,13 +166,10 @@ export default function ExpenseItemsTable<
           <TableRow>
             <TableHead>Date</TableHead>
             <TableHead>Item Type</TableHead>
-            <TableHead>Description</TableHead>
             <TableHead>Details</TableHead>
-            <TableHead>Currency</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
+            <TableHead className="text-right">Amount (≈ SGD)</TableHead>
             <TableHead className="text-right">Rate</TableHead>
-            <TableHead className="text-right">SGD Amount</TableHead>
-            <TableHead>Attachments</TableHead>
+            <TableHead className="text-center">Attachments</TableHead>
             {hasActions && <TableHead className="text-right">{actionColumnLabel}</TableHead>}
           </TableRow>
         </TableHeader>
@@ -194,6 +190,24 @@ export default function ExpenseItemsTable<
                 ?? (Array.isArray(item.attachments) ? item.attachments : [])
 
               const hasAttachments = existingAttachments.length > 0 || pendingAttachments.length > 0
+              const formattedAmount = formatAmount(item.amount)
+              const formattedSgdAmount = formatAmount(item.sgdAmount)
+              const currencySuffix = item.currencyCode ? ` ${item.currencyCode}` : ""
+              const combinedAmountLabel = (() => {
+                if (formattedAmount !== "—" && formattedSgdAmount !== "—") {
+                  return `${formattedAmount}${currencySuffix} ≈ ${formattedSgdAmount} SGD`
+                }
+
+                if (formattedAmount !== "—") {
+                  return `${formattedAmount}${currencySuffix}`
+                }
+
+                if (formattedSgdAmount !== "—") {
+                  return `${formattedSgdAmount} SGD`
+                }
+
+                return "—"
+              })()
 
               return (
                 <TableRow key={item.id}>
@@ -213,11 +227,6 @@ export default function ExpenseItemsTable<
                     )}
                   </TableCell>
                   <TableCell className="max-w-xs">
-                    <div className="truncate" title={item.description ?? undefined}>
-                      {item.description ? item.description : "—"}
-                    </div>
-                  </TableCell>
-                  <TableCell className="max-w-xs">
                     <div
                       className="truncate text-xs text-muted-foreground"
                       title={item.details ?? undefined}
@@ -225,27 +234,15 @@ export default function ExpenseItemsTable<
                       {item.details ? item.details : "—"}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    {item.currencyCode ? (
-                      <Badge variant="outline" className="text-xs">
-                        {item.currencyCode}
-                      </Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
                   <TableCell className="text-right font-mono">
-                    {formatAmount(item.amount)}
+                    <span className="whitespace-nowrap">{combinedAmountLabel}</span>
                   </TableCell>
                   <TableCell className="text-right font-mono text-xs text-muted-foreground">
                     {formatRate(item.rate)}
                   </TableCell>
-                  <TableCell className="text-right font-mono font-medium">
-                    {formatAmount(item.sgdAmount)}
-                  </TableCell>
-                  <TableCell className="align-top">
+                  <TableCell className="align-middle text-center">
                     {hasAttachments ? (
-                      <div className="space-y-1">
+                      <div className="flex flex-col items-center gap-1">
                         {existingAttachments.map((attachment) => {
                           const label = truncateName(attachment.fileName)
                           const title = [attachment.fileName, attachment.fileType, attachment.fileSize]
@@ -259,7 +256,7 @@ export default function ExpenseItemsTable<
                                 asChild
                                 variant="ghost"
                                 size="sm"
-                                className="h-6 px-2 justify-start"
+                                className="h-6 px-2 justify-center"
                               >
                                 <a
                                   href={attachment.url}
@@ -277,7 +274,7 @@ export default function ExpenseItemsTable<
                           return (
                             <div
                               key={`existing-${attachment.id}`}
-                              className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                              className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground"
                               title={title || attachment.fileName}
                             >
                               <Paperclip className="h-3 w-3" />
@@ -294,7 +291,7 @@ export default function ExpenseItemsTable<
                           return (
                             <div
                               key={`pending-${item.id}-${index}`}
-                              className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                              className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground"
                               title={fileName}
                             >
                               <Paperclip className="h-3 w-3" />

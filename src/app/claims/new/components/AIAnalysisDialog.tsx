@@ -7,7 +7,7 @@ import ExpenseDetailsFields, { ExpenseCurrencyOption, ExpenseItemTypeOption } fr
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle, X, Edit3, Paperclip } from 'lucide-react'
+import { CheckCircle, X, Paperclip } from 'lucide-react'
 
 interface AIAnalysisDialogProps {
   isOpen: boolean
@@ -37,7 +37,6 @@ export default function AIAnalysisDialog({
   exchangeRates = {}
 }: AIAnalysisDialogProps) {
   const [editableData, setEditableData] = useState<ExpenseAnalysisResult>(analysisResult || {})
-  const [isEditing, setIsEditing] = useState(false)
   const [editableDate, setEditableDate] = useState<Date | null>(null)
 
   const parseDateString = (value?: string | null) => {
@@ -77,7 +76,6 @@ export default function AIAnalysisDialog({
     if (!analysisResult) {
       setEditableData({})
       setEditableDate(null)
-      setIsEditing(false)
       return
     }
 
@@ -106,7 +104,6 @@ export default function AIAnalysisDialog({
 
     setEditableData(nextData)
     setEditableDate(parseDateString(nextData.date))
-    setIsEditing(false)
   }, [analysisResult, exchangeRates])
 
   const handleConfirm = () => {
@@ -210,9 +207,9 @@ export default function AIAnalysisDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto py-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             {isError ? (
               <>
                 <X className="h-5 w-5 text-red-500" />
@@ -228,15 +225,15 @@ export default function AIAnalysisDialog({
         </DialogHeader>
 
         {uploadedFile && (
-          <Card className="mb-4">
-            <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-4">
+          <Card className="mb-3">
+            <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3 sm:py-2">
               <div className="flex items-start gap-3 text-sm text-gray-700">
                 <div className="mt-1">
                   <Paperclip className="h-4 w-4 text-gray-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">{uploadedFile.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-medium text-gray-900 leading-tight">{uploadedFile.name}</p>
+                  <p className="text-xs text-gray-500 leading-tight">
                     {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB · {uploadedFile.type || 'Unknown type'}
                   </p>
                 </div>
@@ -252,11 +249,11 @@ export default function AIAnalysisDialog({
           </Card>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* 分析结果/错误信息 */}
             {isError ? (
               <Card>
-                <CardHeader>
+                <CardHeader className="pb-2">
                   <CardTitle className="text-sm text-red-600">Analysis Failed</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -270,38 +267,29 @@ export default function AIAnalysisDialog({
               </Card>
             ) : (
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm">Extracted Information</CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditing(!isEditing)}
-                    className="gap-1"
-                  >
-                    <Edit3 className="h-3 w-3" />
-                    {isEditing ? 'View' : 'Edit'}
-                  </Button>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   <ExpenseDetailsFields
-                    mode={isEditing ? 'edit' : 'display'}
+                    mode='edit'
                     date={editableDate}
                     dateDisplay={editableData.date || null}
-                    onDateChange={isEditing ? handleDateChange : undefined}
+                    onDateChange={handleDateChange}
                     itemNo={editableData.itemNo}
-                    onItemNoChange={isEditing ? handleItemNoChange : undefined}
+                    onItemNoChange={handleItemNoChange}
                     itemTypes={itemTypes}
                     currency={editableData.currency}
-                    onCurrencyChange={isEditing ? handleCurrencyChange : undefined}
+                    onCurrencyChange={handleCurrencyChange}
                     currencies={currencies}
                     amount={editableData.amount}
-                    onAmountChange={isEditing ? handleAmountChange : undefined}
+                    onAmountChange={handleAmountChange}
                     forexRate={editableData.forexRate}
-                    onForexRateChange={isEditing ? handleForexRateChange : undefined}
+                    onForexRateChange={handleForexRateChange}
                     sgdAmount={editableData.sgdAmount}
-                    onSgdAmountChange={isEditing ? handleSgdAmountChange : undefined}
+                    onSgdAmountChange={handleSgdAmountChange}
                     details={editableData.details}
-                    onDetailsChange={isEditing ? handleDetailsChange : undefined}
+                    onDetailsChange={handleDetailsChange}
                   />
 
                   {/* 提示信息 */}
