@@ -1,26 +1,25 @@
 'use client'
 
-import { Fragment, useMemo, useState, useRef } from 'react'
+import { Fragment, useMemo, useRef, useState } from 'react'
 import { format } from 'date-fns'
+import dynamic from 'next/dynamic'
+import { useReactToPrint } from 'react-to-print'
+import { ArrowLeft, FileDown, FileSpreadsheet, FileText, Info, Printer } from 'lucide-react'
+
 import { formatClaimId } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import dynamic from 'next/dynamic'
-import { ArrowLeft, Printer, FileDown, FileText, FileSpreadsheet, Info } from 'lucide-react'
-import { useReactToPrint } from 'react-to-print'
 
-// Dynamic import for client-side only component
 const PdfPreview = dynamic(() => import('@/components/ui/pdf-preview'), {
   ssr: false,
   loading: () => (
-    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-      <div className="flex items-center justify-center mb-3">
+    <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+      <div className="mb-3 flex items-center justify-center">
         <FileText className="h-12 w-12 text-red-500" />
       </div>
-      <div className="text-center">
-        <p className="text-sm font-medium text-gray-900">Loading PDF preview...</p>
-      </div>
+      <div className="text-center text-sm font-medium text-gray-900">Loading PDF preview...</div>
     </div>
   )
 })
@@ -67,6 +66,34 @@ interface ClaimReportProps {
   }
 }
 
+type EditableRow = {
+  contactName: string
+  invoiceNumber: string
+  invoiceDate: string
+  dueDate: string
+  total: string
+  inventoryItemCode: string
+  description: string
+  quantity: string
+  unitAmount: string
+  accountCode: string
+  taxType: string
+  taxAmount: string
+  trackingName1: string
+  trackingOption1: string
+  trackingName2: string
+  trackingOption2: string
+  currency: string
+}
+
+type AttachmentWithContext = {
+  attachment: Attachment
+  itemIndex: number | null
+  itemName: string | null
+}
+
+type ClaimItem = ClaimReportProps['items'][number]
+
 const parseToDate = (value: Date | string | null | undefined) => {
   if (!value) return null
   const dateObj = value instanceof Date ? value : new Date(value)
@@ -98,24 +125,16 @@ const toDateInputValue = (value: Date | string | null | undefined) => {
   return parsed ? format(parsed, 'yyyy-MM-dd') : ''
 }
 
-type EditableRow = {
-  contactName: string
-  invoiceNumber: string
-  invoiceDate: string
-  dueDate: string
-  total: string
-  inventoryItemCode: string
-  description: string
-  quantity: string
-  unitAmount: string
-  accountCode: string
-  taxType: string
-  taxAmount: string
-  trackingName1: string
-  trackingOption1: string
-  trackingName2: string
-  trackingOption2: string
-  currency: string
+const isImageFile = (fileType: string, fileName: string) => {
+  const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+
+  return imageTypes.includes(fileType.toLowerCase()) ||
+    imageExtensions.some((ext) => fileName.toLowerCase().endsWith(ext))
+}
+
+const isPdfFile = (fileType: string, fileName: string) => {
+  return fileType.toLowerCase() === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')
 }
 
 export default function ClaimReportV2({ claim, items, attachments, employee }: ClaimReportProps) {
@@ -152,13 +171,11 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
           padding: 24px !important;
         }
 
-        /* 确保摘要页面占满一页 */
         .summary-page {
           min-height: calc(100vh - 48px);
           page-break-after: always;
         }
 
-        /* 每个附件页面独占一页 */
         .attachment-page {
           page-break-before: always;
           page-break-after: always;
@@ -167,7 +184,6 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
           flex-direction: column;
         }
 
-        /* 附件内容区域占满剩余空间 */
         .attachment-content {
           flex: 1;
           display: flex;
@@ -176,14 +192,12 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
           min-height: 600px;
         }
 
-        /* PDF 预览占满页面 */
         .attachment-content .pdf-preview-container {
           width: 100% !important;
           height: 100% !important;
           max-height: 600px !important;
         }
 
-        /* 图片占满可用空间 */
         .attachment-content img {
           max-width: 100% !important;
           max-height: 600px !important;
@@ -200,7 +214,6 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
           border-color: #000000 !important;
         }
 
-        /* 避免表格被分页 */
         .summary-table {
           page-break-inside: avoid;
         }
@@ -241,12 +254,8 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
     }, 0)
   }, [items])
 
-  const allAttachmentsWithContext = useMemo(() => {
-    const attachmentsList: Array<{
-      attachment: Attachment
-      itemIndex: number | null
-      itemName: string | null
-    }> = []
+  const allAttachmentsWithContext = useMemo<AttachmentWithContext[]>(() => {
+    const attachmentsList: AttachmentWithContext[] = []
 
     items.forEach((item, index) => {
       const itemAttachments: Attachment[] = []
@@ -267,20 +276,21 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
         attachmentsList.push({
           attachment,
           itemIndex: index + 1,
-          itemName: `${item.itemTypeNo} - ${item.itemTypeName}`
+          itemName: `${item.itemTypeNo} - ${item.itemTypeName}`,
         })
       })
     })
 
     if (attachments && attachments.length > 0) {
-      const claimLevelAttachments = attachments.filter((attachment) => !attachment.claimItemId)
-      claimLevelAttachments.forEach((attachment) => {
-        attachmentsList.push({
-          attachment,
-          itemIndex: null,
-          itemName: null
+      attachments
+        .filter((attachment) => !attachment.claimItemId)
+        .forEach((attachment) => {
+          attachmentsList.push({
+            attachment,
+            itemIndex: null,
+            itemName: null,
+          })
         })
-      })
     }
 
     return attachmentsList
@@ -292,87 +302,22 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
   const statusLabel = claim.status ? `${claim.status.charAt(0).toUpperCase()}${claim.status.slice(1).toLowerCase()}` : '—'
   const generatedAtDisplay = useMemo(() => format(new Date(), 'dd MMM yyyy, HH:mm'), [])
 
-  const tableHeaderClass = 'summary-table-header border border-slate-300 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600'
-  const tableCellClass = 'summary-table-cell border border-slate-200 px-3 py-2 text-sm text-slate-700'
-  const tableIndexCellClass = `${tableCellClass} text-center font-semibold`
-  const tableMonoCellClass = `${tableCellClass} mono text-right font-mono`
-  const descriptionCellClass = 'summary-description-cell border border-slate-200 px-3 py-2 text-xs text-slate-500'
-
-  const isImageFile = (fileType: string, fileName: string) => {
-    const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-
-    return imageTypes.includes(fileType.toLowerCase()) ||
-      imageExtensions.some((ext) => fileName.toLowerCase().endsWith(ext))
-  }
-
-  const isPdfFile = (fileType: string, fileName: string) => {
-    return fileType.toLowerCase() === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')
-  }
-
-  const renderFilePreview = (attachment: Attachment) => {
-    if (isImageFile(attachment.fileType, attachment.fileName)) {
-      return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={attachment.url}
-          alt={attachment.fileName}
-          className="mx-auto max-h-[75vh] max-w-full object-contain"
-          onError={(event) => {
-            const target = event.target as HTMLImageElement
-            target.style.display = 'none'
-            const fallback = document.createElement('div')
-            fallback.className = 'attachment-placeholder flex flex-col items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500'
-            fallback.textContent = 'Preview not available'
-            target.parentNode?.appendChild(fallback)
-          }}
-        />
-      )
-    }
-
-    if (isPdfFile(attachment.fileType, attachment.fileName)) {
-      return (
-        <div className="pdf-preview-container max-h-[75vh] w-full overflow-auto print:max-h-none print:h-full">
-          <PdfPreview
-            url={attachment.url}
-            fileName={attachment.fileName}
-            maxPages={10}
-          />
-        </div>
-      )
-    }
-
-    return (
-      <div className="attachment-placeholder flex flex-col items-center gap-4 text-center">
-        <FileText className="h-12 w-12 text-slate-400" />
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-slate-700">{attachment.fileName}</p>
-          <p className="text-xs text-slate-500">Preview not available. Download to view the original file.</p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="inline-flex items-center gap-2"
-          onClick={() => window.open(attachment.url, '_blank')}
-        >
-          <FileText className="h-4 w-4" />
-          Download
-        </Button>
-      </div>
-    )
-  }
-
-
   const handleCsvRowChange = (index: number, field: keyof EditableRow, value: string) => {
-    setCsvData((prev) => prev.map((row, rowIndex) => {
-      if (rowIndex !== index) {
-        return row
-      }
-      return {
-        ...row,
-        [field]: value,
-      }
-    }))
+    setCsvData((prev) => prev.map((row, rowIndex) => (rowIndex === index ? { ...row, [field]: value } : row)))
+  }
+
+  const handleCsvDialogOpen = () => {
+    setCsvData(editableRows.map((row) => ({ ...row })))
+    setShowCsvDialog(true)
+  }
+
+  const handleCsvDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setShowCsvDialog(false)
+      return
+    }
+    setCsvData(editableRows.map((row) => ({ ...row })))
+    setShowCsvDialog(true)
   }
 
   const handleExportCsv = () => {
@@ -393,12 +338,12 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
       'TrackingOption1',
       'TrackingName2',
       'TrackingOption2',
-      'Currency'
+      'Currency',
     ]
 
     const csvRows = [
       headers.join(','),
-      ...csvData.map(row => [
+      ...csvData.map((row) => [
         `"${row.contactName}"`,
         `"${row.invoiceNumber}"`,
         `"${row.invoiceDate}"`,
@@ -415,8 +360,8 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
         `"${row.trackingOption1}"`,
         `"${row.trackingName2}"`,
         `"${row.trackingOption2}"`,
-        `"${row.currency}"`
-      ].join(','))
+        `"${row.currency}"`,
+      ].join(',')),
     ]
 
     const csvContent = csvRows.join('\n')
@@ -465,7 +410,516 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
     URL.revokeObjectURL(url)
   }
 
-  const getReportStyles = () => `
+  return (
+    <>
+      <ReportActionBar
+        attachmentCount={attachmentCount}
+        claimId={claim.id}
+        onBack={() => window.history.back()}
+        onExportHtml={handleExportHTML}
+        onOpenCsv={handleCsvDialogOpen}
+        onPrint={handlePrint}
+      />
+
+      <div className="bg-slate-50 print:bg-white">
+        <div className="mx-auto w-full max-w-5xl px-6 py-8 print:max-w-none print:p-0">
+          <div ref={printRef} id="report-content-v2" className="report-container space-y-10 print:space-y-0">
+            <SummaryPage
+              attachmentCount={attachmentCount}
+              claim={claim}
+              claimedAmountDisplay={claimedAmountDisplay}
+              employee={employee}
+              generatedAtDisplay={generatedAtDisplay}
+              items={items}
+              postingDateDisplay={postingDateDisplay}
+              statusLabel={statusLabel}
+            />
+
+            <AttachmentsSection
+              attachmentsWithContext={allAttachmentsWithContext}
+              attachmentCount={attachmentCount}
+              claimId={claim.id}
+            />
+          </div>
+        </div>
+      </div>
+
+      <CsvExportDialog
+        open={showCsvDialog}
+        rows={csvData}
+        onExport={handleExportCsv}
+        onOpenChange={handleCsvDialogOpenChange}
+        onRowChange={handleCsvRowChange}
+      />
+    </>
+  )
+}
+
+type ReportActionBarProps = {
+  claimId: number
+  attachmentCount: number
+  onBack: () => void
+  onPrint: () => void
+  onExportHtml: () => void
+  onOpenCsv: () => void
+}
+
+function ReportActionBar({ claimId, attachmentCount, onBack, onPrint, onExportHtml, onOpenCsv }: ReportActionBarProps) {
+  return (
+    <div className="no-print sticky top-0 z-10 border-b bg-white print:hidden">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Expense Claim Report</h1>
+          <p className="text-sm text-slate-500">
+            {formatClaimId(claimId)} • {attachmentCount} attachments • Optimized for printing
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <Button variant="outline" onClick={onPrint} className="flex items-center gap-2">
+            <Printer className="h-4 w-4" />
+            Print
+          </Button>
+          <Button onClick={onExportHtml} className="flex items-center gap-2">
+            <FileDown className="h-4 w-4" />
+            Export HTML
+          </Button>
+          <Button variant="outline" onClick={onOpenCsv} className="flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type SummaryPageProps = {
+  claim: ClaimReportProps['claim']
+  employee: ClaimReportProps['employee']
+  items: ClaimReportProps['items']
+  postingDateDisplay: string
+  attachmentCount: number
+  claimedAmountDisplay: string
+  statusLabel: string
+  generatedAtDisplay: string
+}
+
+function SummaryPage({
+  claim,
+  employee,
+  items,
+  postingDateDisplay,
+  attachmentCount,
+  claimedAmountDisplay,
+  statusLabel,
+  generatedAtDisplay,
+}: SummaryPageProps) {
+  const tableHeaderClass = 'summary-table-header border border-slate-300 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600'
+  const tableCellClass = 'summary-table-cell border border-slate-200 px-3 py-2 text-sm text-slate-700'
+  const tableIndexCellClass = `${tableCellClass} text-center font-semibold`
+  const tableMonoCellClass = `${tableCellClass} mono text-right font-mono`
+  const descriptionCellClass = 'summary-description-cell border border-slate-200 px-3 py-2 text-xs text-slate-500'
+
+  return (
+    <section className="summary-page rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm print:rounded-none print:border-none print:shadow-none">
+      <header className="summary-header flex flex-col gap-4 border-b border-dashed border-slate-300 pb-6">
+        <div>
+          <h2 className="summary-title text-2xl font-semibold text-slate-900">Expense Claim Report</h2>
+          <p className="text-sm text-slate-500">Prepared for {employee.name || '—'}</p>
+        </div>
+        <div className="summary-meta flex flex-wrap items-center gap-4 text-sm text-slate-600">
+          <span className="summary-meta-item font-semibold text-slate-700">Claim {formatClaimId(claim.id)}</span>
+          <span className="summary-meta-item">Posting Date: {postingDateDisplay}</span>
+          <span className="summary-meta-item">Attachments: {attachmentCount}</span>
+        </div>
+      </header>
+
+      <div className="summary-info-grid grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <dl className="summary-info grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="summary-info-row flex flex-col gap-1">
+            <dt>Employee Code</dt>
+            <dd>{employee.employeeCode ?? '—'}</dd>
+          </div>
+          <div className="summary-info-row flex flex-col gap-1">
+            <dt>Staff Name</dt>
+            <dd>{employee.name || '—'}</dd>
+          </div>
+          <div className="summary-info-row flex flex-col gap-1">
+            <dt>Department</dt>
+            <dd>{employee.department || '—'}</dd>
+          </div>
+          <div className="summary-info-row flex flex-col gap-1">
+            <dt>Status</dt>
+            <dd>{statusLabel}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div className="summary-table-wrapper mt-8 overflow-hidden rounded-xl border border-slate-200">
+        <table className="summary-table w-full">
+          <thead className="bg-slate-100">
+            <tr>
+              <th className={tableHeaderClass}>Item</th>
+              <th className={tableHeaderClass}>Date</th>
+              <th className={tableHeaderClass}>Type &amp; Description</th>
+              <th className={tableHeaderClass}>Original</th>
+              <th className={tableHeaderClass}>Rate</th>
+              <th className={tableHeaderClass}>SGD Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan={6} className={`${tableCellClass} text-center text-sm text-slate-500`}>
+                  No claim line items were provided.
+                </td>
+              </tr>
+            ) : (
+              items.map((item, index) => (
+                <SummaryTableRow
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  tableIndexCellClass={tableIndexCellClass}
+                  tableCellClass={tableCellClass}
+                  tableMonoCellClass={tableMonoCellClass}
+                  descriptionCellClass={descriptionCellClass}
+                />
+              ))
+            )}
+            {items.length > 0 && (
+              <tr className="summary-total-row bg-slate-100 font-semibold">
+                <td colSpan={5} className={`${tableCellClass} text-right`}>
+                  TOTAL:
+                </td>
+                <td className={tableMonoCellClass}>SGD {claimedAmountDisplay}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <footer className="summary-footer border-t border-slate-200 pt-6 text-sm text-slate-600">
+        {claim.adminNotes ? (
+          <div className="space-y-2">
+            <span className="font-semibold text-slate-700">Admin Notes</span>
+            <p className="whitespace-pre-wrap">{claim.adminNotes}</p>
+          </div>
+        ) : (
+          <p className="italic text-slate-500">No admin notes recorded for this claim.</p>
+        )}
+        <p className="footer-muted text-xs">Generated on {generatedAtDisplay}</p>
+      </footer>
+    </section>
+  )
+}
+
+type SummaryTableRowProps = {
+  item: ClaimItem
+  index: number
+  tableIndexCellClass: string
+  tableCellClass: string
+  tableMonoCellClass: string
+  descriptionCellClass: string
+}
+
+function SummaryTableRow({ item, index, tableIndexCellClass, tableCellClass, tableMonoCellClass, descriptionCellClass }: SummaryTableRowProps) {
+  return (
+    <Fragment>
+      <tr>
+        <td rowSpan={2} className={tableIndexCellClass}>
+          {String(index + 1).padStart(2, '0')}
+        </td>
+        <td rowSpan={2} className={tableCellClass}>
+          {formatDateValue(item.date, 'dd/MM/yyyy')}
+        </td>
+        <td className={tableCellClass}>
+          [{item.itemTypeNo}] {item.itemTypeName}
+        </td>
+        <td className={tableMonoCellClass}>
+          {item.currencyCode === 'SGD'
+            ? `SGD ${Number.parseFloat(item.sgdAmount || '0').toFixed(2)}`
+            : `${item.currencyCode} ${Number.parseFloat(item.amount || '0').toFixed(2)}`}
+        </td>
+        <td className={tableMonoCellClass}>{Number.parseFloat(item.rate || '0').toFixed(4)}</td>
+        <td className={tableMonoCellClass}>{Number.parseFloat(item.sgdAmount || '0').toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td colSpan={4} className={descriptionCellClass}>
+          <div className="flex items-start gap-2">
+            {(item.note || item.details) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="mt-0.5 h-3 w-3 cursor-help flex-shrink-0 text-slate-400 hover:text-slate-600" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-80 bg-slate-900 p-3 text-white">
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold">Item Details</div>
+                    <div className="text-xs whitespace-pre-wrap">{item.note || item.details}</div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            <span className="flex-1">{item.note || item.details || '—'}</span>
+          </div>
+        </td>
+      </tr>
+    </Fragment>
+  )
+}
+
+type AttachmentsSectionProps = {
+  attachmentsWithContext: AttachmentWithContext[]
+  attachmentCount: number
+  claimId: number
+}
+
+function AttachmentsSection({ attachmentsWithContext, attachmentCount, claimId }: AttachmentsSectionProps) {
+  if (attachmentCount === 0) {
+    return (
+      <section className="attachment-page rounded-2xl border border-slate-200 bg-white px-8 py-12 text-center text-sm text-slate-600 shadow-sm print:rounded-none print:border-none print:shadow-none">
+        <h3 className="attachment-title mb-3 text-lg font-semibold text-slate-900">Attachments</h3>
+        <p>No attachments were uploaded for this claim.</p>
+      </section>
+    )
+  }
+
+  return (
+    <>
+      {attachmentsWithContext.map(({ attachment, itemIndex, itemName }, idx) => (
+        <section
+          key={`attachment-${attachment.id}-${idx}`}
+          className="attachment-page rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm print:rounded-none print:border-none print:shadow-none"
+        >
+          <header className="attachment-header no-print flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="attachment-title text-lg font-semibold text-slate-900">
+                Attachment {idx + 1} of {attachmentCount}
+              </h3>
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Claim {formatClaimId(claimId)}
+              </span>
+            </div>
+            <div className="attachment-meta grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-2">
+              <div>
+                <span className="mr-2 font-semibold text-slate-700">File:</span>
+                {attachment.fileName}
+              </div>
+              <div>
+                <span className="mr-2 font-semibold text-slate-700">Size:</span>
+                {formatFileSize(attachment.fileSize)}
+              </div>
+              {itemIndex !== null && (
+                <div className="sm:col-span-2">
+                  <span className="mr-2 font-semibold text-slate-700">
+                    Item {String(itemIndex).padStart(2, '0')}:
+                  </span>
+                  {itemName}
+                </div>
+              )}
+            </div>
+          </header>
+          <div className="attachment-content flex min-h-[420px] flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white p-6 print:border-none print:rounded-none print:min-h-0">
+            {renderFilePreview(attachment)}
+          </div>
+        </section>
+      ))}
+    </>
+  )
+}
+
+const renderFilePreview = (attachment: Attachment) => {
+  if (isImageFile(attachment.fileType, attachment.fileName)) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={attachment.url}
+        alt={attachment.fileName}
+        className="mx-auto max-h-[75vh] max-w-full object-contain"
+        onError={(event) => {
+          const target = event.target as HTMLImageElement
+          target.style.display = 'none'
+          const fallback = document.createElement('div')
+          fallback.className = 'attachment-placeholder flex flex-col items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500'
+          fallback.textContent = 'Preview not available'
+          target.parentNode?.appendChild(fallback)
+        }}
+      />
+    )
+  }
+
+  if (isPdfFile(attachment.fileType, attachment.fileName)) {
+    return (
+      <div className="pdf-preview-container max-h-[75vh] w-full overflow-auto print:h-full print:max-h-none">
+        <PdfPreview url={attachment.url} fileName={attachment.fileName} maxPages={10} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="attachment-placeholder flex flex-col items-center gap-4 text-center">
+      <FileText className="h-12 w-12 text-slate-400" />
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-slate-700">{attachment.fileName}</p>
+        <p className="text-xs text-slate-500">Preview not available. Download to view the original file.</p>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        className="inline-flex items-center gap-2"
+        onClick={() => window.open(attachment.url, '_blank')}
+      >
+        <FileText className="h-4 w-4" />
+        Download
+      </Button>
+    </div>
+  )
+}
+
+type CsvExportDialogProps = {
+  open: boolean
+  rows: EditableRow[]
+  onOpenChange: (open: boolean) => void
+  onRowChange: (index: number, field: keyof EditableRow, value: string) => void
+  onExport: () => void
+}
+
+function CsvExportDialog({ open, rows, onOpenChange, onRowChange, onExport }: CsvExportDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex h-[85vh] w-full max-w-[95vw] flex-col overflow-hidden p-0 sm:max-w-[90vw] lg:max-w-[1200px] xl:max-w-[1400px]">
+        <DialogHeader className="flex-shrink-0 border-b px-6 py-4">
+          <DialogTitle>Export CSV Data</DialogTitle>
+          <div className="text-sm text-gray-600">
+            Review and edit the data before exporting to CSV. You can modify any field as needed.
+          </div>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-hidden px-6 py-6">
+          <div className="h-full overflow-auto">
+            <Table className="min-w-[2400px]">
+              <TableHeader className="sticky top-0 z-10 bg-gray-50">
+                <TableRow>
+                  <TableHead className="w-12 text-xs font-medium">#</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">*ContactName</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">*InvoiceNumber</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">*InvoiceDate</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">*DueDate</TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">Total</TableHead>
+                  <TableHead className="min-w-[140px] text-xs font-medium">InventoryItemCode</TableHead>
+                  <TableHead className="min-w-[200px] text-xs font-medium">Description</TableHead>
+                  <TableHead className="min-w-[80px] text-xs font-medium">*Quantity</TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">*UnitAmount</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">*AccountCode</TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">*TaxType</TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">TaxAmount</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">TrackingName1</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">TrackingOption1</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">TrackingName2</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">TrackingOption2</TableHead>
+                  <TableHead className="min-w-[80px] text-xs font-medium">Currency</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((row, index) => (
+                  <TableRow key={`csv-row-${row.invoiceNumber}-${index}`}>
+                    <TableCell className="px-2 py-1 text-center text-xs font-medium">{index + 1}</TableCell>
+                    <EditableCell value={row.contactName} onChange={(value) => onRowChange(index, 'contactName', value)} />
+                    <EditableCell value={row.invoiceNumber} onChange={(value) => onRowChange(index, 'invoiceNumber', value)} />
+                    <EditableCell type="date" value={row.invoiceDate} onChange={(value) => onRowChange(index, 'invoiceDate', value)} />
+                    <EditableCell type="date" value={row.dueDate} onChange={(value) => onRowChange(index, 'dueDate', value)} />
+                    <EditableCell type="number" step="0.01" value={row.total} onChange={(value) => onRowChange(index, 'total', value)} />
+                    <EditableCell value={row.inventoryItemCode} onChange={(value) => onRowChange(index, 'inventoryItemCode', value)} />
+                    <EditableCell value={row.description} onChange={(value) => onRowChange(index, 'description', value)} />
+                    <EditableCell type="number" value={row.quantity} onChange={(value) => onRowChange(index, 'quantity', value)} />
+                    <EditableCell type="number" step="0.01" value={row.unitAmount} onChange={(value) => onRowChange(index, 'unitAmount', value)} />
+                    <EditableCell value={row.accountCode} onChange={(value) => onRowChange(index, 'accountCode', value)} />
+                    <EditableSelect
+                      options={[
+                        { label: 'No Tax', value: 'No Tax' },
+                        { label: 'GST', value: 'GST' },
+                        { label: 'VAT', value: 'VAT' },
+                      ]}
+                      value={row.taxType}
+                      onChange={(value) => onRowChange(index, 'taxType', value)}
+                    />
+                    <EditableCell type="number" step="0.01" value={row.taxAmount} onChange={(value) => onRowChange(index, 'taxAmount', value)} />
+                    <EditableCell value={row.trackingName1} onChange={(value) => onRowChange(index, 'trackingName1', value)} />
+                    <EditableCell value={row.trackingOption1} onChange={(value) => onRowChange(index, 'trackingOption1', value)} />
+                    <EditableCell value={row.trackingName2} onChange={(value) => onRowChange(index, 'trackingName2', value)} />
+                    <EditableCell value={row.trackingOption2} onChange={(value) => onRowChange(index, 'trackingOption2', value)} />
+                    <EditableCell value={row.currency} onChange={(value) => onRowChange(index, 'currency', value)} />
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        <DialogFooter className="flex flex-shrink-0 items-center justify-end gap-2 border-t bg-gray-50 px-6 py-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={onExport} className="flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+type EditableCellProps = {
+  value: string
+  onChange: (value: string) => void
+  type?: string
+  step?: string
+}
+
+function EditableCell({ value, onChange, type = 'text', step }: EditableCellProps) {
+  return (
+    <TableCell className="p-0">
+      <input
+        type={type}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+      />
+    </TableCell>
+  )
+}
+
+type EditableSelectProps = {
+  value: string
+  onChange: (value: string) => void
+  options: Array<{ label: string; value: string }>
+}
+
+function EditableSelect({ value, onChange, options }: EditableSelectProps) {
+  return (
+    <TableCell className="p-0">
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </TableCell>
+  )
+}
+
+const getReportStyles = () => `
     :root {
       color-scheme: light;
     }
@@ -761,472 +1215,3 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
       }
     }
   `
-
-  return (
-    <>
-      <div className="no-print sticky top-0 z-10 border-b bg-white print:hidden">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Expense Claim Report</h1>
-            <p className="text-sm text-slate-500">
-              {formatClaimId(claim.id)} • {attachmentCount} attachments • Optimized for printing
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => window.history.back()}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handlePrint}
-              className="flex items-center gap-2"
-            >
-              <Printer className="h-4 w-4" />
-              Print
-            </Button>
-            <Button
-              onClick={handleExportHTML}
-              className="flex items-center gap-2"
-            >
-              <FileDown className="h-4 w-4" />
-              Export HTML
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setCsvData([...editableRows])
-                setShowCsvDialog(true)
-              }}
-              className="flex items-center gap-2"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              Export CSV
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-slate-50 print:bg-white">
-        <div className="mx-auto w-full max-w-5xl px-6 py-8 print:max-w-none print:p-0">
-          <div ref={printRef} id="report-content-v2" className="report-container space-y-10 print:space-y-0">
-            <section className="summary-page rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm print:rounded-none print:border-none print:shadow-none">
-              <header className="summary-header flex flex-col gap-4 border-b border-dashed border-slate-300 pb-6">
-                <div>
-                  <h2 className="summary-title text-2xl font-semibold text-slate-900">Expense Claim Report</h2>
-                  <p className="text-sm text-slate-500">Prepared for {employee.name || '—'}</p>
-                </div>
-                <div className="summary-meta flex flex-wrap items-center gap-4 text-sm text-slate-600">
-                  <span className="summary-meta-item font-semibold text-slate-700">
-                    Claim {formatClaimId(claim.id)}
-                  </span>
-                  <span className="summary-meta-item">Posting Date: {postingDateDisplay}</span>
-                  <span className="summary-meta-item">Attachments: {attachmentCount}</span>
-                </div>
-              </header>
-
-              <div className="summary-info-grid grid gap-6 lg:grid-cols-[2fr_1fr]">
-                <dl className="summary-info grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="summary-info-row flex flex-col gap-1">
-                    <dt>Employee Code</dt>
-                    <dd>{employee.employeeCode ?? '—'}</dd>
-                  </div>
-                  <div className="summary-info-row flex flex-col gap-1">
-                    <dt>Staff Name</dt>
-                    <dd>{employee.name || '—'}</dd>
-                  </div>
-                  <div className="summary-info-row flex flex-col gap-1">
-                    <dt>Department</dt>
-                    <dd>{employee.department || '—'}</dd>
-                  </div>
-                  <div className="summary-info-row flex flex-col gap-1">
-                    <dt>Status</dt>
-                    <dd>{statusLabel}</dd>
-                  </div>
-                </dl>
-
-                {/* <div className="summary-highlight flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
-                  <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
-                    Total Claim (SGD)
-                  </span>
-                  <span className="summary-amount text-3xl font-semibold tracking-tight text-slate-900">
-                    SGD {claimedAmountDisplay}
-                  </span>
-                  <div className="flex flex-col gap-1 text-sm text-slate-600">
-                    <span>
-                      Ref Number:{' '}
-                      <span className="font-semibold text-slate-800">{formatClaimId(claim.id)}</span>
-                    </span>
-                    <span>
-                      Attachments:{' '}
-                      <span className="font-semibold text-slate-800">{attachmentCount}</span>
-                    </span>
-                  </div>
-                </div> */}
-              </div>
-
-              <div className="summary-table-wrapper mt-8 overflow-hidden rounded-xl border border-slate-200">
-                <table className="summary-table w-full">
-                  <thead className="bg-slate-100">
-                    <tr>
-                      <th className={tableHeaderClass}>Item</th>
-                      <th className={tableHeaderClass}>Date</th>
-                      <th className={tableHeaderClass}>Type & Description</th>
-                      <th className={tableHeaderClass}>Original</th>
-                      <th className={tableHeaderClass}>Rate</th>
-                      <th className={tableHeaderClass}>SGD Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className={`${tableCellClass} text-center text-sm text-slate-500`}>
-                          No claim line items were provided.
-                        </td>
-                      </tr>
-                    ) : (
-                      items.map((item, index) => (
-                        <Fragment key={item.id}>
-                          <tr>
-                            <td rowSpan={2} className={tableIndexCellClass}>
-                              {String(index + 1).padStart(2, '0')}
-                            </td>
-                            <td rowSpan={2} className={tableCellClass}>
-                              {formatDateValue(item.date, 'dd/MM/yyyy')}
-                            </td>
-                            <td className={tableCellClass}>
-                              [{item.itemTypeNo}] {item.itemTypeName}
-                            </td>
-                            <td className={tableMonoCellClass}>
-                              {item.currencyCode === 'SGD'
-                                ? `SGD ${Number.parseFloat(item.sgdAmount || '0').toFixed(2)}`
-                                : `${item.currencyCode} ${Number.parseFloat(item.amount || '0').toFixed(2)}`
-                              }
-                            </td>
-                            <td className={tableMonoCellClass}>
-                              {Number.parseFloat(item.rate || '0').toFixed(4)}
-                            </td>
-                            <td className={tableMonoCellClass}>
-                              {Number.parseFloat(item.sgdAmount || '0').toFixed(2)}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td colSpan={4} className={descriptionCellClass}>
-                              <div className="flex items-start gap-2">
-                                {(item.note || item.details) && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Info className="mt-0.5 h-3 w-3 text-slate-400 hover:text-slate-600 cursor-help flex-shrink-0" />
-                                    </TooltipTrigger>
-                                    <TooltipContent className="max-w-80 p-3 bg-slate-900 text-white">
-                                      <div className="space-y-2">
-                                        <div className="text-xs font-semibold">Item Details</div>
-                                        <div className="text-xs whitespace-pre-wrap">
-                                          {item.note || item.details}
-                                        </div>
-                                      </div>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-                                <span className="flex-1">
-                                  {item.note || item.details || '—'}
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        </Fragment>
-                      ))
-                    )}
-                    {items.length > 0 && (
-                      <tr className="summary-total-row bg-slate-100 font-semibold">
-                        <td colSpan={5} className={`${tableCellClass} text-right`}>
-                          TOTAL:
-                        </td>
-                        <td className={tableMonoCellClass}>SGD {claimedAmountDisplay}</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <footer className="summary-footer border-t border-slate-200 pt-6 text-sm text-slate-600">
-                {claim.adminNotes ? (
-                  <div className="space-y-2">
-                    <span className="font-semibold text-slate-700">Admin Notes</span>
-                    <p className="whitespace-pre-wrap">{claim.adminNotes}</p>
-                  </div>
-                ) : (
-                  <p className="italic text-slate-500">No admin notes recorded for this claim.</p>
-                )}
-                <p className="footer-muted text-xs">Generated on {generatedAtDisplay}</p>
-              </footer>
-            </section>
-
-            {attachmentCount === 0 ? (
-              <section className="attachment-page rounded-2xl border border-slate-200 bg-white px-8 py-12 text-center text-sm text-slate-600 shadow-sm print:rounded-none print:border-none print:shadow-none">
-                <h3 className="attachment-title mb-3 text-lg font-semibold text-slate-900">Attachments</h3>
-                <p>No attachments were uploaded for this claim.</p>
-              </section>
-            ) : (
-              allAttachmentsWithContext.map(({ attachment, itemIndex, itemName }, idx) => (
-                <section
-                  key={`attachment-${attachment.id}-${idx}`}
-                  className="attachment-page rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm print:rounded-none print:border-none print:shadow-none"
-                >
-                  <header className="attachment-header flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 no-print">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h3 className="attachment-title text-lg font-semibold text-slate-900">
-                        Attachment {idx + 1} of {attachmentCount}
-                      </h3>
-                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                        Claim {formatClaimId(claim.id)}
-                      </span>
-                    </div>
-                    <div className="attachment-meta grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                      <div>
-                        <span className="mr-2 font-semibold text-slate-700">File:</span>
-                        {attachment.fileName}
-                      </div>
-                      <div>
-                        <span className="mr-2 font-semibold text-slate-700">Size:</span>
-                        {formatFileSize(attachment.fileSize)}
-                      </div>
-                      {itemIndex !== null && (
-                        <div className="sm:col-span-2">
-                          <span className="mr-2 font-semibold text-slate-700">
-                            Item {String(itemIndex).padStart(2, '0')}:
-                          </span>
-                          {itemName}
-                        </div>
-                      )}
-                    </div>
-                  </header>
-                  <div className="attachment-content flex min-h-[420px] flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white p-6 print:border-none print:rounded-none print:min-h-0">
-                    {renderFilePreview(attachment)}
-                  </div>
-                </section>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      <Dialog open={showCsvDialog} onOpenChange={setShowCsvDialog}>
-        <DialogContent className="h-[85vh] max-w-[95vw] overflow-hidden p-0">
-          <div className="flex h-full flex-col">
-            <DialogHeader className="border-b px-6 py-4 flex-shrink-0">
-              <DialogTitle>Export CSV Data</DialogTitle>
-              <div className="text-sm text-gray-600">
-                Review and edit the data before exporting to CSV. You can modify any field as needed.
-              </div>
-            </DialogHeader>
-
-            <div className="flex-1 overflow-hidden p-6">
-              <div className="overflow-hidden rounded-xl border h-full">
-                <div className="h-full overflow-auto">
-                  <table className="w-full min-w-[2400px] border-collapse">
-                    <thead className="sticky top-0 z-10 bg-gray-50">
-                      <tr>
-                        <th className="w-12 border border-gray-300 px-2 py-2 text-left text-xs font-medium">#</th>
-                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*ContactName</th>
-                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*InvoiceNumber</th>
-                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*InvoiceDate</th>
-                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*DueDate</th>
-                        <th className="min-w-[100px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">Total</th>
-                        <th className="min-w-[140px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">InventoryItemCode</th>
-                        <th className="min-w-[200px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">Description</th>
-                        <th className="min-w-[80px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*Quantity</th>
-                        <th className="min-w-[100px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*UnitAmount</th>
-                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*AccountCode</th>
-                        <th className="min-w-[100px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">*TaxType</th>
-                        <th className="min-w-[100px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">TaxAmount</th>
-                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">TrackingName1</th>
-                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">TrackingOption1</th>
-                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">TrackingName2</th>
-                        <th className="min-w-[120px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">TrackingOption2</th>
-                        <th className="min-w-[80px] border border-gray-300 px-2 py-2 text-left text-xs font-medium">Currency</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {csvData.map((row, index) => (
-                        <tr key={`csv-row-${row.invoiceNumber}-${index}`}>
-                          <td className="border border-gray-300 px-2 py-1 text-center text-xs font-medium">
-                            {index + 1}
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="text"
-                              value={row.contactName}
-                              onChange={(e) => handleCsvRowChange(index, 'contactName', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="text"
-                              value={row.invoiceNumber}
-                              onChange={(e) => handleCsvRowChange(index, 'invoiceNumber', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="date"
-                              value={row.invoiceDate}
-                              onChange={(e) => handleCsvRowChange(index, 'invoiceDate', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="date"
-                              value={row.dueDate}
-                              onChange={(e) => handleCsvRowChange(index, 'dueDate', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={row.total}
-                              onChange={(e) => handleCsvRowChange(index, 'total', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="text"
-                              value={row.inventoryItemCode}
-                              onChange={(e) => handleCsvRowChange(index, 'inventoryItemCode', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="text"
-                              value={row.description}
-                              onChange={(e) => handleCsvRowChange(index, 'description', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="number"
-                              value={row.quantity}
-                              onChange={(e) => handleCsvRowChange(index, 'quantity', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={row.unitAmount}
-                              onChange={(e) => handleCsvRowChange(index, 'unitAmount', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="text"
-                              value={row.accountCode}
-                              onChange={(e) => handleCsvRowChange(index, 'accountCode', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <select
-                              value={row.taxType}
-                              onChange={(e) => handleCsvRowChange(index, 'taxType', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            >
-                              <option value="No Tax">No Tax</option>
-                              <option value="GST">GST</option>
-                              <option value="VAT">VAT</option>
-                            </select>
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={row.taxAmount}
-                              onChange={(e) => handleCsvRowChange(index, 'taxAmount', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="text"
-                              value={row.trackingName1}
-                              onChange={(e) => handleCsvRowChange(index, 'trackingName1', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="text"
-                              value={row.trackingOption1}
-                              onChange={(e) => handleCsvRowChange(index, 'trackingOption1', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="text"
-                              value={row.trackingName2}
-                              onChange={(e) => handleCsvRowChange(index, 'trackingName2', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="text"
-                              value={row.trackingOption2}
-                              onChange={(e) => handleCsvRowChange(index, 'trackingOption2', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-0">
-                            <input
-                              type="text"
-                              value={row.currency}
-                              onChange={(e) => handleCsvRowChange(index, 'currency', e.target.value)}
-                              className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t bg-gray-50 px-6 py-4 flex-shrink-0">
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCsvDialog(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleExportCsv}
-                  className="flex items-center gap-2"
-                >
-                  <FileSpreadsheet className="h-4 w-4" />
-                  Export CSV
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
-}
