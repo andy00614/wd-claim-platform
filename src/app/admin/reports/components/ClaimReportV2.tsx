@@ -820,7 +820,7 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
                   </div>
                 </dl>
 
-                <div className="summary-highlight flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
+                {/* <div className="summary-highlight flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
                   <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
                     Total Claim (SGD)
                   </span>
@@ -837,7 +837,7 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
                       <span className="font-semibold text-slate-800">{attachmentCount}</span>
                     </span>
                   </div>
-                </div>
+                </div> */}
               </div>
 
               <div className="summary-table-wrapper mt-8 overflow-hidden rounded-xl border border-slate-200">
