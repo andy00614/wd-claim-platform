@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { enforceEnglishInput } from '@/lib/utils'
 import { ExpenseItem } from '../page'
 
 interface AIAssistantProps {
@@ -87,7 +88,10 @@ export default function AIAssistant({ onExtractData }: AIAssistantProps) {
             className="w-full min-h-[100px] p-2 border border-gray-300 rounded text-sm resize-vertical"
             placeholder="Describe your expense in natural language. For example: 'Taxi from office to client meeting at Marina Bay, cost $25 on November 15'"
             value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
+            onChange={(event) => {
+              enforceEnglishInput(event.target)
+              setTextInput(event.target.value)
+            }}
           />
           <button 
             onClick={handleProcessText}
