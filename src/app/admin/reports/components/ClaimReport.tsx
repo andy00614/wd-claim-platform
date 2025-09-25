@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { formatClaimId } from '@/lib/utils'
+import { enforceEnglishInput, formatClaimId } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import dynamic from 'next/dynamic'
 import { ArrowLeft, Printer, FileDown, Image, FileText } from 'lucide-react'
@@ -594,7 +594,10 @@ export default function ClaimReport({ claim, items, attachments, employee }: Cla
                                 type={inputType}
                                 step={column.key === 'unitAmount' ? '0.01' : column.key === 'quantity' ? '1' : undefined}
                                 value={row[column.key]}
-                                onChange={(event) => handleRowChange(rowIndex, column.key, event.target.value)}
+                                onChange={(event) => {
+                                  enforceEnglishInput(event.target)
+                                  handleRowChange(rowIndex, column.key, event.target.value)
+                                }}
                               />
                             </td>
                           )
