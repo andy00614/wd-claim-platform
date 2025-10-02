@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { CalendarIcon, Check, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -50,6 +50,7 @@ interface ExpenseDetailsFieldsProps {
   onSgdAmountChange?: (value: string) => void
   details?: string
   onDetailsChange?: (value: string) => void
+  onValidationChange?: (hasError: boolean) => void
 }
 
 const formatAmount = (value?: string | null, fractionDigits = 2) => {
@@ -88,7 +89,8 @@ export default function ExpenseDetailsFields({
   sgdAmount,
   onSgdAmountChange,
   details,
-  onDetailsChange
+  onDetailsChange,
+  onValidationChange
 }: ExpenseDetailsFieldsProps) {
   const formattedDate = date ? format(date, 'MM/dd/yyyy') : null
   const displayDate = dateDisplay || formattedDate || 'Not detected'
@@ -97,6 +99,18 @@ export default function ExpenseDetailsFields({
   const currencyLabel = currencies.find(cur => cur.code === currency)
 
   const [itemPopoverOpen, setItemPopoverOpen] = useState(false)
+
+  // Check if details contains Chinese characters
+  const containsChinese = (text: string) => {
+    return /[\u4e00-\u9fa5\u3400-\u4dbf\u{20000}-\u{2a6df}\u{2a700}-\u{2b73f}\u{2b740}-\u{2b81f}\u{2b820}-\u{2ceaf}\uf900-\ufaff\u3300-\u33ff\ufe30-\ufe4f\uf900-\ufaff\u{2f800}-\u{2fa1f}]/u.test(text)
+  }
+
+  const hasChineseInDetails = details ? containsChinese(details) : false
+
+  // Notify parent component about validation status
+  useEffect(() => {
+    onValidationChange?.(hasChineseInDetails)
+  }, [hasChineseInDetails, onValidationChange])
 
   const itemDisplayLabel = useMemo(() => {
     if (itemTypeLabel) {
@@ -276,16 +290,26 @@ export default function ExpenseDetailsFields({
       {/* Details */}
       <div className="space-y-2">
         <Label className="text-sm font-semibold mb-1">
-          <span className="hidden sm:inline">Details/Reason (Please Indicate Restaurant name or Supplier Name)</span>
-          <span className="sm:hidden">Details/Reason</span>
+          <span className="hidden sm:inline">Details/Reason (Please Indicate Restaurant name or Supplier Name) - English Only</span>
+          <span className="sm:hidden">Details/Reason (English Only)</span>
         </Label>
         {mode === 'edit' ? (
-          <Textarea
-            placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"
-            className="resize-vertical min-h-[80px]"
-            value={details || ''}
-            onChange={(e) => onDetailsChange?.(e.target.value)}
-          />
+          <div className="space-y-1">
+            <Textarea
+              placeholder="e.g., Meeting with KPMG - Taxi from office to Suntec tower one - (Comfort Delgro)"
+              className={cn(
+                "resize-vertical min-h-[80px]",
+                hasChineseInDetails && "border-red-500 focus-visible:ring-red-500"
+              )}
+              value={details || ''}
+              onChange={(e) => onDetailsChange?.(e.target.value)}
+            />
+            {hasChineseInDetails && (
+              <p className="text-xs text-red-600">
+                ⚠️ Chinese characters detected. Please use English only.
+              </p>
+            )}
+          </div>
         ) : (
           <p className="text-sm p-2 bg-gray-50 rounded border min-h-[80px] whitespace-pre-wrap">
             {details || 'Not detected'}

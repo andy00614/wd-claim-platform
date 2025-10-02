@@ -574,7 +574,7 @@ export async function getClaimDetails(claimId: number) {
 export async function updateClaim(claimId: number, _prevState: any, formData: FormData) {
   try {
     const currentEmployee = await getCurrentEmployee()
-    
+
     if (!currentEmployee.success || !currentEmployee.data) {
       return { success: false, error: '用户未登录或未绑定员工' }
     }

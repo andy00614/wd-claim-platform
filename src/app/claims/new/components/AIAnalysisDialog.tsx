@@ -38,6 +38,7 @@ export default function AIAnalysisDialog({
 }: AIAnalysisDialogProps) {
   const [editableData, setEditableData] = useState<ExpenseAnalysisResult>(analysisResult || {})
   const [editableDate, setEditableDate] = useState<Date | null>(null)
+  const [hasValidationError, setHasValidationError] = useState(false)
 
   const parseDateString = (value?: string | null) => {
     if (!value) return null
@@ -297,6 +298,7 @@ export default function AIAnalysisDialog({
                     onSgdAmountChange={handleSgdAmountChange}
                     details={editableData.details}
                     onDetailsChange={handleDetailsChange}
+                    onValidationChange={setHasValidationError}
                   />
 
                   {/* 提示信息 */}
@@ -315,7 +317,7 @@ export default function AIAnalysisDialog({
             {isError ? 'Close' : 'Don\'t Use AI'}
           </Button>
           {!isError && (
-            <Button onClick={handleConfirm} className="gap-2">
+            <Button onClick={handleConfirm} className="gap-2" disabled={hasValidationError}>
               <CheckCircle className="h-4 w-4" />
               Use This Data
             </Button>

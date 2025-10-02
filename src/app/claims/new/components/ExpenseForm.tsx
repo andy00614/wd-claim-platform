@@ -42,6 +42,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
   })
 
   const [attachments, setAttachments] = useState<File[]>([])
+  const [hasValidationError, setHasValidationError] = useState(false)
 
   const isFormValid = useMemo(() => {
     const hasValidDate = date instanceof Date && !Number.isNaN(date.getTime())
@@ -60,8 +61,8 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     const numericFields = [trimmedAmount, trimmedRate, trimmedSgdAmount]
     const hasValidNumbers = numericFields.every((value) => !Number.isNaN(Number.parseFloat(value)))
 
-    return hasValidNumbers
-  }, [date, formData])
+    return hasValidNumbers && !hasValidationError
+  }, [date, formData, hasValidationError])
 
   // 计算SGD金额
   const calculateSgdAmount = (amount: string, rate: string) => {
@@ -241,6 +242,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           onSgdAmountChange={handleSgdAmountChange}
           details={formData.details}
           onDetailsChange={(value) => setFormData(prev => ({ ...prev, details: value }))}
+          onValidationChange={setHasValidationError}
         />
 
         {/* 智能文件上传 */}

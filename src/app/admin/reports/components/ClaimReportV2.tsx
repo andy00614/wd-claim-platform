@@ -238,7 +238,6 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
 
   const editableRows = useMemo(() => {
     return items.map((item) => {
-      console.log(item)
       const invoiceDate = toDateInputValue(item.date)
       const approveDate = invoiceDate
         ? toDateInputValue(addMonths(new Date(invoiceDate), 1))
@@ -381,7 +380,6 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
     const csvRows = [
       headers.join(','),
       ...csvData.map((row) => {
-        console.log(row)
         return [
           `"${row.contactName}"`,
           `"${row.emailAddress}"`,
