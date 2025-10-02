@@ -81,8 +81,8 @@ type EditableRow = {
   poCountry: string
   invoiceNumber: string
   invoiceDate: string
-  approveDate: string
   dueDate: string
+  total: string
   inventoryItemCode: string
   description: string
   quantity: string
@@ -227,10 +227,42 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
 
         .summary-table {
           page-break-inside: avoid;
+          table-layout: fixed !important;
+          width: 100% !important;
         }
 
         .summary-table tr {
           page-break-inside: avoid;
+        }
+
+        .summary-table th:nth-child(1),
+        .summary-table td:nth-child(1) {
+          width: 6% !important;
+        }
+
+        .summary-table th:nth-child(2),
+        .summary-table td:nth-child(2) {
+          width: 10% !important;
+        }
+
+        .summary-table th:nth-child(3),
+        .summary-table td:nth-child(3) {
+          width: 44% !important;
+        }
+
+        .summary-table th:nth-child(4),
+        .summary-table td:nth-child(4) {
+          width: 15% !important;
+        }
+
+        .summary-table th:nth-child(5),
+        .summary-table td:nth-child(5) {
+          width: 10% !important;
+        }
+
+        .summary-table th:nth-child(6),
+        .summary-table td:nth-child(6) {
+          width: 15% !important;
         }
       }
     `
@@ -239,7 +271,7 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
   const editableRows = useMemo(() => {
     return items.map((item) => {
       const invoiceDate = toDateInputValue(item.date)
-      const approveDate = invoiceDate
+      const dueDate = invoiceDate
         ? toDateInputValue(addMonths(new Date(invoiceDate), 1))
         : ''
 
@@ -256,13 +288,13 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
         poCountry: '',
         invoiceNumber: item.evidenceNo || formatClaimId(claim.id),
         invoiceDate,
-        approveDate,
-        dueDate: toDateInputValue(item.date),
-        inventoryItemCode: '#VALUE!',
+        dueDate,
+        total: '',
+        inventoryItemCode: '',
         description: item.details || item.note || item.itemTypeName,
         quantity: '1',
         unitAmount: item.sgdAmount ? Number.parseFloat(item.sgdAmount).toFixed(2) : '',
-        accountCode: `${item.itemNo}-${item.xeroCode}`,
+        accountCode: item.xeroCode,
         taxType: 'No Tax',
         taxAmount: '',
         trackingName1: '',
@@ -361,8 +393,8 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
       'POCountry',
       '*InvoiceNumber',
       '*InvoiceDate',
-      'ApproveDate',
       '*DueDate',
+      'Total',
       'InventoryItemCode',
       'Description',
       '*Quantity',
@@ -393,8 +425,8 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
           `"${row.poCountry}"`,
           `"${row.invoiceNumber}"`,
           `"${row.invoiceDate}"`,
-          `"${row.approveDate}"`,
           `"${row.dueDate}"`,
+          `"${row.total}"`,
           `"${row.inventoryItemCode}"`,
           `"${row.description}"`,
           `"${row.quantity}"`,
@@ -565,11 +597,11 @@ function SummaryPage({
   statusLabel,
   generatedAtDisplay,
 }: SummaryPageProps) {
-  const tableHeaderClass = 'summary-table-header border border-slate-300 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600 print:px-1.5 print:py-0.5'
-  const tableCellClass = 'summary-table-cell border border-slate-200 px-2 py-1 text-xs text-slate-700 print:px-1.5 print:py-0.5 print:text-[10px]'
+  const tableHeaderClass = 'summary-table-header border border-slate-300 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600 print:px-1.5 print:py-0.5 break-words'
+  const tableCellClass = 'summary-table-cell border border-slate-200 px-2 py-1 text-xs text-slate-700 print:px-1.5 print:py-0.5 print:text-[10px] break-words'
   const tableIndexCellClass = `${tableCellClass} text-center font-semibold`
   const tableMonoCellClass = `${tableCellClass} mono text-right font-mono`
-  const descriptionCellClass = 'summary-description-cell border border-slate-200 px-2 py-0.5 text-[10px] text-slate-500 print:px-1.5'
+  const descriptionCellClass = 'summary-description-cell border border-slate-200 px-2 py-0.5 text-[10px] text-slate-500 print:px-1.5 break-words'
 
   return (
     <section className="summary-page rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm print:rounded-none print:border-none print:shadow-none print:px-3 print:py-2">
@@ -654,14 +686,49 @@ function SummaryPage({
 
       <footer className="summary-footer border-t border-slate-200 pt-3 text-xs text-slate-600 print:pt-2 print:text-[10px]">
         {claim.adminNotes ? (
-          <div className="space-y-1">
+          <div className="space-y-1 mb-4">
             <span className="font-semibold text-slate-700">Admin Notes</span>
             <p className="whitespace-pre-wrap">{claim.adminNotes}</p>
           </div>
         ) : (
-          <p className="italic text-slate-500">No admin notes recorded for this claim.</p>
+          <p className="italic text-slate-500 mb-4">No admin notes recorded for this claim.</p>
         )}
-        <p className="footer-muted mt-1 text-[10px]">Generated on {generatedAtDisplay}</p>
+
+        {/* Signature Section - Compact Table */}
+        <table className="w-full mt-4 mb-2 text-[10px] print:text-[9px]">
+          <tbody>
+            <tr className="border-b border-slate-200">
+              <td className="py-1.5 pr-2 font-semibold text-slate-600 w-[120px]">Request By</td>
+              <td className="py-1.5 border-b border-slate-400"></td>
+              <td className="py-1.5 pl-4 pr-2 font-semibold text-slate-600 w-[160px]">Approved By Supervisor</td>
+              <td className="py-1.5 border-b border-slate-400"></td>
+            </tr>
+            <tr className="border-b border-slate-200">
+              <td className="py-1.5 pr-2 font-semibold text-slate-600">Date</td>
+              <td className="py-1.5 border-b border-slate-400"></td>
+              <td className="py-1.5 pl-4 pr-2 font-semibold text-slate-600">Date</td>
+              <td className="py-1.5 border-b border-slate-400"></td>
+            </tr>
+            <tr className="border-b border-slate-200">
+              <td className="py-1.5 pr-2 font-semibold text-slate-600">Remark (if any)</td>
+              <td className="py-1.5 border-b border-slate-400"></td>
+              <td className="py-1.5 pl-4 pr-2"></td>
+              <td className="py-1.5"></td>
+            </tr>
+            <tr>
+              <td className="py-1.5 pr-2 font-semibold text-slate-600">Checked By</td>
+              <td className="py-1.5 border-b border-slate-400">
+                <span className="text-[9px] text-slate-600">Candice</span>
+              </td>
+              <td className="py-1.5 pl-4 pr-2 font-semibold text-slate-600">Approved By</td>
+              <td className="py-1.5 border-b border-slate-400">
+                <span className="text-[9px] text-slate-600">Peter via email</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p className="footer-muted mt-4 text-[10px]">Generated on {generatedAtDisplay}</p>
       </footer>
     </section>
   )
@@ -689,7 +756,7 @@ function SummaryTableRow({ item, index, tableIndexCellClass, tableCellClass, tab
       </td>
       <td className={tableCellClass}>
         <div className="flex flex-col gap-0.5">
-          <div className="font-medium">[{item.itemNo}] {item.itemTypeName}</div>
+          <div className="font-medium">[{item.itemNo}] {item.itemTypeName} - Xero: {item.xeroCode}</div>
           {descriptionText && (
             <div className="flex items-start gap-1">
               <Tooltip>
@@ -864,8 +931,8 @@ function CsvExportDialog({ open, rows, onOpenChange, onRowChange, onExport }: Cs
                   <TableHead className="min-w-[100px] text-xs font-medium">POCountry</TableHead>
                   <TableHead className="min-w-[120px] text-xs font-medium">*InvoiceNumber</TableHead>
                   <TableHead className="min-w-[120px] text-xs font-medium">*InvoiceDate</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">ApproveDate</TableHead>
                   <TableHead className="min-w-[120px] text-xs font-medium">*DueDate</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">Total</TableHead>
                   <TableHead className="min-w-[140px] text-xs font-medium">InventoryItemCode</TableHead>
                   <TableHead className="min-w-[200px] text-xs font-medium">Description</TableHead>
                   <TableHead className="min-w-[80px] text-xs font-medium">*Quantity</TableHead>
@@ -896,8 +963,8 @@ function CsvExportDialog({ open, rows, onOpenChange, onRowChange, onExport }: Cs
                     <EditableCell value={row.poCountry} onChange={(value) => onRowChange(index, 'poCountry', value)} />
                     <EditableCell value={row.invoiceNumber} onChange={(value) => onRowChange(index, 'invoiceNumber', value)} />
                     <EditableCell type="date" value={row.invoiceDate} onChange={(value) => onRowChange(index, 'invoiceDate', value)} />
-                    <EditableCell type="date" value={row.approveDate} onChange={(value) => onRowChange(index, 'approveDate', value)} />
                     <EditableCell type="date" value={row.dueDate} onChange={(value) => onRowChange(index, 'dueDate', value)} />
+                    <EditableCell value={row.total} onChange={(value) => onRowChange(index, 'total', value)} />
                     <EditableCell value={row.inventoryItemCode} onChange={(value) => onRowChange(index, 'inventoryItemCode', value)} />
                     <EditableCell value={row.description} onChange={(value) => onRowChange(index, 'description', value)} />
                     <EditableCell type="number" value={row.quantity} onChange={(value) => onRowChange(index, 'quantity', value)} />
