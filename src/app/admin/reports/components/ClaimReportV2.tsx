@@ -471,8 +471,8 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
       />
 
       <div className="bg-slate-50 print:bg-white">
-        <div className="mx-auto w-full max-w-5xl px-6 py-8 print:max-w-none print:p-0">
-          <div ref={printRef} id="report-content-v2" className="report-container space-y-10 print:space-y-0">
+        <div className="mx-auto w-full max-w-5xl px-4 py-4 print:max-w-none print:p-0">
+          <div ref={printRef} id="report-content-v2" className="report-container space-y-4 print:space-y-2">
             <SummaryPage
               attachmentCount={attachmentCount}
               claim={claim}
@@ -567,48 +567,50 @@ function SummaryPage({
   statusLabel,
   generatedAtDisplay,
 }: SummaryPageProps) {
-  const tableHeaderClass = 'summary-table-header border border-slate-300 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600'
-  const tableCellClass = 'summary-table-cell border border-slate-200 px-3 py-2 text-sm text-slate-700'
+  const tableHeaderClass = 'summary-table-header border border-slate-300 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600 print:px-1.5 print:py-0.5'
+  const tableCellClass = 'summary-table-cell border border-slate-200 px-2 py-1 text-xs text-slate-700 print:px-1.5 print:py-0.5 print:text-[10px]'
   const tableIndexCellClass = `${tableCellClass} text-center font-semibold`
   const tableMonoCellClass = `${tableCellClass} mono text-right font-mono`
-  const descriptionCellClass = 'summary-description-cell border border-slate-200 px-3 py-2 text-xs text-slate-500'
+  const descriptionCellClass = 'summary-description-cell border border-slate-200 px-2 py-0.5 text-[10px] text-slate-500 print:px-1.5'
 
   return (
-    <section className="summary-page rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm print:rounded-none print:border-none print:shadow-none">
-      <header className="summary-header flex flex-col gap-4 border-b border-dashed border-slate-300 pb-6">
-        <div>
-          <h2 className="summary-title text-2xl font-semibold text-slate-900">Expense Claim Report</h2>
-          <p className="text-sm text-slate-500">Prepared for {employee.name || '—'}</p>
-        </div>
-        <div className="summary-meta flex flex-wrap items-center gap-4 text-sm text-slate-600">
-          <span className="summary-meta-item font-semibold text-slate-700">Claim {formatClaimId(claim.id)}</span>
-          <span className="summary-meta-item">Posting Date: {postingDateDisplay}</span>
-          <span className="summary-meta-item">Attachments: {attachmentCount}</span>
+    <section className="summary-page rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm print:rounded-none print:border-none print:shadow-none print:px-3 print:py-2">
+      <header className="summary-header flex flex-col gap-2 border-b border-dashed border-slate-300 pb-3 print:pb-2">
+        <div className="flex items-baseline justify-between">
+          <div>
+            <h2 className="summary-title text-xl font-semibold text-slate-900 print:text-lg">Expense Claim Report</h2>
+            <p className="text-xs text-slate-500">Prepared for {employee.name || '—'}</p>
+          </div>
+          <div className="text-xs text-slate-600">
+            <span className="font-semibold">Claim {formatClaimId(claim.id)}</span>
+            <span className="ml-3">Posting Date: {postingDateDisplay}</span>
+            <span className="ml-3">Attachments: {attachmentCount}</span>
+          </div>
         </div>
       </header>
 
-      <div className="summary-info-grid grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <dl className="summary-info grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="summary-info-row flex flex-col gap-1">
-            <dt>Employee Code</dt>
-            <dd>{employee.employeeCode ?? '—'}</dd>
+      <div className="summary-info-grid mt-3 print:mt-2">
+        <dl className="summary-info grid grid-cols-4 gap-x-4 gap-y-1 text-xs print:text-[10px]">
+          <div className="summary-info-row flex items-baseline gap-2">
+            <dt className="font-semibold text-slate-600">Employee Code</dt>
+            <dd className="text-slate-700">{employee.employeeCode ?? '—'}</dd>
           </div>
-          <div className="summary-info-row flex flex-col gap-1">
-            <dt>Staff Name</dt>
-            <dd>{employee.name || '—'}</dd>
+          <div className="summary-info-row flex items-baseline gap-2">
+            <dt className="font-semibold text-slate-600">Staff Name</dt>
+            <dd className="text-slate-700">{employee.name || '—'}</dd>
           </div>
-          <div className="summary-info-row flex flex-col gap-1">
-            <dt>Department</dt>
-            <dd>{employee.department || '—'}</dd>
+          <div className="summary-info-row flex items-baseline gap-2">
+            <dt className="font-semibold text-slate-600">Department</dt>
+            <dd className="text-slate-700">{employee.department || '—'}</dd>
           </div>
-          <div className="summary-info-row flex flex-col gap-1">
-            <dt>Status</dt>
-            <dd>{statusLabel}</dd>
+          <div className="summary-info-row flex items-baseline gap-2">
+            <dt className="font-semibold text-slate-600">Status</dt>
+            <dd className="text-slate-700">{statusLabel}</dd>
           </div>
         </dl>
       </div>
 
-      <div className="summary-table-wrapper mt-8 overflow-hidden rounded-xl border border-slate-200">
+      <div className="summary-table-wrapper mt-3 overflow-hidden rounded-xl border border-slate-200 print:mt-2">
         <table className="summary-table w-full">
           <thead className="bg-slate-100">
             <tr>
@@ -652,16 +654,16 @@ function SummaryPage({
         </table>
       </div>
 
-      <footer className="summary-footer border-t border-slate-200 pt-6 text-sm text-slate-600">
+      <footer className="summary-footer border-t border-slate-200 pt-3 text-xs text-slate-600 print:pt-2 print:text-[10px]">
         {claim.adminNotes ? (
-          <div className="space-y-2">
+          <div className="space-y-1">
             <span className="font-semibold text-slate-700">Admin Notes</span>
             <p className="whitespace-pre-wrap">{claim.adminNotes}</p>
           </div>
         ) : (
           <p className="italic text-slate-500">No admin notes recorded for this claim.</p>
         )}
-        <p className="footer-muted text-xs">Generated on {generatedAtDisplay}</p>
+        <p className="footer-muted mt-1 text-[10px]">Generated on {generatedAtDisplay}</p>
       </footer>
     </section>
   )
@@ -676,48 +678,46 @@ type SummaryTableRowProps = {
   descriptionCellClass: string
 }
 
-function SummaryTableRow({ item, index, tableIndexCellClass, tableCellClass, tableMonoCellClass, descriptionCellClass }: SummaryTableRowProps) {
+function SummaryTableRow({ item, index, tableIndexCellClass, tableCellClass, tableMonoCellClass }: SummaryTableRowProps) {
+  const descriptionText = item.details || item.note || ''
+
   return (
-    <Fragment>
-      <tr>
-        <td rowSpan={2} className={tableIndexCellClass}>
-          {String(index + 1).padStart(2, '0')}
-        </td>
-        <td rowSpan={2} className={tableCellClass}>
-          {formatDateValue(item.date, 'dd/MM/yyyy')}
-        </td>
-        <td className={tableCellClass}>
-          [{item.itemTypeNo}] {item.itemTypeName}
-        </td>
-        <td className={tableMonoCellClass}>
-          {item.currencyCode === 'SGD'
-            ? `SGD ${Number.parseFloat(item.sgdAmount || '0').toFixed(2)}`
-            : `${item.currencyCode} ${Number.parseFloat(item.amount || '0').toFixed(2)}`}
-        </td>
-        <td className={tableMonoCellClass}>{Number.parseFloat(item.rate || '0').toFixed(4)}</td>
-        <td className={tableMonoCellClass}>{Number.parseFloat(item.sgdAmount || '0').toFixed(2)}</td>
-      </tr>
-      <tr>
-        <td colSpan={4} className={descriptionCellClass}>
-          <div className="flex items-start gap-2">
-            {(item.note || item.details) && (
+    <tr>
+      <td className={tableIndexCellClass}>
+        {String(index + 1).padStart(2, '0')}
+      </td>
+      <td className={tableCellClass}>
+        {formatDateValue(item.date, 'dd/MM/yyyy')}
+      </td>
+      <td className={tableCellClass}>
+        <div className="flex flex-col gap-0.5">
+          <div className="font-medium">[{item.itemNo}] {item.itemTypeName}</div>
+          {descriptionText && (
+            <div className="flex items-start gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className="mt-0.5 h-3 w-3 cursor-help flex-shrink-0 text-slate-400 hover:text-slate-600" />
+                  <Info className="mt-0.5 h-2.5 w-2.5 cursor-help flex-shrink-0 text-slate-400 hover:text-slate-600" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-80 bg-slate-900 p-3 text-white">
-                  <div className="space-y-2">
+                <TooltipContent className="max-w-80 bg-slate-900 p-2 text-xs text-white">
+                  <div className="space-y-1">
                     <div className="text-xs font-semibold">Item Details</div>
-                    <div className="text-xs whitespace-pre-wrap">{item.note || item.details}</div>
+                    <div className="text-xs whitespace-pre-wrap">{descriptionText}</div>
                   </div>
                 </TooltipContent>
               </Tooltip>
-            )}
-            <span className="flex-1">{item.note || item.details || '—'}</span>
-          </div>
-        </td>
-      </tr>
-    </Fragment>
+              <span className="flex-1 truncate text-[10px]">{descriptionText}</span>
+            </div>
+          )}
+        </div>
+      </td>
+      <td className={tableMonoCellClass}>
+        {item.currencyCode === 'SGD'
+          ? `SGD ${Number.parseFloat(item.sgdAmount || '0').toFixed(2)}`
+          : `${item.currencyCode} ${Number.parseFloat(item.amount || '0').toFixed(2)}`}
+      </td>
+      <td className={tableMonoCellClass}>{Number.parseFloat(item.rate || '0').toFixed(4)}</td>
+      <td className={tableMonoCellClass}>{Number.parseFloat(item.sgdAmount || '0').toFixed(2)}</td>
+    </tr>
   )
 }
 
