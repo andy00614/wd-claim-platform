@@ -35,8 +35,10 @@ export const userEmployeeBind = pgTable('user_employee_bindings', {
 
 export const itemType = pgTable('item_type', {
   id: serial('id').primaryKey(),
+  itemNo: varchar('item_no', { length: 10 }).notNull().unique(), // 这是 Item No (A1, A2, B1, etc.)
+  xeroCode: varchar('xero_code', { length: 10 }).notNull().unique(), // 这是 Xero Code (420, 439, 449, etc.)
   name: varchar('name').notNull(),  // 这是 GL Code Description
-  no: varchar('no', { length: 10 }).notNull().unique(), // 这是 Xero Code
+  no: varchar('no', { length: 10 }).notNull().unique(), // 保持原样
   remark: varchar('remark', { length: 200 }),
 })
 

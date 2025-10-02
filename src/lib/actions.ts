@@ -512,6 +512,8 @@ export async function getClaimDetails(claimId: number) {
         amount: claimItems.amount,
         rate: claimItems.rate,
         sgdAmount: claimItems.sgdAmount,
+        itemNo: itemType.itemNo,
+        xeroCode: itemType.xeroCode,
         itemTypeName: itemType.name,
         itemTypeNo: itemType.no,
         currencyCode: currency.code

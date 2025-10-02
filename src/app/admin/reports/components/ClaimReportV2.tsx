@@ -47,6 +47,8 @@ interface ClaimReportProps {
   items: Array<{
     id: number
     date: Date | null
+    itemNo: string
+    xeroCode: string
     itemTypeNo: string
     itemTypeName: string
     note: string | null
@@ -236,6 +238,7 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
 
   const editableRows = useMemo(() => {
     return items.map((item) => {
+      console.log(item)
       const invoiceDate = toDateInputValue(item.date)
       const approveDate = invoiceDate
         ? toDateInputValue(addMonths(new Date(invoiceDate), 1))
@@ -260,14 +263,14 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
         description: item.details || item.note || item.itemTypeName,
         quantity: '1',
         unitAmount: item.sgdAmount ? Number.parseFloat(item.sgdAmount).toFixed(2) : '',
-        accountCode: item.itemTypeNo,
+        accountCode: `${item.itemNo}-${item.xeroCode}`,
         taxType: 'No Tax',
         taxAmount: '',
         trackingName1: '',
         trackingOption1: '',
         trackingName2: '',
         trackingOption2: '',
-        currency: item.currencyCode,
+        currency: 'SGD',
       }
     })
   }, [items, employee.name, claim.id])
@@ -378,6 +381,7 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
     const csvRows = [
       headers.join(','),
       ...csvData.map((row) => {
+        console.log(row)
         return [
           `"${row.contactName}"`,
           `"${row.emailAddress}"`,
