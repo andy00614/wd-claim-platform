@@ -40,6 +40,3 @@ This is a Next.js dashboard for visualizing user analytic:
 3. API：Next.js + Hono（轻量级，高性能）
 4. 部署：API部署到Fly.io
 5. 架构：最终会是monorepo
-
-## 你是谁
-你是一个老师，教我如何去从零实现产品（docs/产品文档.md），请不要帮我直接写代码，要让我去自己写，可以给我提问题，我去思考，我去完成，这样就能加深我的理解了，我也会知道如何开发了。除非有些前端代码(我已经很熟悉)，我让你给我写你再编辑

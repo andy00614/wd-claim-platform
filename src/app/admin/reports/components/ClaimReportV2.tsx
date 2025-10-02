@@ -1,7 +1,7 @@
 'use client'
 
 import { Fragment, useMemo, useRef, useState } from 'react'
-import { format } from 'date-fns'
+import { addMonths, format } from 'date-fns'
 import dynamic from 'next/dynamic'
 import { useReactToPrint } from 'react-to-print'
 import { ArrowLeft, FileDown, FileSpreadsheet, FileText, Info, Printer } from 'lucide-react'
@@ -68,10 +68,19 @@ interface ClaimReportProps {
 
 type EditableRow = {
   contactName: string
+  emailAddress: string
+  poAddressLine1: string
+  poAddressLine2: string
+  poAddressLine3: string
+  poAddressLine4: string
+  poCity: string
+  poRegion: string
+  poPostalCode: string
+  poCountry: string
   invoiceNumber: string
   invoiceDate: string
+  approveDate: string
   dueDate: string
-  total: string
   inventoryItemCode: string
   description: string
   quantity: string
@@ -226,25 +235,41 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
   })
 
   const editableRows = useMemo(() => {
-    return items.map((item) => ({
-      contactName: employee.name ?? '',
-      invoiceNumber: item.evidenceNo || formatClaimId(claim.id),
-      invoiceDate: toDateInputValue(item.date),
-      dueDate: toDateInputValue(item.date),
-      total: item.sgdAmount ? Number.parseFloat(item.sgdAmount).toFixed(2) : '',
-      inventoryItemCode: '#VALUE!',
-      description: item.details || item.note || item.itemTypeName,
-      quantity: '1',
-      unitAmount: item.sgdAmount ? Number.parseFloat(item.sgdAmount).toFixed(2) : '',
-      accountCode: item.itemTypeNo,
-      taxType: 'No Tax',
-      taxAmount: '',
-      trackingName1: '',
-      trackingOption1: '',
-      trackingName2: '',
-      trackingOption2: '',
-      currency: item.currencyCode,
-    }))
+    return items.map((item) => {
+      const invoiceDate = toDateInputValue(item.date)
+      const approveDate = invoiceDate
+        ? toDateInputValue(addMonths(new Date(invoiceDate), 1))
+        : ''
+
+      return {
+        contactName: employee.name ?? '',
+        emailAddress: '',
+        poAddressLine1: '',
+        poAddressLine2: '',
+        poAddressLine3: '',
+        poAddressLine4: '',
+        poCity: '',
+        poRegion: '',
+        poPostalCode: '',
+        poCountry: '',
+        invoiceNumber: item.evidenceNo || formatClaimId(claim.id),
+        invoiceDate,
+        approveDate,
+        dueDate: toDateInputValue(item.date),
+        inventoryItemCode: '#VALUE!',
+        description: item.details || item.note || item.itemTypeName,
+        quantity: '1',
+        unitAmount: item.sgdAmount ? Number.parseFloat(item.sgdAmount).toFixed(2) : '',
+        accountCode: item.itemTypeNo,
+        taxType: 'No Tax',
+        taxAmount: '',
+        trackingName1: '',
+        trackingOption1: '',
+        trackingName2: '',
+        trackingOption2: '',
+        currency: item.currencyCode,
+      }
+    })
   }, [items, employee.name, claim.id])
 
   const totalSgdAmount = useMemo(() => {
@@ -323,10 +348,19 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
   const handleExportCsv = () => {
     const headers = [
       '*ContactName',
+      'EmailAddress',
+      'POAddressLine1',
+      'POAddressLine2',
+      'POAddressLine3',
+      'POAddressLine4',
+      'POCity',
+      'PORegion',
+      'POPostalCode',
+      'POCountry',
       '*InvoiceNumber',
       '*InvoiceDate',
+      'ApproveDate',
       '*DueDate',
-      'Total',
       'InventoryItemCode',
       'Description',
       '*Quantity',
@@ -343,25 +377,36 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
 
     const csvRows = [
       headers.join(','),
-      ...csvData.map((row) => [
-        `"${row.contactName}"`,
-        `"${row.invoiceNumber}"`,
-        `"${row.invoiceDate}"`,
-        `"${row.dueDate}"`,
-        `"${row.total}"`,
-        `"${row.inventoryItemCode}"`,
-        `"${row.description}"`,
-        `"${row.quantity}"`,
-        `"${row.unitAmount}"`,
-        `"${row.accountCode}"`,
-        `"${row.taxType}"`,
-        `"${row.taxAmount}"`,
-        `"${row.trackingName1}"`,
-        `"${row.trackingOption1}"`,
-        `"${row.trackingName2}"`,
-        `"${row.trackingOption2}"`,
-        `"${row.currency}"`,
-      ].join(',')),
+      ...csvData.map((row) => {
+        return [
+          `"${row.contactName}"`,
+          `"${row.emailAddress}"`,
+          `"${row.poAddressLine1}"`,
+          `"${row.poAddressLine2}"`,
+          `"${row.poAddressLine3}"`,
+          `"${row.poAddressLine4}"`,
+          `"${row.poCity}"`,
+          `"${row.poRegion}"`,
+          `"${row.poPostalCode}"`,
+          `"${row.poCountry}"`,
+          `"${row.invoiceNumber}"`,
+          `"${row.invoiceDate}"`,
+          `"${row.approveDate}"`,
+          `"${row.dueDate}"`,
+          `"${row.inventoryItemCode}"`,
+          `"${row.description}"`,
+          `"${row.quantity}"`,
+          `"${row.unitAmount}"`,
+          `"${row.accountCode}"`,
+          `"${row.taxType}"`,
+          `"${row.taxAmount}"`,
+          `"${row.trackingName1}"`,
+          `"${row.trackingOption1}"`,
+          `"${row.trackingName2}"`,
+          `"${row.trackingOption2}"`,
+          `"${row.currency}"`,
+        ].join(',')
+      }),
     ]
 
     const csvContent = csvRows.join('\n')
@@ -801,15 +846,24 @@ function CsvExportDialog({ open, rows, onOpenChange, onRowChange, onExport }: Cs
 
         <div className="flex-1 overflow-hidden px-6 py-6">
           <div className="h-full overflow-auto">
-            <Table className="min-w-[2400px]">
+            <Table className="min-w-[3600px]">
               <TableHeader className="sticky top-0 z-10 bg-gray-50">
                 <TableRow>
                   <TableHead className="w-12 text-xs font-medium">#</TableHead>
                   <TableHead className="min-w-[120px] text-xs font-medium">*ContactName</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">EmailAddress</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">POAddressLine1</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">POAddressLine2</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">POAddressLine3</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">POAddressLine4</TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">POCity</TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">PORegion</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">POPostalCode</TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">POCountry</TableHead>
                   <TableHead className="min-w-[120px] text-xs font-medium">*InvoiceNumber</TableHead>
                   <TableHead className="min-w-[120px] text-xs font-medium">*InvoiceDate</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">ApproveDate</TableHead>
                   <TableHead className="min-w-[120px] text-xs font-medium">*DueDate</TableHead>
-                  <TableHead className="min-w-[100px] text-xs font-medium">Total</TableHead>
                   <TableHead className="min-w-[140px] text-xs font-medium">InventoryItemCode</TableHead>
                   <TableHead className="min-w-[200px] text-xs font-medium">Description</TableHead>
                   <TableHead className="min-w-[80px] text-xs font-medium">*Quantity</TableHead>
@@ -829,10 +883,19 @@ function CsvExportDialog({ open, rows, onOpenChange, onRowChange, onExport }: Cs
                   <TableRow key={`csv-row-${row.invoiceNumber}-${index}`}>
                     <TableCell className="px-2 py-1 text-center text-xs font-medium">{index + 1}</TableCell>
                     <EditableCell value={row.contactName} onChange={(value) => onRowChange(index, 'contactName', value)} />
+                    <EditableCell value={row.emailAddress} onChange={(value) => onRowChange(index, 'emailAddress', value)} />
+                    <EditableCell value={row.poAddressLine1} onChange={(value) => onRowChange(index, 'poAddressLine1', value)} />
+                    <EditableCell value={row.poAddressLine2} onChange={(value) => onRowChange(index, 'poAddressLine2', value)} />
+                    <EditableCell value={row.poAddressLine3} onChange={(value) => onRowChange(index, 'poAddressLine3', value)} />
+                    <EditableCell value={row.poAddressLine4} onChange={(value) => onRowChange(index, 'poAddressLine4', value)} />
+                    <EditableCell value={row.poCity} onChange={(value) => onRowChange(index, 'poCity', value)} />
+                    <EditableCell value={row.poRegion} onChange={(value) => onRowChange(index, 'poRegion', value)} />
+                    <EditableCell value={row.poPostalCode} onChange={(value) => onRowChange(index, 'poPostalCode', value)} />
+                    <EditableCell value={row.poCountry} onChange={(value) => onRowChange(index, 'poCountry', value)} />
                     <EditableCell value={row.invoiceNumber} onChange={(value) => onRowChange(index, 'invoiceNumber', value)} />
                     <EditableCell type="date" value={row.invoiceDate} onChange={(value) => onRowChange(index, 'invoiceDate', value)} />
+                    <EditableCell type="date" value={row.approveDate} onChange={(value) => onRowChange(index, 'approveDate', value)} />
                     <EditableCell type="date" value={row.dueDate} onChange={(value) => onRowChange(index, 'dueDate', value)} />
-                    <EditableCell type="number" step="0.01" value={row.total} onChange={(value) => onRowChange(index, 'total', value)} />
                     <EditableCell value={row.inventoryItemCode} onChange={(value) => onRowChange(index, 'inventoryItemCode', value)} />
                     <EditableCell value={row.description} onChange={(value) => onRowChange(index, 'description', value)} />
                     <EditableCell type="number" value={row.quantity} onChange={(value) => onRowChange(index, 'quantity', value)} />
