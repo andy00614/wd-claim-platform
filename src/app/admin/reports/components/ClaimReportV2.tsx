@@ -242,26 +242,21 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
 
         .summary-table th:nth-child(2),
         .summary-table td:nth-child(2) {
-          width: 12% !important;
+          width: 52% !important;
         }
 
         .summary-table th:nth-child(3),
         .summary-table td:nth-child(3) {
-          width: 40% !important;
+          width: 15% !important;
         }
 
         .summary-table th:nth-child(4),
         .summary-table td:nth-child(4) {
-          width: 15% !important;
+          width: 10% !important;
         }
 
         .summary-table th:nth-child(5),
         .summary-table td:nth-child(5) {
-          width: 10% !important;
-        }
-
-        .summary-table th:nth-child(6),
-        .summary-table td:nth-child(6) {
           width: 15% !important;
         }
       }
@@ -645,7 +640,6 @@ function SummaryPage({
           <thead className="bg-slate-100">
             <tr>
               <th className={tableHeaderClass}>Item</th>
-              <th className={tableHeaderClass}>Date</th>
               <th className={tableHeaderClass}>Type &amp; Description</th>
               <th className={tableHeaderClass}>Original</th>
               <th className={tableHeaderClass}>Rate</th>
@@ -655,7 +649,7 @@ function SummaryPage({
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={6} className={`${tableCellClass} text-center text-sm text-slate-500`}>
+                <td colSpan={5} className={`${tableCellClass} text-center text-sm text-slate-500`}>
                   No claim line items were provided.
                 </td>
               </tr>
@@ -674,7 +668,7 @@ function SummaryPage({
             )}
             {items.length > 0 && (
               <tr className="summary-total-row bg-slate-100 font-semibold">
-                <td colSpan={5} className={`${tableCellClass} text-right`}>
+                <td colSpan={4} className={`${tableCellClass} text-right`}>
                   TOTAL:
                 </td>
                 <td className={tableMonoCellClass}>SGD {claimedAmountDisplay}</td>
@@ -758,26 +752,10 @@ function SummaryTableRow({ item, index, tableIndexCellClass, tableCellClass, tab
         {String(index + 1).padStart(2, '0')}
       </td>
       <td className={tableCellClass}>
-        {formatDateValue(item.date, 'dd/MM/yyyy')}
-      </td>
-      <td className={tableCellClass}>
-        <div className="flex flex-col gap-0.5">
-          <div className="font-medium">[{item.itemNo}] {item.itemTypeName} - Xero: {item.xeroCode}</div>
+        <div className="flex flex-col gap-1">
+          <div className="font-medium">{formatDateValue(item.date, 'dd/MM/yyyy')} - [{item.itemNo}] {item.itemTypeName} - Xero: {item.xeroCode}</div>
           {descriptionText && (
-            <div className="flex items-start gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="mt-0.5 h-2.5 w-2.5 cursor-help flex-shrink-0 text-slate-400 hover:text-slate-600" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-80 bg-slate-900 p-2 text-xs text-white">
-                  <div className="space-y-1">
-                    <div className="text-xs font-semibold">Item Details</div>
-                    <div className="text-xs whitespace-pre-wrap">{descriptionText}</div>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-              <span className="flex-1 truncate text-[10px]">{descriptionText}</span>
-            </div>
+            <div className="text-[10px] text-slate-600 whitespace-pre-wrap">{descriptionText}</div>
           )}
         </div>
       </td>
