@@ -237,17 +237,17 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
 
         .summary-table th:nth-child(1),
         .summary-table td:nth-child(1) {
-          width: 6% !important;
+          width: 8% !important;
         }
 
         .summary-table th:nth-child(2),
         .summary-table td:nth-child(2) {
-          width: 10% !important;
+          width: 12% !important;
         }
 
         .summary-table th:nth-child(3),
         .summary-table td:nth-child(3) {
-          width: 44% !important;
+          width: 40% !important;
         }
 
         .summary-table th:nth-child(4),
@@ -696,32 +696,38 @@ function SummaryPage({
 
         {/* Signature Section - Compact Table */}
         <table className="w-full mt-4 mb-2 text-[10px] print:text-[9px]">
+          <colgroup>
+            <col className="w-[140px]" />
+            <col className="w-auto" />
+            <col className="w-[180px]" />
+            <col className="w-auto" />
+          </colgroup>
           <tbody>
-            <tr className="border-b border-slate-200">
-              <td className="py-1.5 pr-2 font-semibold text-slate-600 w-[120px]">Request By</td>
-              <td className="py-1.5 border-b border-slate-400"></td>
-              <td className="py-1.5 pl-4 pr-2 font-semibold text-slate-600 w-[160px]">Approved By Supervisor</td>
-              <td className="py-1.5 border-b border-slate-400"></td>
-            </tr>
-            <tr className="border-b border-slate-200">
-              <td className="py-1.5 pr-2 font-semibold text-slate-600">Date</td>
-              <td className="py-1.5 border-b border-slate-400"></td>
-              <td className="py-1.5 pl-4 pr-2 font-semibold text-slate-600">Date</td>
-              <td className="py-1.5 border-b border-slate-400"></td>
-            </tr>
-            <tr className="border-b border-slate-200">
-              <td className="py-1.5 pr-2 font-semibold text-slate-600">Remark (if any)</td>
-              <td className="py-1.5 border-b border-slate-400"></td>
-              <td className="py-1.5 pl-4 pr-2"></td>
-              <td className="py-1.5"></td>
+            <tr>
+              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">Request By</td>
+              <td className="py-3 border-b border-slate-400 align-bottom"></td>
+              <td className="py-3 pl-6 pr-3 font-semibold text-slate-600 align-bottom">Approved By Supervisor</td>
+              <td className="py-3 border-b border-slate-400 align-bottom"></td>
             </tr>
             <tr>
-              <td className="py-1.5 pr-2 font-semibold text-slate-600">Checked By</td>
-              <td className="py-1.5 border-b border-slate-400">
+              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">Date</td>
+              <td className="py-3 border-b border-slate-400 align-bottom"></td>
+              <td className="py-3 pl-6 pr-3 font-semibold text-slate-600 align-bottom">Date</td>
+              <td className="py-3 border-b border-slate-400 align-bottom"></td>
+            </tr>
+            <tr>
+              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">Remark (if any)</td>
+              <td className="py-3 border-b border-slate-400 align-bottom"></td>
+              <td className="py-3 pl-6 pr-3 align-bottom"></td>
+              <td className="py-3 align-bottom"></td>
+            </tr>
+            <tr>
+              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">Checked By</td>
+              <td className="py-3 border-b border-slate-400 align-bottom">
                 <span className="text-[9px] text-slate-600">Candice</span>
               </td>
-              <td className="py-1.5 pl-4 pr-2 font-semibold text-slate-600">Approved By</td>
-              <td className="py-1.5 border-b border-slate-400">
+              <td className="py-3 pl-6 pr-3 font-semibold text-slate-600 align-bottom">Approved By</td>
+              <td className="py-3 border-b border-slate-400 align-bottom">
                 <span className="text-[9px] text-slate-600">Peter via email</span>
               </td>
             </tr>
