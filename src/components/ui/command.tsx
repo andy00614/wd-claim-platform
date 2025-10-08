@@ -4,7 +4,7 @@ import * as React from "react"
 import { Command as CommandPrimitive } from "cmdk"
 import { SearchIcon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
+import { cn, enforceEnglishInput, removeChineseCharacters } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -60,10 +60,55 @@ function CommandDialog({
   )
 }
 
-function CommandInput({
-  className,
-  ...props
-}: React.ComponentProps<typeof CommandPrimitive.Input>) {
+const CommandInput = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.Input>,
+  React.ComponentProps<typeof CommandPrimitive.Input>
+>(function CommandInput(
+  { className, onValueChange, onChange, onInput, ...props },
+  forwardedRef
+) {
+  const innerRef = React.useRef<React.ElementRef<typeof CommandPrimitive.Input> | null>(null)
+
+  const setRefs = React.useCallback(
+    (node: React.ElementRef<typeof CommandPrimitive.Input> | null) => {
+      innerRef.current = node
+      if (typeof forwardedRef === "function") {
+        forwardedRef(node)
+      } else if (forwardedRef) {
+        ;(forwardedRef as React.MutableRefObject<React.ElementRef<typeof CommandPrimitive.Input> | null>).current = node
+      }
+    },
+    [forwardedRef]
+  )
+
+  const handleValueChange = React.useCallback(
+    (value: string) => {
+      const sanitizedValue = removeChineseCharacters(value)
+      if (value !== sanitizedValue && innerRef.current) {
+        enforceEnglishInput(innerRef.current)
+        innerRef.current.value = sanitizedValue
+      }
+      onValueChange?.(sanitizedValue)
+    },
+    [onValueChange]
+  )
+
+  const handleChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      enforceEnglishInput(event.target)
+      onChange?.(event)
+    },
+    [onChange]
+  )
+
+  const handleInput = React.useCallback(
+    (event: React.FormEvent<HTMLInputElement>) => {
+      enforceEnglishInput(event.currentTarget)
+      onInput?.(event)
+    },
+    [onInput]
+  )
+
   return (
     <div
       data-slot="command-input-wrapper"
@@ -71,16 +116,20 @@ function CommandInput({
     >
       <SearchIcon className="size-4 shrink-0 opacity-50" />
       <CommandPrimitive.Input
+        ref={setRefs}
         data-slot="command-input"
         className={cn(
           "placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
+        onValueChange={handleValueChange}
+        onChange={handleChange}
+        onInput={handleInput}
         {...props}
       />
     </div>
   )
-}
+})
 
 function CommandList({
   className,

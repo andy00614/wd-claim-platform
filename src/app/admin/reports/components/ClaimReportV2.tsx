@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic'
 import { useReactToPrint } from 'react-to-print'
 import { ArrowLeft, FileDown, FileSpreadsheet, FileText, Info, Printer } from 'lucide-react'
 
-import { formatClaimId } from '@/lib/utils'
+import { enforceEnglishInput, formatClaimId } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -1004,7 +1004,10 @@ function EditableCell({ value, onChange, type = 'text', step }: EditableCellProp
         type={type}
         step={step}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => {
+          enforceEnglishInput(event.target)
+          onChange(event.target.value)
+        }}
         className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
     </TableCell>
