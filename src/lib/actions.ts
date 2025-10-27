@@ -8,6 +8,57 @@ import { eq, inArray, and, desc } from 'drizzle-orm'
 
 const STORAGE_BUCKET = 'wd-attachments'
 
+// 智能日期解析函数 - 支持 MM/dd/yyyy 和 MM/dd 格式
+function parseSmartDate(dateStr: string): Date {
+  try {
+    const parts = dateStr.split('/')
+    if (parts.length < 2) {
+      throw new Error(`Invalid date format: ${dateStr}`)
+    }
+
+    const month = parseInt(parts[0], 10)
+    const day = parseInt(parts[1], 10)
+
+    if (Number.isNaN(month) || Number.isNaN(day)) {
+      throw new Error(`Invalid date components: ${dateStr}`)
+    }
+    if (month < 1 || month > 12 || day < 1 || day > 31) {
+      throw new Error(`Date components out of range: ${dateStr}`)
+    }
+
+    // 如果有年份，直接使用
+    if (parts.length === 3 && parts[2]) {
+      const year = parseInt(parts[2], 10)
+      if (!Number.isNaN(year)) {
+        return new Date(year, month - 1, day)
+      }
+    }
+
+    // 只有 MM/dd 格式，需要智能推断年份
+    const today = new Date()
+    const currentYear = today.getFullYear()
+
+    // 先尝试当前年份
+    let candidateDate = new Date(currentYear, month - 1, day)
+
+    // 如果日期在未来超过30天，可能是去年的
+    const daysDiff = (candidateDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    if (daysDiff > 30) {
+      candidateDate = new Date(currentYear - 1, month - 1, day)
+    }
+    // 如果日期在过去超过335天（约11个月），可能是明年的
+    else if (daysDiff < -335) {
+      candidateDate = new Date(currentYear + 1, month - 1, day)
+    }
+
+    return candidateDate
+  } catch (error) {
+    console.error('Failed to parse date:', dateStr, error)
+    // 如果解析失败，返回当前日期作为 fallback
+    return new Date()
+  }
+}
+
 function getStoragePathFromPublicUrl(urlString: string) {
   try {
     const parsedUrl = new URL(urlString)
@@ -149,9 +200,7 @@ export async function submitClaim(prevState: any, formData: FormData) {
 
       // 3. 创建申请项目记录
       const claimItemsData = expenseItems.map((item: any) => {
-        const [month, day] = item.date.split('/')
-        const currentYear = new Date().getFullYear()
-        const itemDate = new Date(currentYear, parseInt(month) - 1, parseInt(day))
+        const itemDate = parseSmartDate(item.date)
 
         return {
           claimId: newClaim.id,

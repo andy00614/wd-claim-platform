@@ -10,7 +10,7 @@ const openai = createOpenAI({
 
 // 定义返回的数据结构，匹配ExpenseForm的formData结构
 const ExpenseAnalysisSchema = z.object({
-  date: z.string().optional().describe('Date in MM/dd format from the expense document'),
+  date: z.string().optional().describe('Date in MM/dd/yyyy format from the expense document. If year is not visible, use MM/dd format.'),
   itemNo: z.string().optional().describe('Expense category code like A1, A2, B1, C1, C2, etc.'),
   details: z.string().optional().describe('Expense description including vendor/restaurant name'),
   currency: z.string().optional().describe('Currency code like SGD, USD, EUR, etc.'),
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
               type: 'text',
               text: `Please analyze this expense receipt/invoice image and extract the following information:
 
-              - date: Date in MM/dd format (e.g., "12/25")
+              - date: Date in MM/dd/yyyy format if year is visible (e.g., "12/25/2024"), otherwise MM/dd format (e.g., "12/25")
               - itemNo: Expense category code based on content:
                 * A1 = Entertainment
                 * A2 = IT Services

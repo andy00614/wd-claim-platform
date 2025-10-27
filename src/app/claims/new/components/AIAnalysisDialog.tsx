@@ -42,14 +42,46 @@ export default function AIAnalysisDialog({
 
   const parseDateString = (value?: string | null) => {
     if (!value) return null
-    const parts = value.split('/')
-    if (parts.length < 2) return null
-    const [month, day, maybeYear] = parts
-    const year = maybeYear ? parseInt(maybeYear, 10) : new Date().getFullYear()
-    const monthIndex = parseInt(month, 10) - 1
-    const dayNumber = parseInt(day, 10)
-    if (Number.isNaN(monthIndex) || Number.isNaN(dayNumber)) return null
-    return new Date(year, monthIndex, dayNumber)
+    try {
+      const parts = value.split('/')
+      if (parts.length < 2) return null
+
+      const month = parseInt(parts[0], 10)
+      const day = parseInt(parts[1], 10)
+
+      if (Number.isNaN(month) || Number.isNaN(day)) return null
+      if (month < 1 || month > 12 || day < 1 || day > 31) return null
+
+      // 如果有年份，直接使用
+      if (parts.length === 3 && parts[2]) {
+        const year = parseInt(parts[2], 10)
+        if (!Number.isNaN(year)) {
+          return new Date(year, month - 1, day)
+        }
+      }
+
+      // 只有 MM/dd 格式，需要智能推断年份
+      const today = new Date()
+      const currentYear = today.getFullYear()
+
+      // 先尝试当前年份
+      let candidateDate = new Date(currentYear, month - 1, day)
+
+      // 如果日期在未来超过30天，可能是去年的
+      const daysDiff = (candidateDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      if (daysDiff > 30) {
+        candidateDate = new Date(currentYear - 1, month - 1, day)
+      }
+      // 如果日期在过去超过335天（约11个月），可能是明年的
+      else if (daysDiff < -335) {
+        candidateDate = new Date(currentYear + 1, month - 1, day)
+      }
+
+      return candidateDate
+    } catch (_error) {
+      console.warn('Failed to parse date:', value, _error)
+      return null
+    }
   }
 
   const formatDateForData = (date: Date | null) => {

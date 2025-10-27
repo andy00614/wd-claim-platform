@@ -121,6 +121,50 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     }))
   }
 
+  // 智能日期解析函数 - 支持 MM/dd/yyyy 和 MM/dd 格式
+  const parseSmartDate = (dateStr: string): Date | null => {
+    try {
+      const parts = dateStr.split('/')
+      if (parts.length < 2) return null
+
+      const month = Number.parseInt(parts[0], 10)
+      const day = Number.parseInt(parts[1], 10)
+
+      if (Number.isNaN(month) || Number.isNaN(day)) return null
+      if (month < 1 || month > 12 || day < 1 || day > 31) return null
+
+      // 如果有年份，直接使用
+      if (parts.length === 3 && parts[2]) {
+        const year = Number.parseInt(parts[2], 10)
+        if (!Number.isNaN(year)) {
+          return new Date(year, month - 1, day)
+        }
+      }
+
+      // 只有 MM/dd 格式，需要智能推断年份
+      const today = new Date()
+      const currentYear = today.getFullYear()
+
+      // 先尝试当前年份
+      let candidateDate = new Date(currentYear, month - 1, day)
+
+      // 如果日期在未来超过30天，可能是去年的
+      const daysDiff = (candidateDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      if (daysDiff > 30) {
+        candidateDate = new Date(currentYear - 1, month - 1, day)
+      }
+      // 如果日期在过去超过335天（约11个月），可能是明年的
+      else if (daysDiff < -335) {
+        candidateDate = new Date(currentYear + 1, month - 1, day)
+      }
+
+      return candidateDate
+    } catch (_error) {
+      console.warn('Failed to parse date:', dateStr, _error)
+      return null
+    }
+  }
+
   // 处理AI分析结果 - 当用户点击"Use This Data"时，优先使用AI数据覆盖现有数据
   const handleAIDataExtracted = (aiData: ExpenseAnalysisResult) => {
     console.log('AI data received:', aiData)
@@ -131,17 +175,10 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
 
     // 日期：优先使用AI识别的结果
     if (aiData.date) {
-      try {
-        const [month, day] = aiData.date.split('/')
-        const currentYear = new Date().getFullYear()
-        const monthNumber = Number.parseInt(month, 10)
-        const dayNumber = Number.parseInt(day, 10)
-        if (!Number.isNaN(monthNumber) && !Number.isNaN(dayNumber)) {
-          newDate = new Date(currentYear, monthNumber - 1, dayNumber)
-        }
+      const parsedDate = parseSmartDate(aiData.date)
+      if (parsedDate) {
+        newDate = parsedDate
         setDate(newDate)
-      } catch (_error) {
-        console.warn('Failed to parse AI date:', aiData.date)
       }
     }
 
