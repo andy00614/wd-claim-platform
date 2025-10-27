@@ -55,8 +55,9 @@ interface EditFormState {
   attachments: File[]
 }
 
-type PreparedExpenseItem = ExpenseItemsTableItemBase & ExpenseItem & {
+type PreparedExpenseItem = ExpenseItemsTableItemBase & Omit<ExpenseItem, 'date'> & {
   originalItem: ExpenseItem
+  date: Date
 }
 
 const calculateSgdAmount = (amount: string, rate: string) => {
