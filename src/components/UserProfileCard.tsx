@@ -12,6 +12,7 @@ import { logoutAction } from '@/app/binding/actions'
 
 interface Employee {
   name: string
+  email: string
   employeeCode: number
   department?: string
   role: 'admin' | 'employee'
@@ -39,12 +40,12 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
                 ? 'hover:bg-yellow-50 text-yellow-600'
                 : 'hover:bg-gray-100 text-gray-600'
             }`}
-            title={employee.name}
+            title={employee.email}
           >
             {employee.avatarUrl ? (
               <Image
                 src={employee.avatarUrl}
-                alt={`${employee.name}'s avatar`}
+                alt={`${employee.email}'s avatar`}
                 width={32}
                 height={32}
                 className="h-8 w-8 rounded-md object-cover"
@@ -82,7 +83,7 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
                   {employee.avatarUrl ? (
                     <Image
                       src={employee.avatarUrl}
-                      alt={`${employee.name}'s avatar`}
+                      alt={`${employee.email}'s avatar`}
                       width={48}
                       height={48}
                       className="h-full w-full object-cover"
@@ -97,7 +98,7 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="text-lg font-semibold text-gray-900 truncate">
-                      {employee.name}
+                      {employee.email}
                     </h4>
                     {employee.role === 'admin' && (
                       <span className="inline-flex items-center gap-1 bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full border border-yellow-300 shadow-sm">

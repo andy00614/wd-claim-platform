@@ -406,9 +406,11 @@ export async function getCurrentEmployee() {
       success: true,
       data: {
         userId: user.id,
+        userEmail: user.email || '',
         employee: {
           ...employee,
           avatarUrl,
+          email: user.email || '',
         }
       }
     }

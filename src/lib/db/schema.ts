@@ -16,6 +16,7 @@ export const employeeRoleEnum = pgEnum('employee_role', ['employee', 'admin']);
 export const employees = pgTable('employees', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 60 }).notNull(),
+  email: varchar('email', { length: 100 }).notNull().unique(),
   employeeCode: integer('employee_code').notNull().unique(),
   departmentEnum: departmentEnum('department').notNull(),
   role: employeeRoleEnum('role').notNull().default('employee'),
