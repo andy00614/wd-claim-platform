@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from "sonner"
 import ExpenseDetailsFields from './ExpenseDetailsFields'
-import SmartFileUpload from './SmartFileUpload'
+import SmartFileUpload, { type BatchAnalysisResult } from './SmartFileUpload'
 import type { ExpenseItem } from '../page'
 import type { ExpenseAnalysisResult } from './types'
 
@@ -165,7 +165,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     }
   }
 
-  // 处理AI分析结果 - 当用户点击"Use This Data"时，优先使用AI数据覆盖现有数据
+  // 处理单个文件的AI分析结果 - 显示弹窗让用户确认
   const handleAIDataExtracted = (aiData: ExpenseAnalysisResult) => {
     console.log('AI data received:', aiData)
 
@@ -218,6 +218,66 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     }
 
     setFormData(newFormData)
+  }
+
+  // 处理批量分析结果 - 自动为每个文件创建一个expense item
+  const handleBatchAnalysisComplete = (results: BatchAnalysisResult[]) => {
+    console.log('Batch analysis complete:', results)
+
+    let successCount = 0
+    let failCount = 0
+
+    results.forEach((result) => {
+      if (result.data) {
+        const aiData = result.data
+        const itemDate = aiData.date ? parseSmartDate(aiData.date) : new Date()
+
+        // 计算汇率和SGD金额
+        let forexRate = '1.0000'
+        let sgdAmount = '0.00'
+
+        if (aiData.forexRate) {
+          forexRate = aiData.forexRate
+        } else if (aiData.currency) {
+          forexRate = (exchangeRates[aiData.currency] || 1.0000).toFixed(4)
+        }
+
+        if (aiData.sgdAmount) {
+          sgdAmount = aiData.sgdAmount
+        } else if (aiData.amount) {
+          sgdAmount = calculateSgdAmount(aiData.amount, forexRate)
+        }
+
+        // 创建新的expense item
+        const newItem: Omit<ExpenseItem, 'id'> = {
+          date: itemDate ? format(itemDate, 'MM/dd') : format(new Date(), 'MM/dd'),
+          itemNo: aiData.itemNo || 'C2',
+          details: aiData.details || '',
+          currency: aiData.currency || 'SGD',
+          amount: parseFloat(aiData.amount || '0'),
+          rate: parseFloat(forexRate),
+          sgdAmount: parseFloat(sgdAmount),
+          attachments: [result.file],
+          existingAttachments: []
+        }
+
+        onAddItem(newItem)
+        successCount++
+      } else {
+        failCount++
+      }
+    })
+
+    if (successCount > 0) {
+      toast.success(`${successCount} expense item${successCount > 1 ? 's' : ''} created successfully!`)
+    }
+
+    if (failCount > 0) {
+      toast.warning(`${failCount} file${failCount > 1 ? 's' : ''} could not be analyzed.`)
+    }
+
+    // 清空上传区域
+    setAttachments([])
   }
 
   const handleAddItem = () => {
@@ -282,12 +342,14 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           onValidationChange={setHasValidationError}
         />
 
-        {/* 智能文件上传 */}
+        {/* 智能文件上传 - 批量模式 */}
         <div className="flex-1">
           <SmartFileUpload
+            mode="batch"
             files={attachments}
             onFilesChange={setAttachments}
             onAIDataExtracted={handleAIDataExtracted}
+            onBatchAnalysisComplete={handleBatchAnalysisComplete}
             itemTypes={itemTypes}
             currencies={currencies}
             exchangeRates={exchangeRates}
@@ -297,7 +359,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         <div className="border-t pt-4 mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span>Click to stash this expense in your list before you submit the claim.</span>
+            <span>Upload receipts above for auto-add, or manually fill in details and click the button.</span>
           </div>
           <Button
             onClick={handleAddItem}
