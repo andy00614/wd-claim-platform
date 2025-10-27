@@ -80,17 +80,11 @@ const truncateAttachmentName = (value: string) => {
 const parseDateString = (value: string) => {
   if (!value) return new Date()
   try {
-    return parse(value, 'MM/dd', new Date())
+    // Parse MM/dd format with current year
+    const currentYear = new Date().getFullYear()
+    return parse(value, 'MM/dd', new Date(currentYear, 0, 1))
   } catch (error) {
     return new Date()
-  }
-}
-
-const formatItemDate = (value: string) => {
-  try {
-    return format(parse(value, 'MM/dd', new Date()), 'MMM dd')
-  } catch (error) {
-    return value
   }
 }
 
@@ -122,7 +116,7 @@ export default function CurrentItems({
     return items.map((item) => ({
       ...item,
       originalItem: item,
-      date: formatItemDate(item.date),
+      date: parseDateString(item.date),
       itemCode: item.itemNo,
       itemName: itemTypeLabelMap.get(item.itemNo) ?? undefined,
       description: '',
