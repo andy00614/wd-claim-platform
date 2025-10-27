@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
               - For details, include vendor name and brief description
               - Ensure all amounts are numbers, not strings
               - Rate defaults to 1 if currency is SGD
+              - If have two more receipts/invoices in one image, you need to merge them into one set of data, like combining details and summing up amounts.
               - Do not calculate exchange rates - they will be calculated automatically`,
             },
             {
