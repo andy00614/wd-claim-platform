@@ -267,6 +267,7 @@ export default function CurrentItems({
 
       if (aiData.currency) {
         next.currency = aiData.currency
+        // 从 exchangeRates 查找正确的汇率
         const matchedRate = exchangeRates[aiData.currency]
         if (typeof matchedRate === 'number') {
           next.forexRate = matchedRate.toFixed(4)
@@ -275,23 +276,13 @@ export default function CurrentItems({
 
       if (aiData.amount) {
         next.amount = aiData.amount
-        const rateToUse = aiData.forexRate || next.forexRate || '1.0000'
+        // 优先使用从 exchangeRates 查找的汇率，而不是 AI 提供的汇率
+        const rateToUse = next.forexRate || '1.0000'
         next.sgdAmount = calculateSgdAmount(aiData.amount, rateToUse)
       }
 
-      if (aiData.forexRate) {
-        next.forexRate = aiData.forexRate
-        if (aiData.amount || next.amount) {
-          next.sgdAmount = calculateSgdAmount(aiData.amount || next.amount, aiData.forexRate)
-        }
-      }
-
-      if (aiData.sgdAmount) {
-        next.sgdAmount = aiData.sgdAmount
-        if (!aiData.forexRate && (aiData.amount || next.amount)) {
-          next.forexRate = calculateForexRate(aiData.sgdAmount, aiData.amount || next.amount)
-        }
-      }
+      // 注意：不要直接使用 AI 提供的 forexRate，因为 AI 可能不知道正确的汇率
+      // 汇率应该已经在上面的 currency 处理中从 exchangeRates 查找了
 
       return next
     })

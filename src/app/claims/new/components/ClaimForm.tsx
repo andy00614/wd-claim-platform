@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { saveDraft, submitClaim, updateClaim, uploadClaimFiles, uploadItemAttachments } from '@/lib/actions'
 import { formatClaimId } from '@/lib/utils'
+import { generateTempId } from '@/lib/idGenerator'
 import type { ClaimAttachment, ExpenseItem } from '../page'
 import CurrentItems from './CurrentItems'
 import ExpenseForm from './ExpenseForm'
@@ -60,7 +61,7 @@ export default function ClaimForm({
   const addExpenseItem = (item: Omit<ExpenseItem, 'id'>) => {
     const newItem = {
       ...item,
-      id: Date.now()
+      id: generateTempId() // 使用负数临时 ID
     }
     setExpenseItems(prev => [...prev, newItem])
   }

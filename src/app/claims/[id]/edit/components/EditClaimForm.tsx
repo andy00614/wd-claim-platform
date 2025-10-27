@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useActionState } from 'react'
 import { updateClaim } from '@/lib/actions'
 import { formatClaimId } from '@/lib/utils'
+import { generateTempId } from '@/lib/idGenerator'
 import ExpenseForm from '@/app/claims/new/components/ExpenseForm'
 import CurrentItems from '@/app/claims/new/components/CurrentItems'
 import FileUpload from '@/app/claims/new/components/FileUpload'
@@ -82,10 +83,11 @@ export default function EditClaimForm({
   const router = useRouter()
 
   // 将现有项目转换为表单格式
-  const convertedItems: ExpenseItem[] = existingItems.map((item, index) => {
+  // 使用数据库的真实 ID，保持数据稳定性
+  const convertedItems: ExpenseItem[] = existingItems.map((item) => {
     const itemDate = item.date ? new Date(item.date) : new Date()
     return {
-      id: Date.now() + index, // 使用临时ID
+      id: item.id, // 使用数据库 ID，不是临时 ID
       date: `${(itemDate.getMonth() + 1).toString().padStart(2, '0')}/${itemDate.getDate().toString().padStart(2, '0')}`,
       itemNo: item.itemTypeNo,
       details: item.details || '',
@@ -108,7 +110,7 @@ export default function EditClaimForm({
   const addExpenseItem = (item: Omit<ExpenseItem, 'id'>) => {
     const newItem = {
       ...item,
-      id: Date.now()
+      id: generateTempId() // 使用负数临时 ID
     }
     setExpenseItems(prev => [...prev, newItem])
   }

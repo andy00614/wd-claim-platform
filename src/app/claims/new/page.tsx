@@ -83,10 +83,11 @@ export default async function NewClaimPage({ searchParams }: NewClaimPageProps) 
       )
     }
 
-    initialItems = claimDetails.data.items.map((item, index) => {
+    // 使用数据库的真实 ID，保持数据稳定性
+    initialItems = claimDetails.data.items.map((item) => {
       const itemDate = item.date ? new Date(item.date) : new Date()
       return {
-        id: Date.now() + index,
+        id: item.id, // 使用数据库 ID，不是临时 ID
         date: `${(itemDate.getMonth() + 1).toString().padStart(2, '0')}/${itemDate.getDate().toString().padStart(2, '0')}`,
         itemNo: item.itemTypeNo,
         details: item.details || '',

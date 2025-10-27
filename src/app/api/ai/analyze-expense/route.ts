@@ -13,10 +13,10 @@ const ExpenseAnalysisSchema = z.object({
   date: z.string().optional().describe('Date in MM/dd/yyyy format from the expense document. If year is not visible, use MM/dd format.'),
   itemNo: z.string().optional().describe('Expense category code like A1, A2, B1, C1, C2, etc.'),
   details: z.string().optional().describe('Expense description including vendor/restaurant name'),
-  currency: z.string().optional().describe('Currency code like SGD, USD, EUR, etc.'),
+  currency: z.string().optional().describe('Currency code like SGD, USD, EUR, CNY, etc.'),
   amount: z.string().optional().describe('Expense amount as string'),
-  forexRate: z.string().optional().describe('Exchange rate as string, calculated from exchange rates').default('1'),
-  sgdAmount: z.string().optional().describe('SGD amount as string, calculated from amount and rate'),
+  forexRate: z.string().optional().describe('DO NOT calculate exchange rates - leave empty, it will be calculated automatically'),
+  sgdAmount: z.string().optional().describe('DO NOT calculate SGD amount - leave empty, it will be calculated automatically'),
 })
 
 export async function POST(request: NextRequest) {

@@ -199,22 +199,21 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
       newFormData.amount = aiData.amount
     }
 
-    // 如果AI提供了汇率和SGD金额，直接使用
-    if (aiData.forexRate) {
-      newFormData.forexRate = aiData.forexRate
-    }
-
-    if (aiData.sgdAmount) {
-      newFormData.sgdAmount = aiData.sgdAmount
-    }
-
-    // 如果AI没有提供汇率但提供了货币和金额，使用现有逻辑计算
-    if (aiData.currency && aiData.amount && !aiData.forexRate) {
-      const newRate = (exchangeRates[aiData.currency] || 1.0000).toFixed(4)
+    // 汇率处理逻辑：
+    // 1. 如果有货币信息，从 exchangeRates 查找正确的汇率
+    // 2. 只有在查找失败时才使用 AI 提供的汇率（如果有）
+    if (aiData.currency && aiData.amount) {
+      // 从 exchangeRates 查找汇率
+      const currencyRate = exchangeRates[aiData.currency]
+      const newRate = (typeof currencyRate === 'number' ? currencyRate : 1.0000).toFixed(4)
       const sgdAmount = calculateSgdAmount(aiData.amount, newRate)
 
       newFormData.forexRate = newRate
       newFormData.sgdAmount = sgdAmount
+    } else if (aiData.forexRate && aiData.sgdAmount) {
+      // 如果没有货币信息但 AI 提供了汇率和 SGD 金额，才使用 AI 的数据
+      newFormData.forexRate = aiData.forexRate
+      newFormData.sgdAmount = aiData.sgdAmount
     }
 
     setFormData(newFormData)
@@ -233,19 +232,24 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
         const itemDate = aiData.date ? parseSmartDate(aiData.date) : new Date()
 
         // 计算汇率和SGD金额
+        // 优先从 exchangeRates 查找汇率，确保使用正确的汇率
         let forexRate = '1.0000'
         let sgdAmount = '0.00'
 
-        if (aiData.forexRate) {
+        if (aiData.currency) {
+          // 从 exchangeRates 查找汇率
+          const currencyRate = exchangeRates[aiData.currency]
+          forexRate = (typeof currencyRate === 'number' ? currencyRate : 1.0000).toFixed(4)
+        } else if (aiData.forexRate) {
+          // 只有在没有货币信息时才使用 AI 提供的汇率
           forexRate = aiData.forexRate
-        } else if (aiData.currency) {
-          forexRate = (exchangeRates[aiData.currency] || 1.0000).toFixed(4)
         }
 
-        if (aiData.sgdAmount) {
-          sgdAmount = aiData.sgdAmount
-        } else if (aiData.amount) {
+        if (aiData.amount) {
           sgdAmount = calculateSgdAmount(aiData.amount, forexRate)
+        } else if (aiData.sgdAmount) {
+          // 只有在没有金额时才使用 AI 提供的 SGD 金额
+          sgdAmount = aiData.sgdAmount
         }
 
         // 创建新的expense item
