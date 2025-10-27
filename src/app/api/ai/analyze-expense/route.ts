@@ -15,7 +15,7 @@ const ExpenseAnalysisSchema = z.object({
   details: z.string().optional().describe('Expense description including vendor/restaurant name'),
   currency: z.string().optional().describe('Currency code like SGD, USD, EUR, etc.'),
   amount: z.string().optional().describe('Expense amount as string'),
-  forexRate: z.string().optional().describe('Exchange rate as string, calculated from exchange rates'),
+  forexRate: z.string().optional().describe('Exchange rate as string, calculated from exchange rates').default('1'),
   sgdAmount: z.string().optional().describe('SGD amount as string, calculated from amount and rate'),
 })
 
@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
               - For itemNo, make your best guess based on the expense type
               - For details, include vendor name and brief description
               - Ensure all amounts are numbers, not strings
+              - Rate defaults to 1 if currency is SGD
               - Do not calculate exchange rates - they will be calculated automatically`,
             },
             {
