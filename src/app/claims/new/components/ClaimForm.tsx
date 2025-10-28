@@ -139,6 +139,10 @@ export default function ClaimForm({
             }, 1000)
           } else if (actionType === 'draft') {
             toast.success(`草稿保存成功！草稿ID: ${currentState.data?.claimId}`)
+            // 保存草稿后也跳转到claims页面
+            setTimeout(() => {
+              router.push('/claims')
+            }, 1000)
           }
 
           setActionType(null)

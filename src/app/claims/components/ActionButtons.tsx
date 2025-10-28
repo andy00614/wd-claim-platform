@@ -57,16 +57,21 @@ export default function ActionButtons({ claim }: ActionButtonsProps) {
       const result = await deleteClaim(claim.id)
       if (result.success) {
         toast.success('Claim deleted successfully')
-        router.refresh()
+        setIsDeleteDialogOpen(false)
+        // 使用 window.location.href 强制完全刷新页面
+        setTimeout(() => {
+          window.location.href = '/claims'
+        }, 500)
       } else {
         toast.error(('error' in result ? result.error : 'Failed to delete claim') || 'Failed to delete claim')
+        setIsDeleteDialogOpen(false)
+        setActionInFlight(null)
       }
     } catch (error) {
       toast.error('Failed to delete claim')
       console.error(error)
-    } finally {
-      setActionInFlight(null)
       setIsDeleteDialogOpen(false)
+      setActionInFlight(null)
     }
   }
 
