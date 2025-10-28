@@ -1,0 +1,1 @@
+ALTER TABLE "employees" ALTER COLUMN "department" SET DATA TYPE varchar(100);

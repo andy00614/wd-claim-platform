@@ -35,7 +35,15 @@ const departments = [
 ]
 
 export default function EmployeeFormDialog({ isOpen, onClose, mode, employee }: EmployeeFormDialogProps) {
-  const [department, setDepartment] = useState(employee?.departmentEnum || '')
+  const isCustomInitial = employee?.departmentEnum ? !departments.includes(employee.departmentEnum) : false
+
+  const [department, setDepartment] = useState(
+    isCustomInitial ? 'custom' : (employee?.departmentEnum || '')
+  )
+  const [isCustomDepartment, setIsCustomDepartment] = useState(isCustomInitial)
+  const [customDepartment, setCustomDepartment] = useState(
+    isCustomInitial ? employee?.departmentEnum || '' : ''
+  )
   const [role, setRole] = useState(employee?.role || 'employee')
 
   const updateAction = mode === 'edit' && employee ? updateEmployee.bind(null, employee.id) : createEmployee
@@ -53,15 +61,44 @@ export default function EmployeeFormDialog({ isOpen, onClose, mode, employee }: 
     }
   }, [state.success, state.error, mode, onClose])
 
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setDepartment('')
+      setIsCustomDepartment(false)
+      setCustomDepartment('')
+      setRole('employee')
+    }
+  }, [isOpen])
+
   useEffect(() => {
     if (employee) {
-      setDepartment(employee.departmentEnum)
+      const isCustom = !departments.includes(employee.departmentEnum)
+      setIsCustomDepartment(isCustom)
+      if (isCustom) {
+        setCustomDepartment(employee.departmentEnum)
+        setDepartment('custom')
+      } else {
+        setDepartment(employee.departmentEnum)
+        setCustomDepartment('')
+      }
       setRole(employee.role)
     }
   }, [employee])
 
+  const handleDepartmentChange = (value: string) => {
+    setDepartment(value)
+    if (value === 'custom') {
+      setIsCustomDepartment(true)
+    } else {
+      setIsCustomDepartment(false)
+      setCustomDepartment('')
+    }
+  }
+
   const handleSubmit = (formData: FormData) => {
-    formData.set('department', department)
+    const finalDepartment = isCustomDepartment ? customDepartment : department
+    formData.set('department', finalDepartment)
     formData.set('role', role)
     formAction(formData)
   }
@@ -111,7 +148,7 @@ export default function EmployeeFormDialog({ isOpen, onClose, mode, employee }: 
 
           <div className="space-y-2">
             <Label htmlFor="department">Department *</Label>
-            <Select value={department} onValueChange={setDepartment} required>
+            <Select value={department} onValueChange={handleDepartmentChange} required>
               <SelectTrigger>
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
@@ -121,8 +158,23 @@ export default function EmployeeFormDialog({ isOpen, onClose, mode, employee }: 
                     {dept}
                   </SelectItem>
                 ))}
+                <SelectItem value="custom">
+                  <span className="text-primary font-medium">+ Custom Department...</span>
+                </SelectItem>
               </SelectContent>
             </Select>
+
+            {isCustomDepartment && (
+              <Input
+                id="customDepartment"
+                name="customDepartment"
+                value={customDepartment}
+                onChange={(e) => setCustomDepartment(e.target.value)}
+                placeholder="Enter custom department name"
+                className="mt-2"
+                required
+              />
+            )}
           </div>
 
           <div className="space-y-2">

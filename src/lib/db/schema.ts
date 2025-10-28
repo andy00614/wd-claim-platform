@@ -1,14 +1,15 @@
 import { sql } from "drizzle-orm";
 import { integer, serial, pgTable, varchar, timestamp, pgEnum, uuid, numeric, text } from "drizzle-orm/pg-core";
 
-export const departmentEnum = pgEnum('department', [
+// Suggested departments (can also use custom values)
+export const suggestedDepartments = [
   'Director',
   'HR Department',
   'Account Department',
   'Marketing Department',
   'Tech Department',
   'Knowledge Management'
-]);
+] as const;
 
 export const employeeRoleEnum = pgEnum('employee_role', ['employee', 'admin']);
 
@@ -18,7 +19,7 @@ export const employees = pgTable('employees', {
   name: varchar('name', { length: 60 }).notNull(),
   email: varchar('email', { length: 100 }).notNull().unique(),
   employeeCode: integer('employee_code').notNull().unique(),
-  departmentEnum: departmentEnum('department').notNull(),
+  departmentEnum: varchar('department', { length: 100 }).notNull(),
   role: employeeRoleEnum('role').notNull().default('employee'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date())
