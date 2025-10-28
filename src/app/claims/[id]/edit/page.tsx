@@ -103,7 +103,7 @@ export default async function EditClaimPage({ params }: EditClaimPageProps) {
 
         {/* 状态栏 */}
         <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-200 text-sm">
-          <span>Employee: <strong>{claimData.data.employee.name} (EMP{claimData.data.employee.employeeCode.toString().padStart(3, '0')})</strong></span>
+          <span>Employee: <strong>{claimData.data.employee.name} (WD{claimData.data.employee.employeeCode.toString().padStart(3, '0')})</strong></span>
           <span>Editing: <strong>{formatClaimId(claimId)}</strong></span>
         </div>
 

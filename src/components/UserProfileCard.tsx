@@ -111,7 +111,7 @@ export function UserProfileCard({ employee }: UserProfileCardProps) {
                   <p className={`text-sm mb-0.5 ${
                     employee.role === 'admin' ? 'text-amber-700 font-medium' : 'text-gray-600'
                   }`}>
-                    Employee ID: EMP{employee.employeeCode.toString().padStart(3, '0')}
+                    Employee ID: WD{employee.employeeCode.toString().padStart(3, '0')}
                   </p>
                   
                   {employee.department && (

@@ -123,7 +123,7 @@ export default function ReportSelector({ claims }: ReportSelectorProps) {
                   <td className="p-3">
                     <div>
                       <div className="font-medium">{claim.employeeName}</div>
-                      <div className="text-sm text-gray-500">EMP{claim.employeeCode.toString().padStart(3, '0')}</div>
+                      <div className="text-sm text-gray-500">WD{claim.employeeCode.toString().padStart(3, '0')}</div>
                     </div>
                   </td>
                   <td className="p-3">

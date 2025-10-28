@@ -94,7 +94,7 @@ export default function EmployeesTable({ employees }: EmployeesTableProps) {
               employees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell className="font-medium">
-                    EMP{employee.employeeCode.toString().padStart(3, '0')}
+                    WD{employee.employeeCode.toString().padStart(3, '0')}
                   </TableCell>
                   <TableCell>{employee.name}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{employee.email}</TableCell>

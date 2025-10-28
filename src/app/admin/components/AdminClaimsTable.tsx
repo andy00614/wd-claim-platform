@@ -140,7 +140,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
               <div className="bg-gray-50 p-3 rounded">
                 <div className="font-medium text-sm">{claim.employeeName}</div>
                 <div className="text-xs text-gray-500">
-                  EMP{claim.employeeCode.toString().padStart(3, '0')} • {claim.department}
+                  WD{claim.employeeCode.toString().padStart(3, '0')} • {claim.department}
                 </div>
               </div>
 
@@ -263,7 +263,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                   <div className="space-y-1">
                     <div className="font-medium">{claim.employeeName}</div>
                     <div className="text-xs text-muted-foreground">
-                      EMP{claim.employeeCode.toString().padStart(3, '0')} • {claim.department}
+                      WD{claim.employeeCode.toString().padStart(3, '0')} • {claim.department}
                     </div>
                   </div>
                 </TableCell>

@@ -113,7 +113,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
               <div className="space-y-1">
                 <div className="font-medium">{employee.name}</div>
                 <div className="text-xs text-muted-foreground">
-                  EMP{employee.employeeCode.toString().padStart(3, '0')}
+                  WD{employee.employeeCode.toString().padStart(3, '0')}
                 </div>
               </div>
             </div>

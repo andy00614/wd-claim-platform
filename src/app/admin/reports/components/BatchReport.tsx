@@ -184,7 +184,7 @@ export default function BatchReport({ claims }: BatchReportProps) {
                   <td className="border border-black p-3">
                     {claimData.employee.name}
                     <br />
-                    <span className="text-sm text-gray-600">EMP{claimData.employee.employeeCode.toString().padStart(3, '0')}</span>
+                    <span className="text-sm text-gray-600">WD{claimData.employee.employeeCode.toString().padStart(3, '0')}</span>
                   </td>
                   <td className="border border-black p-3">{claimData.employee.department || 'N/A'}</td>
                   <td className="border border-black p-3">
@@ -216,7 +216,7 @@ export default function BatchReport({ claims }: BatchReportProps) {
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-300">
                   <div>
                     <h4 className="text-xl font-bold">Claim {formatClaimId(claimData.claim.id)}</h4>
-                    <p className="text-gray-600">{claimData.employee.name} (EMP{claimData.employee.employeeCode.toString().padStart(3, '0')})</p>
+                    <p className="text-gray-600">{claimData.employee.name} (WD{claimData.employee.employeeCode.toString().padStart(3, '0')})</p>
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold">SGD {parseFloat(claimData.claim.totalAmount).toFixed(2)}</div>
