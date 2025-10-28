@@ -107,17 +107,23 @@ export default function ClaimForm({
             ? currentState.data.insertedItems as Array<{ id: number }>
             : []
 
+          console.log('[ClaimForm] insertedItems:', insertedItems)
+          console.log('[ClaimForm] expenseItems length:', expenseItems.length)
+
           const itemsWithAttachments = insertedItems
             .map((insertedItem, index) => {
               const itemAttachments = (expenseItems[index]?.attachments || []).filter(
                 (attachment): attachment is File => attachment instanceof File
               )
+              console.log(`[ClaimForm] Mapping item ${index}: insertedItem.id=${insertedItem.id}, attachments=${itemAttachments.length}`)
               return {
                 id: insertedItem.id,
                 attachments: itemAttachments
               }
             })
             .filter(item => item.attachments.length > 0)
+
+          console.log('[ClaimForm] itemsWithAttachments:', itemsWithAttachments.map(i => ({ id: i.id, count: i.attachments.length })))
 
           if (itemsWithAttachments.length > 0) {
             const itemUploadResult = await uploadItemAttachments(itemsWithAttachments)
@@ -177,17 +183,34 @@ export default function ClaimForm({
             ? updateState.data.insertedItems as Array<{ id: number }>
             : []
 
+          console.log('[ClaimForm Update] insertedItems:', insertedItems)
+          console.log('[ClaimForm Update] expenseItems:', expenseItems.length)
+
           const itemsWithAttachments = insertedItems
             .map((insertedItem, index) => {
-              const itemAttachments = (expenseItems[index]?.attachments || []).filter(
+              const expenseItem = expenseItems[index]
+              if (!expenseItem) {
+                console.warn(`[ClaimForm Update] No expenseItem at index ${index}`)
+                return null
+              }
+
+              // 只获取新上传的文件（File对象），不包括已存在的附件
+              const newFileAttachments = (expenseItem.attachments || []).filter(
                 (attachment): attachment is File => attachment instanceof File
               )
+
+              console.log(`[ClaimForm Update] Item ${index}: insertedId=${insertedItem.id}, newFiles=${newFileAttachments.length}`)
+
               return {
                 id: insertedItem.id,
-                attachments: itemAttachments
+                attachments: newFileAttachments
               }
             })
-            .filter(item => item.attachments.length > 0)
+            .filter((item): item is { id: number; attachments: File[] } =>
+              item !== null && item.attachments.length > 0
+            )
+
+          console.log('[ClaimForm Update] itemsWithAttachments:', itemsWithAttachments.map(i => ({ id: i.id, count: i.attachments.length })))
 
           if (itemsWithAttachments.length > 0) {
             const itemUploadResult = await uploadItemAttachments(itemsWithAttachments)
