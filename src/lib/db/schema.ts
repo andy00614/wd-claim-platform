@@ -60,6 +60,7 @@ export const claims = pgTable('claims', {
   status: claimStatusEnum('status').notNull().default('draft'),
   totalAmount: numeric('total_amount').notNull(),
   adminNotes: text('admin_notes'),
+  approvedAt: timestamp('approved_at'),
 })
 
 export const claimItems = pgTable('claim_items', {

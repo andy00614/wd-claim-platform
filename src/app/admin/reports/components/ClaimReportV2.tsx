@@ -42,6 +42,7 @@ interface ClaimReportProps {
     status: string
     totalAmount: string
     createdAt: Date | null
+    approvedAt: Date | null
     adminNotes: string | null
   }
   items: Array<{
@@ -352,7 +353,7 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
 
   const attachmentCount = allAttachmentsWithContext.length
   const claimedAmountDisplay = totalSgdAmount.toFixed(2)
-  const postingDateDisplay = formatDateValue(claim.createdAt) || 'dd/mm/yyyy'
+  const postingDateDisplay = formatDateValue(claim.approvedAt) || 'dd/mm/yyyy'
   const statusLabel = claim.status ? `${claim.status.charAt(0).toUpperCase()}${claim.status.slice(1).toLowerCase()}` : '—'
   const generatedAtDisplay = useMemo(() => format(new Date(), 'dd MMM yyyy, HH:mm'), [])
 

@@ -537,7 +537,8 @@ export async function getClaimDetails(claimId: number) {
         totalAmount: claims.totalAmount,
         createdAt: claims.createdAt,
         employeeId: claims.employeeId,
-        adminNotes: claims.adminNotes
+        adminNotes: claims.adminNotes,
+        approvedAt: claims.approvedAt
       })
       .from(claims)
       .where(eq(claims.id, claimId))
@@ -864,6 +865,7 @@ export async function getAllClaims() {
         totalAmount: claims.totalAmount,
         createdAt: claims.createdAt,
         adminNotes: claims.adminNotes,
+        approvedAt: claims.approvedAt,
         employeeId: claims.employeeId,
         employeeName: employees.name,
         employeeCode: employees.employeeCode,
@@ -1102,13 +1104,15 @@ export async function updateClaimStatus(claimId: number, newStatus: 'draft' | 's
       .set({
         status: newStatus,
         adminNotes: isAdmin ? adminNotes || null : undefined,
+        approvedAt: newStatus === 'approved' ? new Date() : undefined,
         updatedAt: new Date()
       })
       .where(eq(claims.id, claimId))
       .returning({
         id: claims.id,
         status: claims.status,
-        adminNotes: claims.adminNotes
+        adminNotes: claims.adminNotes,
+        approvedAt: claims.approvedAt
       })
 
     if (!updatedClaim) {

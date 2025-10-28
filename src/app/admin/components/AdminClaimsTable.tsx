@@ -24,6 +24,7 @@ interface Claim {
   status: string
   totalAmount: string
   createdAt: Date | null
+  approvedAt: Date | null
   adminNotes: string | null
   employeeName: string
   employeeCode: number
@@ -97,7 +98,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
               {/* Header Row */}
               <div className="flex items-start justify-between">
                 <div>
-                  <Link 
+                  <Link
                     href={`/claims/${claim.id}`}
                     className="text-blue-600 hover:underline font-mono font-medium text-sm"
                   >
@@ -106,6 +107,11 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                   <div className="text-xs text-gray-500 mt-1">
                     {claim.createdAt ? dayjs(claim.createdAt).format('YYYY-MM-DD HH:mm') : 'N/A'}
                   </div>
+                  {claim.approvedAt && (
+                    <div className="text-xs text-green-600 mt-0.5">
+                      Approved: {dayjs(claim.approvedAt).format('YYYY-MM-DD HH:mm')}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="font-mono font-bold text-lg">
@@ -234,6 +240,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
               <TableHead>Claim ID</TableHead>
               <TableHead>Employee</TableHead>
               <TableHead>Date</TableHead>
+              <TableHead>Approve Time</TableHead>
               <TableHead className="text-right">Amount (SGD)</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Admin Notes</TableHead>
@@ -262,6 +269,9 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                 </TableCell>
                 <TableCell>
                   {claim.createdAt ? dayjs(claim.createdAt).format('YYYY-MM-DD HH:mm') : 'N/A'}
+                </TableCell>
+                <TableCell>
+                  {claim.approvedAt ? dayjs(claim.approvedAt).format('YYYY-MM-DD HH:mm') : '-'}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="font-mono font-bold text-lg">
@@ -363,7 +373,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                 No claims found
               </TableCell>
             </TableRow>
