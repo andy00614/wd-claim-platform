@@ -1,23 +1,24 @@
 'use client'
 
 import { useState } from 'react'
+import dayjs from 'dayjs'
+import Link from 'next/link'
+import { BarChart3, Check, Eye, MoreHorizontal, Pencil, X } from 'lucide-react'
+import { toast } from 'sonner'
+
 import { updateClaimStatus } from '@/lib/actions'
 import { formatClaimId } from '@/lib/utils'
-import Link from 'next/link'
-import dayjs from 'dayjs'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { toast } from 'sonner'
-import { Eye, Pencil, Check, X, BarChart3, MoreHorizontal } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
 
 interface Claim {
   id: number
@@ -64,7 +65,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
       } else {
         toast.error(`更新失败：${result.error || 'Unknown error'}`)
       }
-    } catch (error) {
+    } catch {
       toast.error('更新失败：网络错误')
     } finally {
       setLoading(false)
@@ -168,6 +169,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                 {editingClaim === claim.id ? (
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => handleSave(claim.id)}
                       disabled={loading}
                       className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
@@ -175,6 +177,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                       Save
                     </button>
                     <button
+                      type="button"
                       onClick={handleCancel}
                       disabled={loading}
                       className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
@@ -312,6 +315,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                   {editingClaim === claim.id ? (
                     <div className="flex items-center gap-2">
                       <button
+                        type="button"
                         onClick={() => handleSave(claim.id)}
                         disabled={loading}
                         className="p-1 text-green-500 hover:text-green-600 hover:bg-green-100 rounded disabled:opacity-50"
@@ -320,6 +324,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
                         <Check className="h-4 w-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={handleCancel}
                         disabled={loading}
                         className="p-1 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded"

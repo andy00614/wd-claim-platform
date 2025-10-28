@@ -1,162 +1,207 @@
-'use client'
+"use client";
 
-import { Fragment, useMemo, useRef, useState } from 'react'
-import { addMonths, format } from 'date-fns'
-import dynamic from 'next/dynamic'
-import { useReactToPrint } from 'react-to-print'
-import { ArrowLeft, FileDown, FileSpreadsheet, FileText, Info, Printer } from 'lucide-react'
+import { Fragment, useMemo, useRef, useState } from "react";
+import { addMonths, format } from "date-fns";
+import dynamic from "next/dynamic";
+import { useReactToPrint } from "react-to-print";
+import {
+  ArrowLeft,
+  FileDown,
+  FileSpreadsheet,
+  FileText,
+  Info,
+  Printer,
+} from "lucide-react";
 
-import { formatClaimId } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { formatClaimId } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-const PdfPreview = dynamic(() => import('@/components/ui/pdf-preview'), {
+const PdfPreview = dynamic(() => import("@/components/ui/pdf-preview"), {
   ssr: false,
   loading: () => (
     <div className="rounded-lg border border-red-200 bg-red-50 p-4">
       <div className="mb-3 flex items-center justify-center">
         <FileText className="h-12 w-12 text-red-500" />
       </div>
-      <div className="text-center text-sm font-medium text-gray-900">Loading PDF preview...</div>
+      <div className="text-center text-sm font-medium text-gray-900">
+        Loading PDF preview...
+      </div>
     </div>
-  )
-})
+  ),
+});
 
 type Attachment = {
-  id: number
-  fileName: string
-  url: string
-  fileType: string
-  fileSize: string
-  claimId?: number | null
-  claimItemId?: number | null
-  createdAt?: Date | null
-  updatedAt?: Date | null
-}
+  id: number;
+  fileName: string;
+  url: string;
+  fileType: string;
+  fileSize: string;
+  claimId?: number | null;
+  claimItemId?: number | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+};
 
 interface ClaimReportProps {
   claim: {
-    id: number
-    status: string
-    totalAmount: string
-    createdAt: Date | null
-    approvedAt: Date | null
-    adminNotes: string | null
-  }
+    id: number;
+    status: string;
+    totalAmount: string;
+    createdAt: Date | null;
+    approvedAt: Date | null;
+    adminNotes: string | null;
+  };
   items: Array<{
-    id: number
-    date: Date | null
-    itemNo: string
-    xeroCode: string
-    itemTypeNo: string
-    itemTypeName: string
-    note: string | null
-    details: string | null
-    currencyCode: string
-    amount: string
-    rate: string
-    sgdAmount: string
-    evidenceNo: string | null
-    attachments?: Attachment[]
-  }>
-  attachments: Attachment[] | undefined
+    id: number;
+    date: Date | null;
+    itemNo: string;
+    xeroCode: string;
+    itemTypeNo: string;
+    itemTypeName: string;
+    note: string | null;
+    details: string | null;
+    currencyCode: string;
+    amount: string;
+    rate: string;
+    sgdAmount: string;
+    evidenceNo: string | null;
+    attachments?: Attachment[];
+  }>;
+  attachments: Attachment[] | undefined;
   employee: {
-    name: string
-    employeeCode: number
-    department?: string
-  }
+    name: string;
+    employeeCode: number;
+    department?: string;
+  };
 }
 
 type EditableRow = {
-  contactName: string
-  emailAddress: string
-  poAddressLine1: string
-  poAddressLine2: string
-  poAddressLine3: string
-  poAddressLine4: string
-  poCity: string
-  poRegion: string
-  poPostalCode: string
-  poCountry: string
-  invoiceNumber: string
-  invoiceDate: string
-  dueDate: string
-  total: string
-  inventoryItemCode: string
-  description: string
-  quantity: string
-  unitAmount: string
-  accountCode: string
-  taxType: string
-  taxAmount: string
-  trackingName1: string
-  trackingOption1: string
-  trackingName2: string
-  trackingOption2: string
-  currency: string
-}
+  contactName: string;
+  emailAddress: string;
+  poAddressLine1: string;
+  poAddressLine2: string;
+  poAddressLine3: string;
+  poAddressLine4: string;
+  poCity: string;
+  poRegion: string;
+  poPostalCode: string;
+  poCountry: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate: string;
+  total: string;
+  inventoryItemCode: string;
+  description: string;
+  quantity: string;
+  unitAmount: string;
+  accountCode: string;
+  taxType: string;
+  taxAmount: string;
+  trackingName1: string;
+  trackingOption1: string;
+  trackingName2: string;
+  trackingOption2: string;
+  currency: string;
+};
 
 type AttachmentWithContext = {
-  attachment: Attachment
-  itemIndex: number | null
-  itemName: string | null
-}
+  attachment: Attachment;
+  itemIndex: number | null;
+  itemName: string | null;
+};
 
-type ClaimItem = ClaimReportProps['items'][number]
+type ClaimItem = ClaimReportProps["items"][number];
 
 const parseToDate = (value: Date | string | null | undefined) => {
-  if (!value) return null
-  const dateObj = value instanceof Date ? value : new Date(value)
-  return Number.isNaN(dateObj.getTime()) ? null : dateObj
-}
+  if (!value) return null;
+  const dateObj = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(dateObj.getTime()) ? null : dateObj;
+};
 
-const formatDateValue = (value: Date | string | null | undefined, dateFormat = 'dd/MM/yyyy') => {
-  const parsed = parseToDate(value)
-  return parsed ? format(parsed, dateFormat) : ''
-}
+const formatDateValue = (
+  value: Date | string | null | undefined,
+  dateFormat = "dd/MM/yyyy",
+) => {
+  const parsed = parseToDate(value);
+  return parsed ? format(parsed, dateFormat) : "";
+};
 
 const formatFileSize = (value?: string | null) => {
-  if (!value) return ''
-  const parsed = Number.parseFloat(value)
+  if (!value) return "";
+  const parsed = Number.parseFloat(value);
   if (Number.isNaN(parsed)) {
-    return value
+    return value;
   }
   if (parsed >= 1024 * 1024) {
-    return `${(parsed / (1024 * 1024)).toFixed(2)} MB`
+    return `${(parsed / (1024 * 1024)).toFixed(2)} MB`;
   }
   if (parsed >= 1024) {
-    return `${Math.round(parsed / 1024)} KB`
+    return `${Math.round(parsed / 1024)} KB`;
   }
-  return `${Math.max(parsed, 0).toFixed(0)} B`
-}
+  return `${Math.max(parsed, 0).toFixed(0)} B`;
+};
 
 const toDateInputValue = (value: Date | string | null | undefined) => {
-  const parsed = parseToDate(value)
-  return parsed ? format(parsed, 'yyyy-MM-dd') : ''
-}
+  const parsed = parseToDate(value);
+  return parsed ? format(parsed, "yyyy-MM-dd") : "";
+};
 
 const isImageFile = (fileType: string, fileName: string) => {
-  const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+  const imageTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+  ];
+  const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
 
-  return imageTypes.includes(fileType.toLowerCase()) ||
+  return (
+    imageTypes.includes(fileType.toLowerCase()) ||
     imageExtensions.some((ext) => fileName.toLowerCase().endsWith(ext))
-}
+  );
+};
 
 const isPdfFile = (fileType: string, fileName: string) => {
-  return fileType.toLowerCase() === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')
-}
+  return (
+    fileType.toLowerCase() === "application/pdf" ||
+    fileName.toLowerCase().endsWith(".pdf")
+  );
+};
 
-export default function ClaimReportV2({ claim, items, attachments, employee }: ClaimReportProps) {
-  const [showCsvDialog, setShowCsvDialog] = useState(false)
-  const [csvData, setCsvData] = useState<EditableRow[]>([])
-  const printRef = useRef<HTMLDivElement>(null)
+export default function ClaimReportV2({
+  claim,
+  items,
+  attachments,
+  employee,
+}: ClaimReportProps) {
+  const [showCsvDialog, setShowCsvDialog] = useState(false);
+  const [csvData, setCsvData] = useState<EditableRow[]>([]);
+  const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
-    documentTitle: `Expense_Claim_Report_${formatClaimId(claim.id)}`,
+    documentTitle: `Expense_Claim_Report_${formatClaimId(claim.id)}_${employee.name}`,
     pageStyle: `
       @page {
         size: A4;
@@ -261,70 +306,75 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
           width: 15% !important;
         }
       }
-    `
-  })
+    `,
+  });
 
   const editableRows = useMemo(() => {
     return items.map((item) => {
-      const invoiceDate = toDateInputValue(item.date)
+      const invoiceDate = toDateInputValue(item.date);
       const dueDate = invoiceDate
         ? toDateInputValue(addMonths(new Date(invoiceDate), 1))
-        : ''
+        : "";
 
       return {
-        contactName: employee.name ?? '',
-        emailAddress: '',
-        poAddressLine1: '',
-        poAddressLine2: '',
-        poAddressLine3: '',
-        poAddressLine4: '',
-        poCity: '',
-        poRegion: '',
-        poPostalCode: '',
-        poCountry: '',
+        contactName: employee.name ?? "",
+        emailAddress: "",
+        poAddressLine1: "",
+        poAddressLine2: "",
+        poAddressLine3: "",
+        poAddressLine4: "",
+        poCity: "",
+        poRegion: "",
+        poPostalCode: "",
+        poCountry: "",
         invoiceNumber: item.evidenceNo || formatClaimId(claim.id),
         invoiceDate,
         dueDate,
-        total: '',
-        inventoryItemCode: '',
+        total: "",
+        inventoryItemCode: "",
         description: item.details || item.note || item.itemTypeName,
-        quantity: '1',
-        unitAmount: item.sgdAmount ? Number.parseFloat(item.sgdAmount).toFixed(2) : '',
+        quantity: "1",
+        unitAmount: item.sgdAmount
+          ? Number.parseFloat(item.sgdAmount).toFixed(2)
+          : "",
         accountCode: item.xeroCode,
-        taxType: 'No Tax',
-        taxAmount: '',
-        trackingName1: '',
-        trackingOption1: '',
-        trackingName2: '',
-        trackingOption2: '',
-        currency: 'SGD',
-      }
-    })
-  }, [items, employee.name, claim.id])
+        taxType: "No Tax",
+        taxAmount: "",
+        trackingName1: "",
+        trackingOption1: "",
+        trackingName2: "",
+        trackingOption2: "",
+        currency: "SGD",
+      };
+    });
+  }, [items, employee.name, claim.id]);
 
   const totalSgdAmount = useMemo(() => {
     return items.reduce((sum, item) => {
-      const parsed = Number.parseFloat(item.sgdAmount || '0')
-      return Number.isNaN(parsed) ? sum : sum + parsed
-    }, 0)
-  }, [items])
+      const parsed = Number.parseFloat(item.sgdAmount || "0");
+      return Number.isNaN(parsed) ? sum : sum + parsed;
+    }, 0);
+  }, [items]);
 
   const allAttachmentsWithContext = useMemo<AttachmentWithContext[]>(() => {
-    const attachmentsList: AttachmentWithContext[] = []
+    const attachmentsList: AttachmentWithContext[] = [];
 
     items.forEach((item, index) => {
-      const itemAttachments: Attachment[] = []
+      const itemAttachments: Attachment[] = [];
 
       if (item.attachments && item.attachments.length > 0) {
-        itemAttachments.push(...item.attachments)
+        itemAttachments.push(...item.attachments);
       }
 
       if (attachments && attachments.length > 0) {
         attachments.forEach((attachment) => {
-          if (attachment.claimItemId === item.id && !itemAttachments.some((existing) => existing.id === attachment.id)) {
-            itemAttachments.push(attachment)
+          if (
+            attachment.claimItemId === item.id &&
+            !itemAttachments.some((existing) => existing.id === attachment.id)
+          ) {
+            itemAttachments.push(attachment);
           }
-        })
+        });
       }
 
       itemAttachments.forEach((attachment) => {
@@ -332,9 +382,9 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
           attachment,
           itemIndex: index + 1,
           itemName: `${item.itemTypeNo} - ${item.itemTypeName}`,
-        })
-      })
-    })
+        });
+      });
+    });
 
     if (attachments && attachments.length > 0) {
       attachments
@@ -344,69 +394,82 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
             attachment,
             itemIndex: null,
             itemName: null,
-          })
-        })
+          });
+        });
     }
 
-    return attachmentsList
-  }, [attachments, items])
+    return attachmentsList;
+  }, [attachments, items]);
 
-  const attachmentCount = allAttachmentsWithContext.length
-  const claimedAmountDisplay = totalSgdAmount.toFixed(2)
-  const postingDateDisplay = formatDateValue(claim.approvedAt) || 'dd/mm/yyyy'
-  const statusLabel = claim.status ? `${claim.status.charAt(0).toUpperCase()}${claim.status.slice(1).toLowerCase()}` : '—'
-  const generatedAtDisplay = useMemo(() => format(new Date(), 'dd MMM yyyy, HH:mm'), [])
+  const attachmentCount = allAttachmentsWithContext.length;
+  const claimedAmountDisplay = totalSgdAmount.toFixed(2);
+  const postingDateDisplay = formatDateValue(claim.approvedAt) || "dd/mm/yyyy";
+  const statusLabel = claim.status
+    ? `${claim.status.charAt(0).toUpperCase()}${claim.status.slice(1).toLowerCase()}`
+    : "—";
+  const generatedAtDisplay = useMemo(
+    () => format(new Date(), "dd MMM yyyy, HH:mm"),
+    [],
+  );
 
-  const handleCsvRowChange = (index: number, field: keyof EditableRow, value: string) => {
-    setCsvData((prev) => prev.map((row, rowIndex) => (rowIndex === index ? { ...row, [field]: value } : row)))
-  }
+  const handleCsvRowChange = (
+    index: number,
+    field: keyof EditableRow,
+    value: string,
+  ) => {
+    setCsvData((prev) =>
+      prev.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, [field]: value } : row,
+      ),
+    );
+  };
 
   const handleCsvDialogOpen = () => {
-    setCsvData(editableRows.map((row) => ({ ...row })))
-    setShowCsvDialog(true)
-  }
+    setCsvData(editableRows.map((row) => ({ ...row })));
+    setShowCsvDialog(true);
+  };
 
   const handleCsvDialogOpenChange = (open: boolean) => {
     if (!open) {
-      setShowCsvDialog(false)
-      return
+      setShowCsvDialog(false);
+      return;
     }
-    setCsvData(editableRows.map((row) => ({ ...row })))
-    setShowCsvDialog(true)
-  }
+    setCsvData(editableRows.map((row) => ({ ...row })));
+    setShowCsvDialog(true);
+  };
 
   const handleExportCsv = () => {
     const headers = [
-      '*ContactName',
-      'EmailAddress',
-      'POAddressLine1',
-      'POAddressLine2',
-      'POAddressLine3',
-      'POAddressLine4',
-      'POCity',
-      'PORegion',
-      'POPostalCode',
-      'POCountry',
-      '*InvoiceNumber',
-      '*InvoiceDate',
-      '*DueDate',
-      'Total',
-      'InventoryItemCode',
-      'Description',
-      '*Quantity',
-      '*UnitAmount',
-      '*AccountCode',
-      '*TaxType',
-      'TaxAmount',
-      'TrackingName1',
-      'TrackingOption1',
-      'TrackingName2',
-      'TrackingOption2',
-      'Currency',
-    ]
+      "*ContactName",
+      "EmailAddress",
+      "POAddressLine1",
+      "POAddressLine2",
+      "POAddressLine3",
+      "POAddressLine4",
+      "POCity",
+      "PORegion",
+      "POPostalCode",
+      "POCountry",
+      "*InvoiceNumber",
+      "*InvoiceDate",
+      "*DueDate",
+      "Total",
+      "InventoryItemCode",
+      "Description",
+      "*Quantity",
+      "*UnitAmount",
+      "*AccountCode",
+      "*TaxType",
+      "TaxAmount",
+      "TrackingName1",
+      "TrackingOption1",
+      "TrackingName2",
+      "TrackingOption2",
+      "Currency",
+    ];
 
     const csvRows = [
-      headers.join(','),
+      headers.join(","),
       ...csvData.map((row) => {
         return [
           `"${row.contactName}"`,
@@ -435,26 +498,27 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
           `"${row.trackingName2}"`,
           `"${row.trackingOption2}"`,
           `"${row.currency}"`,
-        ].join(',')
+        ].join(",");
       }),
-    ]
+    ];
 
-    const csvContent = csvRows.join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `Claim_${formatClaimId(claim.id)}_${format(new Date(), 'yyyy-MM-dd')}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    setShowCsvDialog(false)
-  }
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Claim_${formatClaimId(claim.id)}_${employee.name}_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setShowCsvDialog(false);
+  };
 
   const handleExportHTML = () => {
-    const reportContent = document.getElementById('report-content-v2')?.innerHTML
-    if (!reportContent) return
+    const reportContent =
+      document.getElementById("report-content-v2")?.innerHTML;
+    if (!reportContent) return;
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -472,18 +536,18 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
     ${reportContent}
   </div>
 </body>
-</html>`
+</html>`;
 
-    const blob = new Blob([htmlContent], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `Expense_Claim_Report_V2_${formatClaimId(claim.id)}.html`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([htmlContent], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Expense_Claim_Report_V2_${formatClaimId(claim.id)}_${employee.name}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <>
@@ -498,7 +562,11 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
 
       <div className="bg-slate-50 print:bg-white">
         <div className="mx-auto w-full max-w-5xl px-4 py-4 print:max-w-none print:p-0">
-          <div ref={printRef} id="report-content-v2" className="report-container space-y-4 print:space-y-2">
+          <div
+            ref={printRef}
+            id="report-content-v2"
+            className="report-container space-y-4 print:space-y-2"
+          >
             <SummaryPage
               attachmentCount={attachmentCount}
               claim={claim}
@@ -527,34 +595,52 @@ export default function ClaimReportV2({ claim, items, attachments, employee }: C
         onRowChange={handleCsvRowChange}
       />
     </>
-  )
+  );
 }
 
 type ReportActionBarProps = {
-  claimId: number
-  attachmentCount: number
-  onBack: () => void
-  onPrint: () => void
-  onExportHtml: () => void
-  onOpenCsv: () => void
-}
+  claimId: number;
+  attachmentCount: number;
+  onBack: () => void;
+  onPrint: () => void;
+  onExportHtml: () => void;
+  onOpenCsv: () => void;
+};
 
-function ReportActionBar({ claimId, attachmentCount, onBack, onPrint, onExportHtml, onOpenCsv }: ReportActionBarProps) {
+function ReportActionBar({
+  claimId,
+  attachmentCount,
+  onBack,
+  onPrint,
+  onExportHtml,
+  onOpenCsv,
+}: ReportActionBarProps) {
   return (
     <div className="no-print sticky top-0 z-10 border-b bg-white print:hidden">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Expense Claim Report</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            Expense Claim Report
+          </h1>
           <p className="text-sm text-slate-500">
-            {formatClaimId(claimId)} • {attachmentCount} attachments • Optimized for printing
+            {formatClaimId(claimId)} • {attachmentCount} attachments • Optimized
+            for printing
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="flex items-center gap-2"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
-          <Button variant="outline" onClick={onPrint} className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={onPrint}
+            className="flex items-center gap-2"
+          >
             <Printer className="h-4 w-4" />
             Print
           </Button>
@@ -562,26 +648,30 @@ function ReportActionBar({ claimId, attachmentCount, onBack, onPrint, onExportHt
             <FileDown className="h-4 w-4" />
             Export HTML
           </Button>
-          <Button variant="outline" onClick={onOpenCsv} className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={onOpenCsv}
+            className="flex items-center gap-2"
+          >
             <FileSpreadsheet className="h-4 w-4" />
             Export CSV
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 type SummaryPageProps = {
-  claim: ClaimReportProps['claim']
-  employee: ClaimReportProps['employee']
-  items: ClaimReportProps['items']
-  postingDateDisplay: string
-  attachmentCount: number
-  claimedAmountDisplay: string
-  statusLabel: string
-  generatedAtDisplay: string
-}
+  claim: ClaimReportProps["claim"];
+  employee: ClaimReportProps["employee"];
+  items: ClaimReportProps["items"];
+  postingDateDisplay: string;
+  attachmentCount: number;
+  claimedAmountDisplay: string;
+  statusLabel: string;
+  generatedAtDisplay: string;
+};
 
 function SummaryPage({
   claim,
@@ -593,22 +683,31 @@ function SummaryPage({
   statusLabel,
   generatedAtDisplay,
 }: SummaryPageProps) {
-  const tableHeaderClass = 'summary-table-header border border-slate-300 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600 print:px-1.5 print:py-0.5 break-words'
-  const tableCellClass = 'summary-table-cell border border-slate-200 px-2 py-1 text-xs text-slate-700 print:px-1.5 print:py-0.5 print:text-[10px] break-words'
-  const tableIndexCellClass = `${tableCellClass} text-center font-semibold`
-  const tableMonoCellClass = `${tableCellClass} mono text-right font-mono`
-  const descriptionCellClass = 'summary-description-cell border border-slate-200 px-2 py-0.5 text-[10px] text-slate-500 print:px-1.5 break-words'
+  const tableHeaderClass =
+    "summary-table-header border border-slate-300 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600 print:px-1.5 print:py-0.5 break-words";
+  const tableCellClass =
+    "summary-table-cell border border-slate-200 px-2 py-1 text-xs text-slate-700 print:px-1.5 print:py-0.5 print:text-[10px] break-words";
+  const tableIndexCellClass = `${tableCellClass} text-center font-semibold`;
+  const tableMonoCellClass = `${tableCellClass} mono text-right font-mono`;
+  const descriptionCellClass =
+    "summary-description-cell border border-slate-200 px-2 py-0.5 text-[10px] text-slate-500 print:px-1.5 break-words";
 
   return (
     <section className="summary-page rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm print:rounded-none print:border-none print:shadow-none print:px-3 print:py-2">
       <header className="summary-header flex flex-col gap-2 border-b border-dashed border-slate-300 pb-3 print:pb-2">
         <div className="flex items-baseline justify-between">
           <div>
-            <h2 className="summary-title text-xl font-semibold text-slate-900 print:text-lg">Expense Claim Report</h2>
-            <p className="text-xs text-slate-500">Prepared for {employee.name || '—'}</p>
+            <h2 className="summary-title text-xl font-semibold text-slate-900 print:text-lg">
+              Expense Claim Report
+            </h2>
+            <p className="text-xs text-slate-500">
+              Prepared for {employee.name || "—"}
+            </p>
           </div>
           <div className="text-xs text-slate-600">
-            <span className="font-semibold">Claim {formatClaimId(claim.id)}</span>
+            <span className="font-semibold">
+              Claim {formatClaimId(claim.id)}
+            </span>
             <span className="ml-3">Posting Date: {postingDateDisplay}</span>
             <span className="ml-3">Attachments: {attachmentCount}</span>
           </div>
@@ -619,15 +718,17 @@ function SummaryPage({
         <dl className="summary-info grid grid-cols-4 gap-x-4 gap-y-1 text-xs print:text-[10px]">
           <div className="summary-info-row flex items-baseline gap-2">
             <dt className="font-semibold text-slate-600">Employee Code</dt>
-            <dd className="text-slate-700">{employee.employeeCode ?? '—'}</dd>
+            <dd className="text-slate-700">
+              {employee.employeeCode ? `WD0${employee.employeeCode}` : "—"}
+            </dd>
           </div>
           <div className="summary-info-row flex items-baseline gap-2">
             <dt className="font-semibold text-slate-600">Staff Name</dt>
-            <dd className="text-slate-700">{employee.name || '—'}</dd>
+            <dd className="text-slate-700">{employee.name || "—"}</dd>
           </div>
           <div className="summary-info-row flex items-baseline gap-2">
             <dt className="font-semibold text-slate-600">Department</dt>
-            <dd className="text-slate-700">{employee.department || '—'}</dd>
+            <dd className="text-slate-700">{employee.department || "—"}</dd>
           </div>
           <div className="summary-info-row flex items-baseline gap-2">
             <dt className="font-semibold text-slate-600">Status</dt>
@@ -650,7 +751,10 @@ function SummaryPage({
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={5} className={`${tableCellClass} text-center text-sm text-slate-500`}>
+                <td
+                  colSpan={5}
+                  className={`${tableCellClass} text-center text-sm text-slate-500`}
+                >
                   No claim line items were provided.
                 </td>
               </tr>
@@ -672,7 +776,9 @@ function SummaryPage({
                 <td colSpan={4} className={`${tableCellClass} text-right`}>
                   TOTAL:
                 </td>
-                <td className={tableMonoCellClass}>SGD {claimedAmountDisplay}</td>
+                <td className={tableMonoCellClass}>
+                  SGD {claimedAmountDisplay}
+                </td>
               </tr>
             )}
           </tbody>
@@ -686,7 +792,9 @@ function SummaryPage({
             <p className="whitespace-pre-wrap">{claim.adminNotes}</p>
           </div>
         ) : (
-          <p className="italic text-slate-500 mb-4">No admin notes recorded for this claim.</p>
+          <p className="italic text-slate-500 mb-4">
+            No admin notes recorded for this claim.
+          </p>
         )}
 
         {/* Signature Section - Compact Table */}
@@ -699,136 +807,187 @@ function SummaryPage({
           </colgroup>
           <tbody>
             <tr>
-              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">Request By</td>
-              <td className="py-3 border-b border-slate-400 align-bottom"></td>
-              <td className="py-3 pl-6 pr-3 font-semibold text-slate-600 align-bottom">Approved By Supervisor</td>
+              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">
+                Request By
+              </td>
+              <td className="py-3 border-b border-slate-400 align-bottom">
+                <span className="text-[10px] text-slate-900 font-medium">{employee.name || '—'}</span>
+              </td>
+              <td className="py-3 pl-6 pr-3 font-semibold text-slate-600 align-bottom">
+                Approved By Supervisor
+              </td>
               <td className="py-3 border-b border-slate-400 align-bottom"></td>
             </tr>
             <tr>
-              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">Date</td>
-              <td className="py-3 border-b border-slate-400 align-bottom"></td>
-              <td className="py-3 pl-6 pr-3 font-semibold text-slate-600 align-bottom">Date</td>
+              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">
+                Date
+              </td>
+              <td className="py-3 border-b border-slate-400 align-bottom">
+                <span className="text-[10px] text-slate-900 font-medium">
+                  {claim.createdAt ? formatDateValue(claim.createdAt, 'dd/MM/yyyy') : '—'}
+                </span>
+              </td>
+              <td className="py-3 pl-6 pr-3 font-semibold text-slate-600 align-bottom">
+                Date
+              </td>
               <td className="py-3 border-b border-slate-400 align-bottom"></td>
             </tr>
             <tr>
-              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">Remark (if any)</td>
+              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">
+                Remark (if any)
+              </td>
               <td className="py-3 border-b border-slate-400 align-bottom"></td>
               <td className="py-3 pl-6 pr-3 align-bottom"></td>
               <td className="py-3 align-bottom"></td>
             </tr>
             <tr>
-              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">Checked By</td>
+              <td className="py-3 pr-3 font-semibold text-slate-600 align-bottom">
+                Checked By
+              </td>
               <td className="py-3 border-b border-slate-400 align-bottom">
                 <span className="text-[9px] text-slate-600">Candice</span>
               </td>
-              <td className="py-3 pl-6 pr-3 font-semibold text-slate-600 align-bottom">Approved By</td>
+              <td className="py-3 pl-6 pr-3 font-semibold text-slate-600 align-bottom">
+                Approved By
+              </td>
               <td className="py-3 border-b border-slate-400 align-bottom">
-                <span className="text-[9px] text-slate-600">Peter via email</span>
+                <span className="text-[9px] text-slate-600">
+                  Peter via email
+                </span>
               </td>
             </tr>
           </tbody>
         </table>
 
-        <p className="footer-muted mt-4 text-[10px]">Generated on {generatedAtDisplay}</p>
+        <p className="footer-muted mt-4 text-[10px]">
+          Generated on {generatedAtDisplay}
+        </p>
       </footer>
     </section>
-  )
+  );
 }
 
 type SummaryTableRowProps = {
-  item: ClaimItem
-  index: number
-  tableIndexCellClass: string
-  tableCellClass: string
-  tableMonoCellClass: string
-  descriptionCellClass: string
-}
+  item: ClaimItem;
+  index: number;
+  tableIndexCellClass: string;
+  tableCellClass: string;
+  tableMonoCellClass: string;
+  descriptionCellClass: string;
+};
 
-function SummaryTableRow({ item, index, tableIndexCellClass, tableCellClass, tableMonoCellClass }: SummaryTableRowProps) {
-  const descriptionText = item.details || item.note || ''
+function SummaryTableRow({
+  item,
+  index,
+  tableIndexCellClass,
+  tableCellClass,
+  tableMonoCellClass,
+}: SummaryTableRowProps) {
+  const descriptionText = item.details || item.note || "";
 
   return (
     <tr>
       <td className={tableIndexCellClass}>
-        {String(index + 1).padStart(2, '0')}
+        {String(index + 1).padStart(2, "0")}
       </td>
       <td className={tableCellClass}>
         <div className="flex flex-col gap-1">
-          <div className="font-medium">{formatDateValue(item.date, 'dd/MM/yyyy')} - [{item.itemNo}] {item.itemTypeName} - Xero: {item.xeroCode}</div>
+          <div className="font-medium">
+            {formatDateValue(item.date, "dd/MM/yyyy")} - [{item.itemNo}]{" "}
+            {item.itemTypeName} - Xero: {item.xeroCode}
+          </div>
           {descriptionText && (
-            <div className="text-[10px] text-slate-600 whitespace-pre-wrap">{descriptionText}</div>
+            <div className="text-[10px] text-slate-600 whitespace-pre-wrap">
+              {descriptionText}
+            </div>
           )}
         </div>
       </td>
       <td className={tableMonoCellClass}>
-        {item.currencyCode === 'SGD'
-          ? `SGD ${Number.parseFloat(item.sgdAmount || '0').toFixed(2)}`
-          : `${item.currencyCode} ${Number.parseFloat(item.amount || '0').toFixed(2)}`}
+        {item.currencyCode === "SGD"
+          ? `SGD ${Number.parseFloat(item.sgdAmount || "0").toFixed(2)}`
+          : `${item.currencyCode} ${Number.parseFloat(item.amount || "0").toFixed(2)}`}
       </td>
-      <td className={tableMonoCellClass}>{Number.parseFloat(item.rate || '0').toFixed(4)}</td>
-      <td className={tableMonoCellClass}>{Number.parseFloat(item.sgdAmount || '0').toFixed(2)}</td>
+      <td className={tableMonoCellClass}>
+        {Number.parseFloat(item.rate || "0").toFixed(4)}
+      </td>
+      <td className={tableMonoCellClass}>
+        {Number.parseFloat(item.sgdAmount || "0").toFixed(2)}
+      </td>
     </tr>
-  )
+  );
 }
 
 type AttachmentsSectionProps = {
-  attachmentsWithContext: AttachmentWithContext[]
-  attachmentCount: number
-  claimId: number
-}
+  attachmentsWithContext: AttachmentWithContext[];
+  attachmentCount: number;
+  claimId: number;
+};
 
-function AttachmentsSection({ attachmentsWithContext, attachmentCount, claimId }: AttachmentsSectionProps) {
+function AttachmentsSection({
+  attachmentsWithContext,
+  attachmentCount,
+  claimId,
+}: AttachmentsSectionProps) {
   if (attachmentCount === 0) {
     return (
       <section className="attachment-page rounded-2xl border border-slate-200 bg-white px-8 py-12 text-center text-sm text-slate-600 shadow-sm print:rounded-none print:border-none print:shadow-none">
-        <h3 className="attachment-title mb-3 text-lg font-semibold text-slate-900">Attachments</h3>
+        <h3 className="attachment-title mb-3 text-lg font-semibold text-slate-900">
+          Attachments
+        </h3>
         <p>No attachments were uploaded for this claim.</p>
       </section>
-    )
+    );
   }
 
   return (
     <>
-      {attachmentsWithContext.map(({ attachment, itemIndex, itemName }, idx) => (
-        <section
-          key={`attachment-${attachment.id}-${idx}`}
-          className="attachment-page rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm print:rounded-none print:border-none print:shadow-none"
-        >
-          <header className="attachment-header no-print flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="attachment-title text-lg font-semibold text-slate-900">
-                Attachment {idx + 1} of {attachmentCount}
-              </h3>
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Claim {formatClaimId(claimId)}
-              </span>
-            </div>
-            <div className="attachment-meta grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-2">
-              <div>
-                <span className="mr-2 font-semibold text-slate-700">File:</span>
-                {attachment.fileName}
+      {attachmentsWithContext.map(
+        ({ attachment, itemIndex, itemName }, idx) => (
+          <section
+            key={`attachment-${attachment.id}-${idx}`}
+            className="attachment-page rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm print:rounded-none print:border-none print:shadow-none"
+          >
+            <header className="attachment-header no-print flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="attachment-title text-lg font-semibold text-slate-900">
+                  Attachment {idx + 1} of {attachmentCount}
+                </h3>
+                <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Claim {formatClaimId(claimId)}
+                </span>
               </div>
-              <div>
-                <span className="mr-2 font-semibold text-slate-700">Size:</span>
-                {formatFileSize(attachment.fileSize)}
-              </div>
-              {itemIndex !== null && (
-                <div className="sm:col-span-2">
+              <div className="attachment-meta grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                <div>
                   <span className="mr-2 font-semibold text-slate-700">
-                    Item {String(itemIndex).padStart(2, '0')}:
+                    File:
                   </span>
-                  {itemName}
+                  {attachment.fileName}
                 </div>
-              )}
+                <div>
+                  <span className="mr-2 font-semibold text-slate-700">
+                    Size:
+                  </span>
+                  {formatFileSize(attachment.fileSize)}
+                </div>
+                {itemIndex !== null && (
+                  <div className="sm:col-span-2">
+                    <span className="mr-2 font-semibold text-slate-700">
+                      Item {String(itemIndex).padStart(2, "0")}:
+                    </span>
+                    {itemName}
+                  </div>
+                )}
+              </div>
+            </header>
+            <div className="attachment-content flex min-h-[420px] flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white p-6 print:border-none print:rounded-none print:min-h-0">
+              {renderFilePreview(attachment)}
             </div>
-          </header>
-          <div className="attachment-content flex min-h-[420px] flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white p-6 print:border-none print:rounded-none print:min-h-0">
-            {renderFilePreview(attachment)}
-          </div>
-        </section>
-      ))}
+          </section>
+        ),
+      )}
     </>
-  )
+  );
 }
 
 const renderFilePreview = (attachment: Attachment) => {
@@ -840,61 +999,77 @@ const renderFilePreview = (attachment: Attachment) => {
         alt={attachment.fileName}
         className="mx-auto max-h-[75vh] max-w-full object-contain"
         onError={(event) => {
-          const target = event.target as HTMLImageElement
-          target.style.display = 'none'
-          const fallback = document.createElement('div')
-          fallback.className = 'attachment-placeholder flex flex-col items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500'
-          fallback.textContent = 'Preview not available'
-          target.parentNode?.appendChild(fallback)
+          const target = event.target as HTMLImageElement;
+          target.style.display = "none";
+          const fallback = document.createElement("div");
+          fallback.className =
+            "attachment-placeholder flex flex-col items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500";
+          fallback.textContent = "Preview not available";
+          target.parentNode?.appendChild(fallback);
         }}
       />
-    )
+    );
   }
 
   if (isPdfFile(attachment.fileType, attachment.fileName)) {
     return (
       <div className="pdf-preview-container max-h-[75vh] w-full overflow-auto print:h-full print:max-h-none">
-        <PdfPreview url={attachment.url} fileName={attachment.fileName} maxPages={10} />
+        <PdfPreview
+          url={attachment.url}
+          fileName={attachment.fileName}
+          maxPages={10}
+        />
       </div>
-    )
+    );
   }
 
   return (
     <div className="attachment-placeholder flex flex-col items-center gap-4 text-center">
       <FileText className="h-12 w-12 text-slate-400" />
       <div className="space-y-1">
-        <p className="text-sm font-medium text-slate-700">{attachment.fileName}</p>
-        <p className="text-xs text-slate-500">Preview not available. Download to view the original file.</p>
+        <p className="text-sm font-medium text-slate-700">
+          {attachment.fileName}
+        </p>
+        <p className="text-xs text-slate-500">
+          Preview not available. Download to view the original file.
+        </p>
       </div>
       <Button
         variant="outline"
         size="sm"
         className="inline-flex items-center gap-2"
-        onClick={() => window.open(attachment.url, '_blank')}
+        onClick={() => window.open(attachment.url, "_blank")}
       >
         <FileText className="h-4 w-4" />
         Download
       </Button>
     </div>
-  )
-}
+  );
+};
 
 type CsvExportDialogProps = {
-  open: boolean
-  rows: EditableRow[]
-  onOpenChange: (open: boolean) => void
-  onRowChange: (index: number, field: keyof EditableRow, value: string) => void
-  onExport: () => void
-}
+  open: boolean;
+  rows: EditableRow[];
+  onOpenChange: (open: boolean) => void;
+  onRowChange: (index: number, field: keyof EditableRow, value: string) => void;
+  onExport: () => void;
+};
 
-function CsvExportDialog({ open, rows, onOpenChange, onRowChange, onExport }: CsvExportDialogProps) {
+function CsvExportDialog({
+  open,
+  rows,
+  onOpenChange,
+  onRowChange,
+  onExport,
+}: CsvExportDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[85vh] w-full max-w-[95vw] flex-col overflow-hidden p-0 sm:max-w-[90vw] lg:max-w-[1200px] xl:max-w-[1400px]">
         <DialogHeader className="flex-shrink-0 border-b px-6 py-4">
           <DialogTitle>Export CSV Data</DialogTitle>
           <div className="text-sm text-gray-600">
-            Review and edit the data before exporting to CSV. You can modify any field as needed.
+            Review and edit the data before exporting to CSV. You can modify any
+            field as needed.
           </div>
         </DialogHeader>
 
@@ -904,72 +1079,252 @@ function CsvExportDialog({ open, rows, onOpenChange, onRowChange, onExport }: Cs
               <TableHeader className="sticky top-0 z-10 bg-gray-50">
                 <TableRow>
                   <TableHead className="w-12 text-xs font-medium">#</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">*ContactName</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">EmailAddress</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">POAddressLine1</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">POAddressLine2</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">POAddressLine3</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">POAddressLine4</TableHead>
-                  <TableHead className="min-w-[100px] text-xs font-medium">POCity</TableHead>
-                  <TableHead className="min-w-[100px] text-xs font-medium">PORegion</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">POPostalCode</TableHead>
-                  <TableHead className="min-w-[100px] text-xs font-medium">POCountry</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">*InvoiceNumber</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">*InvoiceDate</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">*DueDate</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">Total</TableHead>
-                  <TableHead className="min-w-[140px] text-xs font-medium">InventoryItemCode</TableHead>
-                  <TableHead className="min-w-[200px] text-xs font-medium">Description</TableHead>
-                  <TableHead className="min-w-[80px] text-xs font-medium">*Quantity</TableHead>
-                  <TableHead className="min-w-[100px] text-xs font-medium">*UnitAmount</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">*AccountCode</TableHead>
-                  <TableHead className="min-w-[100px] text-xs font-medium">*TaxType</TableHead>
-                  <TableHead className="min-w-[100px] text-xs font-medium">TaxAmount</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">TrackingName1</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">TrackingOption1</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">TrackingName2</TableHead>
-                  <TableHead className="min-w-[120px] text-xs font-medium">TrackingOption2</TableHead>
-                  <TableHead className="min-w-[80px] text-xs font-medium">Currency</TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    *ContactName
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    EmailAddress
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    POAddressLine1
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    POAddressLine2
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    POAddressLine3
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    POAddressLine4
+                  </TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">
+                    POCity
+                  </TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">
+                    PORegion
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    POPostalCode
+                  </TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">
+                    POCountry
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    *InvoiceNumber
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    *InvoiceDate
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    *DueDate
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    Total
+                  </TableHead>
+                  <TableHead className="min-w-[140px] text-xs font-medium">
+                    InventoryItemCode
+                  </TableHead>
+                  <TableHead className="min-w-[200px] text-xs font-medium">
+                    Description
+                  </TableHead>
+                  <TableHead className="min-w-[80px] text-xs font-medium">
+                    *Quantity
+                  </TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">
+                    *UnitAmount
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    *AccountCode
+                  </TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">
+                    *TaxType
+                  </TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-medium">
+                    TaxAmount
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    TrackingName1
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    TrackingOption1
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    TrackingName2
+                  </TableHead>
+                  <TableHead className="min-w-[120px] text-xs font-medium">
+                    TrackingOption2
+                  </TableHead>
+                  <TableHead className="min-w-[80px] text-xs font-medium">
+                    Currency
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map((row, index) => (
                   <TableRow key={`csv-row-${row.invoiceNumber}-${index}`}>
-                    <TableCell className="px-2 py-1 text-center text-xs font-medium">{index + 1}</TableCell>
-                    <EditableCell value={row.contactName} onChange={(value) => onRowChange(index, 'contactName', value)} />
-                    <EditableCell value={row.emailAddress} onChange={(value) => onRowChange(index, 'emailAddress', value)} />
-                    <EditableCell value={row.poAddressLine1} onChange={(value) => onRowChange(index, 'poAddressLine1', value)} />
-                    <EditableCell value={row.poAddressLine2} onChange={(value) => onRowChange(index, 'poAddressLine2', value)} />
-                    <EditableCell value={row.poAddressLine3} onChange={(value) => onRowChange(index, 'poAddressLine3', value)} />
-                    <EditableCell value={row.poAddressLine4} onChange={(value) => onRowChange(index, 'poAddressLine4', value)} />
-                    <EditableCell value={row.poCity} onChange={(value) => onRowChange(index, 'poCity', value)} />
-                    <EditableCell value={row.poRegion} onChange={(value) => onRowChange(index, 'poRegion', value)} />
-                    <EditableCell value={row.poPostalCode} onChange={(value) => onRowChange(index, 'poPostalCode', value)} />
-                    <EditableCell value={row.poCountry} onChange={(value) => onRowChange(index, 'poCountry', value)} />
-                    <EditableCell value={row.invoiceNumber} onChange={(value) => onRowChange(index, 'invoiceNumber', value)} />
-                    <EditableCell type="date" value={row.invoiceDate} onChange={(value) => onRowChange(index, 'invoiceDate', value)} />
-                    <EditableCell type="date" value={row.dueDate} onChange={(value) => onRowChange(index, 'dueDate', value)} />
-                    <EditableCell value={row.total} onChange={(value) => onRowChange(index, 'total', value)} />
-                    <EditableCell value={row.inventoryItemCode} onChange={(value) => onRowChange(index, 'inventoryItemCode', value)} />
-                    <EditableCell value={row.description} onChange={(value) => onRowChange(index, 'description', value)} />
-                    <EditableCell type="number" value={row.quantity} onChange={(value) => onRowChange(index, 'quantity', value)} />
-                    <EditableCell type="number" step="0.01" value={row.unitAmount} onChange={(value) => onRowChange(index, 'unitAmount', value)} />
-                    <EditableCell value={row.accountCode} onChange={(value) => onRowChange(index, 'accountCode', value)} />
+                    <TableCell className="px-2 py-1 text-center text-xs font-medium">
+                      {index + 1}
+                    </TableCell>
+                    <EditableCell
+                      value={row.contactName}
+                      onChange={(value) =>
+                        onRowChange(index, "contactName", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.emailAddress}
+                      onChange={(value) =>
+                        onRowChange(index, "emailAddress", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.poAddressLine1}
+                      onChange={(value) =>
+                        onRowChange(index, "poAddressLine1", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.poAddressLine2}
+                      onChange={(value) =>
+                        onRowChange(index, "poAddressLine2", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.poAddressLine3}
+                      onChange={(value) =>
+                        onRowChange(index, "poAddressLine3", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.poAddressLine4}
+                      onChange={(value) =>
+                        onRowChange(index, "poAddressLine4", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.poCity}
+                      onChange={(value) => onRowChange(index, "poCity", value)}
+                    />
+                    <EditableCell
+                      value={row.poRegion}
+                      onChange={(value) =>
+                        onRowChange(index, "poRegion", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.poPostalCode}
+                      onChange={(value) =>
+                        onRowChange(index, "poPostalCode", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.poCountry}
+                      onChange={(value) =>
+                        onRowChange(index, "poCountry", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.invoiceNumber}
+                      onChange={(value) =>
+                        onRowChange(index, "invoiceNumber", value)
+                      }
+                    />
+                    <EditableCell
+                      type="date"
+                      value={row.invoiceDate}
+                      onChange={(value) =>
+                        onRowChange(index, "invoiceDate", value)
+                      }
+                    />
+                    <EditableCell
+                      type="date"
+                      value={row.dueDate}
+                      onChange={(value) => onRowChange(index, "dueDate", value)}
+                    />
+                    <EditableCell
+                      value={row.total}
+                      onChange={(value) => onRowChange(index, "total", value)}
+                    />
+                    <EditableCell
+                      value={row.inventoryItemCode}
+                      onChange={(value) =>
+                        onRowChange(index, "inventoryItemCode", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.description}
+                      onChange={(value) =>
+                        onRowChange(index, "description", value)
+                      }
+                    />
+                    <EditableCell
+                      type="number"
+                      value={row.quantity}
+                      onChange={(value) =>
+                        onRowChange(index, "quantity", value)
+                      }
+                    />
+                    <EditableCell
+                      type="number"
+                      step="0.01"
+                      value={row.unitAmount}
+                      onChange={(value) =>
+                        onRowChange(index, "unitAmount", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.accountCode}
+                      onChange={(value) =>
+                        onRowChange(index, "accountCode", value)
+                      }
+                    />
                     <EditableSelect
                       options={[
-                        { label: 'No Tax', value: 'No Tax' },
-                        { label: 'GST', value: 'GST' },
-                        { label: 'VAT', value: 'VAT' },
+                        { label: "No Tax", value: "No Tax" },
+                        { label: "GST", value: "GST" },
+                        { label: "VAT", value: "VAT" },
                       ]}
                       value={row.taxType}
-                      onChange={(value) => onRowChange(index, 'taxType', value)}
+                      onChange={(value) => onRowChange(index, "taxType", value)}
                     />
-                    <EditableCell type="number" step="0.01" value={row.taxAmount} onChange={(value) => onRowChange(index, 'taxAmount', value)} />
-                    <EditableCell value={row.trackingName1} onChange={(value) => onRowChange(index, 'trackingName1', value)} />
-                    <EditableCell value={row.trackingOption1} onChange={(value) => onRowChange(index, 'trackingOption1', value)} />
-                    <EditableCell value={row.trackingName2} onChange={(value) => onRowChange(index, 'trackingName2', value)} />
-                    <EditableCell value={row.trackingOption2} onChange={(value) => onRowChange(index, 'trackingOption2', value)} />
-                    <EditableCell value={row.currency} onChange={(value) => onRowChange(index, 'currency', value)} />
+                    <EditableCell
+                      type="number"
+                      step="0.01"
+                      value={row.taxAmount}
+                      onChange={(value) =>
+                        onRowChange(index, "taxAmount", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.trackingName1}
+                      onChange={(value) =>
+                        onRowChange(index, "trackingName1", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.trackingOption1}
+                      onChange={(value) =>
+                        onRowChange(index, "trackingOption1", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.trackingName2}
+                      onChange={(value) =>
+                        onRowChange(index, "trackingName2", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.trackingOption2}
+                      onChange={(value) =>
+                        onRowChange(index, "trackingOption2", value)
+                      }
+                    />
+                    <EditableCell
+                      value={row.currency}
+                      onChange={(value) =>
+                        onRowChange(index, "currency", value)
+                      }
+                    />
                   </TableRow>
                 ))}
               </TableBody>
@@ -988,17 +1343,22 @@ function CsvExportDialog({ open, rows, onOpenChange, onRowChange, onExport }: Cs
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 type EditableCellProps = {
-  value: string
-  onChange: (value: string) => void
-  type?: string
-  step?: string
-}
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  step?: string;
+};
 
-function EditableCell({ value, onChange, type = 'text', step }: EditableCellProps) {
+function EditableCell({
+  value,
+  onChange,
+  type = "text",
+  step,
+}: EditableCellProps) {
   return (
     <TableCell className="p-0">
       <input
@@ -1009,14 +1369,14 @@ function EditableCell({ value, onChange, type = 'text', step }: EditableCellProp
         className="editable-input w-full px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
     </TableCell>
-  )
+  );
 }
 
 type EditableSelectProps = {
-  value: string
-  onChange: (value: string) => void
-  options: Array<{ label: string; value: string }>
-}
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ label: string; value: string }>;
+};
 
 function EditableSelect({ value, onChange, options }: EditableSelectProps) {
   return (
@@ -1033,7 +1393,7 @@ function EditableSelect({ value, onChange, options }: EditableSelectProps) {
         ))}
       </select>
     </TableCell>
-  )
+  );
 }
 
 const getReportStyles = () => `
@@ -1331,4 +1691,4 @@ const getReportStyles = () => `
         margin: 15mm;
       }
     }
-  `
+  `;

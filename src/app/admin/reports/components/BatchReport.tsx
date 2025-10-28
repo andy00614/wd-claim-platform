@@ -100,6 +100,65 @@ export default function BatchReport({ claims }: BatchReportProps) {
     URL.revokeObjectURL(url)
   }
 
+  const handleExportCSV = () => {
+    const headers = [
+      'Claim ID',
+      'Employee Name',
+      'Employee Code',
+      'Department',
+      'Claim Date',
+      'Item Date',
+      'Item Type No',
+      'Item Type Name',
+      'Description',
+      'Currency',
+      'Amount',
+      'Rate',
+      'SGD Amount',
+      'Evidence No',
+      'Status'
+    ]
+
+    const rows: string[][] = []
+
+    claims.forEach((claimData) => {
+      claimData.items.forEach((item) => {
+        rows.push([
+          formatClaimId(claimData.claim.id),
+          claimData.employee.name,
+          `WD${claimData.employee.employeeCode.toString().padStart(3, '0')}`,
+          claimData.employee.department || 'N/A',
+          claimData.claim.createdAt ? dayjs(claimData.claim.createdAt).format('YYYY-MM-DD HH:mm') : 'N/A',
+          item.date ? dayjs(item.date).format('YYYY-MM-DD') : 'N/A',
+          item.itemTypeNo,
+          item.itemTypeName,
+          (item.details || item.note || '').replace(/"/g, '""'),
+          item.currencyCode,
+          item.amount,
+          item.rate,
+          item.sgdAmount,
+          item.evidenceNo || '',
+          claimData.claim.status
+        ])
+      })
+    })
+
+    const csvContent = [
+      headers.map(h => `"${h}"`).join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `Batch_Expense_Claims_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   const getBatchReportStyles = () => `
     body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: white; }
     .report-container { max-width: 1200px; margin: 0 auto; }
@@ -128,22 +187,32 @@ export default function BatchReport({ claims }: BatchReportProps) {
           <h1 className="text-xl font-bold">Batch Expense Claims Report</h1>
           <div className="flex gap-4">
             <button
+              type="button"
               onClick={() => window.history.back()}
               className="px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50"
             >
               ← Back
             </button>
             <button
+              type="button"
               onClick={handlePrint}
               className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
             >
-              🖨️ Print Report
+              🖨️ Print PDF
             </button>
             <button
+              type="button"
               onClick={handleExportHTML}
               className="px-4 py-2 bg-green-600 text-white hover:bg-green-700"
             >
               📄 Export HTML
+            </button>
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              📊 Export CSV
             </button>
           </div>
         </div>
