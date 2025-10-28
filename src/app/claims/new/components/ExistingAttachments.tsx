@@ -1,5 +1,10 @@
 'use client'
 
+import { useState } from 'react'
+import { deleteClaimFile } from '@/lib/actions'
+import { toast } from 'sonner'
+import { Trash2 } from 'lucide-react'
+
 interface Attachment {
   id: number
   claimId: number | null
@@ -15,20 +20,18 @@ interface Attachment {
 interface ExistingAttachmentsProps {
   attachments: Attachment[]
   title?: string
+  onDelete?: () => void
 }
 
 export default function ExistingAttachments({
   attachments,
-  title = "Existing Attachments"
+  title = "Existing Attachments",
+  onDelete
 }: ExistingAttachmentsProps) {
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set())
 
   if (!attachments || attachments.length === 0) {
-    return (
-      <div className="bg-white border border-gray-300 p-4 mb-6">
-        <h3 className="text-sm font-medium text-gray-900 mb-3">{title}</h3>
-        <p className="text-sm text-gray-500">No attachments found for this claim.</p>
-      </div>
-    )
+    return null
   }
 
   const formatFileSize = (sizeStr: string) => {
@@ -48,9 +51,46 @@ export default function ExistingAttachments({
     document.body.removeChild(link)
   }
 
+  const handleDelete = async (attachmentId: number, fileName: string) => {
+    if (!confirm(`Are you sure you want to delete "${fileName}"?`)) {
+      return
+    }
+
+    setDeletingIds(prev => new Set(prev).add(attachmentId))
+
+    try {
+      const result = await deleteClaimFile(attachmentId)
+
+      if (result.success) {
+        toast.success('Attachment deleted successfully')
+        if (onDelete) {
+          onDelete()
+        } else {
+          // 如果没有提供 onDelete 回调，刷新页面
+          window.location.reload()
+        }
+      } else {
+        toast.error(result.error || 'Failed to delete attachment')
+        setDeletingIds(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(attachmentId)
+          return newSet
+        })
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      toast.error('Failed to delete attachment')
+      setDeletingIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(attachmentId)
+        return newSet
+      })
+    }
+  }
+
   return (
-    <div className="bg-white border border-gray-300 p-4 mb-6">
-      <h3 className="text-sm font-medium text-gray-900 mb-3">{title}</h3>
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
       <div className="space-y-2">
         {attachments.map((attachment) => (
           <div
@@ -72,12 +112,24 @@ export default function ExistingAttachments({
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => handleDownload(attachment.url, attachment.fileName)}
-              className="flex-shrink-0 ml-2 inline-flex items-center px-2 py-1 border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Download
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleDownload(attachment.url, attachment.fileName)}
+                className="flex-shrink-0 inline-flex items-center px-2 py-1 border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 rounded"
+              >
+                Download
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(attachment.id, attachment.fileName)}
+                disabled={deletingIds.has(attachment.id)}
+                className="flex-shrink-0 inline-flex items-center px-2 py-1 border border-red-300 bg-white text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                title="Delete attachment"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
           </div>
         ))}
       </div>

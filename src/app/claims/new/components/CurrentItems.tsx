@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { FileText } from 'lucide-react'
 import type { ExpenseItem } from '../page'
 import ExpenseDetailsFields from './ExpenseDetailsFields'
 import ExistingAttachments from './ExistingAttachments'
@@ -71,11 +70,6 @@ const calculateForexRate = (sgdAmount: string, amount: string) => {
   const parsedAmount = parseFloat(amount) || 0
   if (parsedAmount === 0) return '0.0000'
   return (parsedSgd / parsedAmount).toFixed(4)
-}
-
-const truncateAttachmentName = (value: string) => {
-  if (!value) return 'Attachment'
-  return value.length > 24 ? `${value.slice(0, 21)}...` : value
 }
 
 const parseDateString = (value: string) => {
@@ -365,26 +359,16 @@ export default function CurrentItems({
           </div>
 
           {editingItem?.existingAttachments && editingItem.existingAttachments.length > 0 && (
-            <div className="border border-gray-200 rounded-md p-4 space-y-2">
-              <h4 className="text-sm font-semibold">Existing Attachments</h4>
-              <div className="space-y-1">
-                {editingItem.existingAttachments.map((attachment) => (
-                  <a
-                    key={attachment.id}
-                    href={attachment.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-primary hover:underline"
-                    title={attachment.fileName}
-                  >
-                    <FileText className="h-4 w-4" />
-                    <span className="truncate max-w-[240px]">
-                      {truncateAttachmentName(attachment.fileName)}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
+            <ExistingAttachments
+              attachments={editingItem.existingAttachments}
+              onDelete={() => {
+                // 刷新编辑项的附件列表
+                if (editingItem) {
+                  // 重新获取附件列表或从状态中移除已删除的附件
+                  window.location.reload()
+                }
+              }}
+            />
           )}
 
           <DialogFooter className="gap-2">
