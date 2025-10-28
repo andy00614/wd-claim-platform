@@ -4,7 +4,7 @@ import { db } from '@/lib/db/drizzle'
 import { claims, claimItems, itemType, currency, employees, userEmployeeBind, attachment } from '@/lib/db/schema'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { eq, inArray, and, desc } from 'drizzle-orm'
+import { eq, inArray, and, desc, sql } from 'drizzle-orm'
 
 const STORAGE_BUCKET = 'wd-attachments'
 
@@ -1300,6 +1300,215 @@ export async function deleteClaim(claimId: number) {
     return {
       success: false,
       error: '删除申请失败',
+      details: error instanceof Error ? error.message : '未知错误'
+    }
+  }
+}
+
+// ==================== Employee Management ====================
+
+// 获取所有员工
+export async function getAllEmployees() {
+  try {
+    const adminCheck = await checkIsAdmin()
+
+    if (!adminCheck.success || !adminCheck.data?.isAdmin) {
+      return { success: false, error: "权限不足：仅管理员可访问" }
+    }
+
+    const allEmployees = await db
+      .select()
+      .from(employees)
+      .orderBy(employees.employeeCode)
+
+    return {
+      success: true,
+      data: allEmployees
+    }
+  } catch (error) {
+    console.error("Failed to get all employees:", error)
+    return { success: false, error: "获取员工列表失败" }
+  }
+}
+
+// 创建员工
+export async function createEmployee(prevState: any, formData: FormData) {
+  try {
+    const adminCheck = await checkIsAdmin()
+
+    if (!adminCheck.success || !adminCheck.data?.isAdmin) {
+      return { success: false, error: "权限不足：仅管理员可访问" }
+    }
+
+    const name = formData.get('name') as string
+    const email = formData.get('email') as string
+    const employeeCode = parseInt(formData.get('employeeCode') as string)
+    const department = formData.get('department') as any
+    const role = formData.get('role') as 'employee' | 'admin'
+
+    if (!name || !email || !employeeCode || !department) {
+      return { success: false, error: '请填写所有必填字段' }
+    }
+
+    // 检查员工编号是否已存在
+    const existingCode = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.employeeCode, employeeCode))
+      .limit(1)
+
+    if (existingCode.length > 0) {
+      return { success: false, error: '员工编号已存在' }
+    }
+
+    // 检查邮箱是否已存在
+    const existingEmail = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.email, email))
+      .limit(1)
+
+    if (existingEmail.length > 0) {
+      return { success: false, error: '邮箱已存在' }
+    }
+
+    const [newEmployee] = await db
+      .insert(employees)
+      .values({
+        name,
+        email,
+        employeeCode,
+        departmentEnum: department,
+        role: role || 'employee'
+      })
+      .returning()
+
+    return {
+      success: true,
+      message: '员工创建成功',
+      data: newEmployee
+    }
+  } catch (error) {
+    console.error('创建员工失败:', error)
+    return {
+      success: false,
+      error: '创建员工失败',
+      details: error instanceof Error ? error.message : '未知错误'
+    }
+  }
+}
+
+// 更新员工
+export async function updateEmployee(employeeId: number, prevState: any, formData: FormData) {
+  try {
+    const adminCheck = await checkIsAdmin()
+
+    if (!adminCheck.success || !adminCheck.data?.isAdmin) {
+      return { success: false, error: "权限不足：仅管理员可访问" }
+    }
+
+    const name = formData.get('name') as string
+    const email = formData.get('email') as string
+    const employeeCode = parseInt(formData.get('employeeCode') as string)
+    const department = formData.get('department') as any
+    const role = formData.get('role') as 'employee' | 'admin'
+
+    if (!name || !email || !employeeCode || !department) {
+      return { success: false, error: '请填写所有必填字段' }
+    }
+
+    // 检查员工编号是否被其他员工使用
+    const existingCode = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.employeeCode, employeeCode))
+      .limit(1)
+
+    if (existingCode.length > 0 && existingCode[0].id !== employeeId) {
+      return { success: false, error: '员工编号已被其他员工使用' }
+    }
+
+    // 检查邮箱是否被其他员工使用
+    const existingEmail = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.email, email))
+      .limit(1)
+
+    if (existingEmail.length > 0 && existingEmail[0].id !== employeeId) {
+      return { success: false, error: '邮箱已被其他员工使用' }
+    }
+
+    const [updatedEmployee] = await db
+      .update(employees)
+      .set({
+        name,
+        email,
+        employeeCode,
+        departmentEnum: department,
+        role: role || 'employee',
+        updatedAt: new Date()
+      })
+      .where(eq(employees.id, employeeId))
+      .returning()
+
+    return {
+      success: true,
+      message: '员工信息更新成功',
+      data: updatedEmployee
+    }
+  } catch (error) {
+    console.error('更新员工失败:', error)
+    return {
+      success: false,
+      error: '更新员工失败',
+      details: error instanceof Error ? error.message : '未知错误'
+    }
+  }
+}
+
+// 删除员工
+export async function deleteEmployee(employeeId: number) {
+  try {
+    const adminCheck = await checkIsAdmin()
+
+    if (!adminCheck.success || !adminCheck.data?.isAdmin) {
+      return { success: false, error: "权限不足：仅管理员可访问" }
+    }
+
+    // 检查员工是否有关联的申请
+    const employeeClaims = await db
+      .select()
+      .from(claims)
+      .where(eq(claims.employeeId, employeeId))
+      .limit(1)
+
+    if (employeeClaims.length > 0) {
+      return {
+        success: false,
+        error: '无法删除：该员工有关联的申请记录，请先删除相关申请'
+      }
+    }
+
+    // 删除用户绑定
+    await db
+      .delete(userEmployeeBind)
+      .where(eq(userEmployeeBind.employeeId, employeeId))
+
+    // 删除员工
+    await db
+      .delete(employees)
+      .where(eq(employees.id, employeeId))
+
+    return {
+      success: true,
+      message: '员工删除成功'
+    }
+  } catch (error) {
+    console.error('删除员工失败:', error)
+    return {
+      success: false,
+      error: '删除员工失败',
       details: error instanceof Error ? error.message : '未知错误'
     }
   }
