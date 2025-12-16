@@ -243,22 +243,31 @@ export default function ClaimReportV2({
 
         .attachment-content {
           flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 600px;
+          display: block;
+          min-height: 0;
         }
 
         .attachment-content .pdf-preview-container {
           width: 100% !important;
-          height: 100% !important;
-          max-height: 600px !important;
+          height: auto !important;
+          max-height: none !important;
+          overflow: visible !important;
         }
 
         .attachment-content img {
+          display: block;
           max-width: 100% !important;
-          max-height: 600px !important;
+          height: auto !important;
+          max-height: calc(100vh - 40mm) !important;
           object-fit: contain !important;
+          page-break-inside: avoid;
+        }
+
+        .attachment-content .pdf-preview-container img {
+          max-width: 100% !important;
+          height: auto !important;
+          max-height: calc(100vh - 40mm) !important;
+          page-break-inside: avoid;
         }
 
         .summary-table-header,
@@ -311,7 +320,7 @@ export default function ClaimReportV2({
 
   const editableRows = useMemo(() => {
     return items.map((item) => {
-      const invoiceDate = toDateInputValue(item.date);
+      const invoiceDate = toDateInputValue(claim.approvedAt);
       const dueDate = invoiceDate
         ? toDateInputValue(addMonths(new Date(invoiceDate), 1))
         : "";
@@ -997,7 +1006,7 @@ const renderFilePreview = (attachment: Attachment) => {
       <img
         src={attachment.url}
         alt={attachment.fileName}
-        className="mx-auto max-h-[75vh] max-w-full object-contain"
+        className="mx-auto h-auto w-full max-w-full object-contain"
         onError={(event) => {
           const target = event.target as HTMLImageElement;
           target.style.display = "none";
@@ -1013,7 +1022,7 @@ const renderFilePreview = (attachment: Attachment) => {
 
   if (isPdfFile(attachment.fileType, attachment.fileName)) {
     return (
-      <div className="pdf-preview-container max-h-[75vh] w-full overflow-auto print:h-full print:max-h-none">
+      <div className="pdf-preview-container w-full print:h-auto print:max-h-none print:overflow-visible">
         <PdfPreview
           url={attachment.url}
           fileName={attachment.fileName}
