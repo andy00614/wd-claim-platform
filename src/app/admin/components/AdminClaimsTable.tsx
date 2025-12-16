@@ -10,6 +10,7 @@ import { updateClaimStatus } from '@/lib/actions'
 import { formatClaimId } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +42,30 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
   const [newStatus, setNewStatus] = useState('')
   const [newNotes, setNewNotes] = useState('')
   const [loading, setLoading] = useState(false)
+  const [selectedClaims, setSelectedClaims] = useState<Set<number>>(new Set())
+
+  const toggleClaim = (claimId: number) => {
+    setSelectedClaims((prev) => {
+      const next = new Set(prev)
+      if (next.has(claimId)) {
+        next.delete(claimId)
+      } else {
+        next.add(claimId)
+      }
+      return next
+    })
+  }
+
+  const toggleAll = () => {
+    if (selectedClaims.size === claims.length) {
+      setSelectedClaims(new Set())
+    } else {
+      setSelectedClaims(new Set(claims.map((c) => c.id)))
+    }
+  }
+
+  const isAllSelected = claims.length > 0 && selectedClaims.size === claims.length
+  const isPartialSelected = selectedClaims.size > 0 && selectedClaims.size < claims.length
 
   const handleEdit = (claim: Claim) => {
     setEditingClaim(claim.id)
@@ -91,28 +116,54 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
 
   return (
     <>
+      {/* Selected Count Display */}
+      {selectedClaims.size > 0 && (
+        <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+          <span className="text-blue-700 font-medium">
+            已勾选 <span className="text-lg font-bold">{selectedClaims.size}</span> 条记录
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedClaims(new Set())}
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            清除选择
+          </button>
+        </div>
+      )}
+
       {/* Mobile Card Layout */}
       <div className="sm:hidden space-y-4">
         {claims.length > 0 ? (
           claims.map((claim) => (
-            <div key={claim.id} className="border rounded-lg p-4 bg-white shadow-sm space-y-3">
+            <div
+              key={claim.id}
+              className={`border rounded-lg p-4 bg-white shadow-sm space-y-3 ${selectedClaims.has(claim.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+            >
               {/* Header Row */}
               <div className="flex items-start justify-between">
-                <div>
-                  <Link
-                    href={`/claims/${claim.id}`}
-                    className="text-blue-600 hover:underline font-mono font-medium text-sm"
-                  >
-                    {formatClaimId(claim.id)}
-                  </Link>
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    checked={selectedClaims.has(claim.id)}
+                    onCheckedChange={() => toggleClaim(claim.id)}
+                    className="mt-1"
+                  />
+                  <div>
+                    <Link
+                      href={`/claims/${claim.id}`}
+                      className="text-blue-600 hover:underline font-mono font-medium text-sm"
+                    >
+                      {formatClaimId(claim.id)}
+                    </Link>
                   <div className="text-xs text-gray-500 mt-1">
                     {claim.createdAt ? dayjs(claim.createdAt).format('YYYY-MM-DD HH:mm') : 'N/A'}
                   </div>
                   {claim.approvedAt && (
-                    <div className="text-xs text-green-600 mt-0.5">
-                      Approved: {dayjs(claim.approvedAt).format('YYYY-MM-DD HH:mm')}
-                    </div>
-                  )}
+                      <div className="text-xs text-green-600 mt-0.5">
+                        Approved: {dayjs(claim.approvedAt).format('YYYY-MM-DD HH:mm')}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="font-mono font-bold text-lg">
@@ -240,6 +291,16 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={isAllSelected}
+                  ref={(el) => {
+                    if (el) el.dataset.indeterminate = String(isPartialSelected)
+                  }}
+                  className={isPartialSelected ? 'data-[state=checked]:bg-blue-600' : ''}
+                  onCheckedChange={toggleAll}
+                />
+              </TableHead>
               <TableHead>Claim ID</TableHead>
               <TableHead>Employee</TableHead>
               <TableHead>Date</TableHead>
@@ -253,9 +314,15 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
           <TableBody>
           {claims.length > 0 ? (
             claims.map((claim) => (
-              <TableRow key={claim.id}>
+              <TableRow key={claim.id} className={selectedClaims.has(claim.id) ? 'bg-blue-50' : ''}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedClaims.has(claim.id)}
+                    onCheckedChange={() => toggleClaim(claim.id)}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">
-                  <Link 
+                  <Link
                     href={`/claims/${claim.id}`}
                     className="text-blue-600 hover:underline"
                   >
@@ -378,7 +445,7 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                 No claims found
               </TableCell>
             </TableRow>
