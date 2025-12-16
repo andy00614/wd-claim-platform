@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import Link from 'next/link'
 import { BarChart3, Check, Eye, MoreHorizontal, Pencil, X } from 'lucide-react'
@@ -43,6 +43,15 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
   const [newNotes, setNewNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [selectedClaims, setSelectedClaims] = useState<Set<number>>(new Set())
+  const selectedTotalAmount = useMemo(() => {
+    if (selectedClaims.size === 0) return 0
+    return claims.reduce((sum, claim) => {
+      if (!selectedClaims.has(claim.id)) return sum
+      const value = Number.parseFloat(claim.totalAmount || '0')
+      if (Number.isNaN(value)) return sum
+      return sum + value
+    }, 0)
+  }, [claims, selectedClaims])
 
   const toggleClaim = (claimId: number) => {
     setSelectedClaims((prev) => {
@@ -119,9 +128,14 @@ export default function AdminClaimsTable({ claims }: AdminClaimsTableProps) {
       {/* Selected Count Display */}
       {selectedClaims.size > 0 && (
         <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
-          <span className="text-blue-700 font-medium">
-            已勾选 <span className="text-lg font-bold">{selectedClaims.size}</span> 条记录
-          </span>
+          <div className="text-blue-700 font-medium space-y-0.5">
+            <div>
+              已勾选 <span className="text-lg font-bold">{selectedClaims.size}</span> 条记录
+            </div>
+            <div className="text-sm text-blue-800">
+              总金额 SGD <span className="font-semibold">{selectedTotalAmount.toFixed(2)}</span>
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => setSelectedClaims(new Set())}

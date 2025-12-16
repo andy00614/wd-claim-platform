@@ -10,6 +10,8 @@ interface PdfPreviewProps {
   fileName: string
   maxPages?: number
   className?: string
+  onReady?: () => void
+  onError?: (message: string) => void
 }
 
 interface PdfPage {
@@ -19,18 +21,26 @@ interface PdfPage {
   height: number
 }
 
-export default function PdfPreview({ url, fileName, maxPages = 3, className = '' }: PdfPreviewProps) {
+export default function PdfPreview({
+  url,
+  fileName,
+  maxPages = 3,
+  className = '',
+  onReady,
+  onError,
+}: PdfPreviewProps) {
   const [pages, setPages] = useState<PdfPage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadPdfPages()
-  }, [])
+  }, [url, maxPages])
 
   const loadPdfPages = async () => {
     setLoading(true)
     setError(null)
+    let wasSuccessful = false
 
     try {
       const convertedPages = await convertPdfToImages({
@@ -39,11 +49,16 @@ export default function PdfPreview({ url, fileName, maxPages = 3, className = ''
         scale: 2.0
       })
       setPages(convertedPages)
+      wasSuccessful = true
+      onReady?.()
     } catch (err) {
       console.error('Failed to convert PDF:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load PDF preview')
+      const message = err instanceof Error ? err.message : 'Failed to load PDF preview'
+      setError(message)
+      onError?.(message)
     } finally {
       setLoading(false)
+      if (!wasSuccessful) onReady?.()
     }
   }
 

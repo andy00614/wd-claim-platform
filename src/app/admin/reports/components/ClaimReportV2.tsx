@@ -1,6 +1,13 @@
 "use client";
 
-import { Fragment, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { addMonths, format } from "date-fns";
 import dynamic from "next/dynamic";
 import { useReactToPrint } from "react-to-print";
@@ -411,6 +418,25 @@ export default function ClaimReportV2({
   }, [attachments, items]);
 
   const attachmentCount = allAttachmentsWithContext.length;
+  const [loadedAttachmentIds, setLoadedAttachmentIds] = useState<Set<number>>(
+    new Set(),
+  );
+  useEffect(() => {
+    setLoadedAttachmentIds(new Set());
+  }, [attachmentCount]);
+
+  const handleAttachmentPreviewDone = useCallback((attachmentId: number) => {
+    setLoadedAttachmentIds((prev) => {
+      if (prev.has(attachmentId)) return prev;
+      const next = new Set(prev);
+      next.add(attachmentId);
+      return next;
+    });
+  }, []);
+
+  const attachmentsLoadedCount = loadedAttachmentIds.size;
+  const isPrintReady =
+    attachmentCount === 0 || attachmentsLoadedCount >= attachmentCount;
   const claimedAmountDisplay = totalSgdAmount.toFixed(2);
   const postingDateDisplay = formatDateValue(claim.approvedAt) || "dd/mm/yyyy";
   const statusLabel = claim.status
@@ -420,6 +446,11 @@ export default function ClaimReportV2({
     () => format(new Date(), "dd MMM yyyy, HH:mm"),
     [],
   );
+
+  const handlePrintClick = () => {
+    if (!isPrintReady) return;
+    handlePrint();
+  };
 
   const handleCsvRowChange = (
     index: number,
@@ -563,10 +594,12 @@ export default function ClaimReportV2({
       <ReportActionBar
         attachmentCount={attachmentCount}
         claimId={claim.id}
+        isPrintReady={isPrintReady}
+        loadedAttachments={attachmentsLoadedCount}
         onBack={() => window.history.back()}
         onExportHtml={handleExportHTML}
         onOpenCsv={handleCsvDialogOpen}
-        onPrint={handlePrint}
+        onPrint={handlePrintClick}
       />
 
       <div className="bg-slate-50 print:bg-white">
@@ -590,6 +623,7 @@ export default function ClaimReportV2({
             <AttachmentsSection
               attachmentsWithContext={allAttachmentsWithContext}
               attachmentCount={attachmentCount}
+              onAttachmentReady={handleAttachmentPreviewDone}
               claimId={claim.id}
             />
           </div>
@@ -610,6 +644,8 @@ export default function ClaimReportV2({
 type ReportActionBarProps = {
   claimId: number;
   attachmentCount: number;
+  loadedAttachments: number;
+  isPrintReady: boolean;
   onBack: () => void;
   onPrint: () => void;
   onExportHtml: () => void;
@@ -619,6 +655,8 @@ type ReportActionBarProps = {
 function ReportActionBar({
   claimId,
   attachmentCount,
+  loadedAttachments,
+  isPrintReady,
   onBack,
   onPrint,
   onExportHtml,
@@ -635,6 +673,11 @@ function ReportActionBar({
             {formatClaimId(claimId)} • {attachmentCount} attachments • Optimized
             for printing
           </p>
+          {!isPrintReady && attachmentCount > 0 && (
+            <p className="text-xs text-amber-600">
+              Loading attachments {loadedAttachments}/{attachmentCount} for print...
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -648,10 +691,11 @@ function ReportActionBar({
           <Button
             variant="outline"
             onClick={onPrint}
+            disabled={!isPrintReady}
             className="flex items-center gap-2"
           >
             <Printer className="h-4 w-4" />
-            Print
+            {isPrintReady ? "Print" : "Loading assets..."}
           </Button>
           <Button onClick={onExportHtml} className="flex items-center gap-2">
             <FileDown className="h-4 w-4" />
@@ -931,12 +975,14 @@ type AttachmentsSectionProps = {
   attachmentsWithContext: AttachmentWithContext[];
   attachmentCount: number;
   claimId: number;
+  onAttachmentReady?: (attachmentId: number) => void;
 };
 
 function AttachmentsSection({
   attachmentsWithContext,
   attachmentCount,
   claimId,
+  onAttachmentReady,
 }: AttachmentsSectionProps) {
   if (attachmentCount === 0) {
     return (
@@ -990,7 +1036,7 @@ function AttachmentsSection({
               </div>
             </header>
             <div className="attachment-content flex min-h-[420px] flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white p-6 print:border-none print:rounded-none print:min-h-0">
-              {renderFilePreview(attachment)}
+              {renderFilePreview(attachment, onAttachmentReady)}
             </div>
           </section>
         ),
@@ -999,7 +1045,10 @@ function AttachmentsSection({
   );
 }
 
-const renderFilePreview = (attachment: Attachment) => {
+const renderFilePreview = (
+  attachment: Attachment,
+  onAttachmentReady?: (attachmentId: number) => void,
+) => {
   if (isImageFile(attachment.fileType, attachment.fileName)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -1015,7 +1064,9 @@ const renderFilePreview = (attachment: Attachment) => {
             "attachment-placeholder flex flex-col items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500";
           fallback.textContent = "Preview not available";
           target.parentNode?.appendChild(fallback);
+          onAttachmentReady?.(attachment.id);
         }}
+        onLoad={() => onAttachmentReady?.(attachment.id)}
       />
     );
   }
@@ -1027,11 +1078,13 @@ const renderFilePreview = (attachment: Attachment) => {
           url={attachment.url}
           fileName={attachment.fileName}
           maxPages={10}
+          onReady={() => onAttachmentReady?.(attachment.id)}
         />
       </div>
     );
   }
 
+  onAttachmentReady?.(attachment.id);
   return (
     <div className="attachment-placeholder flex flex-col items-center gap-4 text-center">
       <FileText className="h-12 w-12 text-slate-400" />
