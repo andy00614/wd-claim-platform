@@ -3,6 +3,7 @@ import { formatClaimId } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import dayjs from 'dayjs'
 import SubmitDraftForm from './components/SubmitDraftForm'
+import { submitDraftAction } from './actions'
 
 interface SubmitDraftPageProps {
   params: Promise<{ id: string }>
@@ -78,7 +79,7 @@ export default async function SubmitDraftPage({ params }: SubmitDraftPageProps) 
         )}
 
         {/* 提交表单 */}
-        <SubmitDraftForm draftId={draftId} />
+        <SubmitDraftForm draftId={draftId} submitDraftAction={submitDraftAction} />
       </div>
     </div>
   )

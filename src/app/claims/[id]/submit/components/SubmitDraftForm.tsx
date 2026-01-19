@@ -6,38 +6,14 @@ import { useEffect } from 'react'
 
 interface SubmitDraftFormProps {
   draftId: number
+  submitDraftAction: (prevState: any, formData: FormData) => Promise<{
+    success: boolean
+    message?: string
+    error?: string
+  }>
 }
 
-// Server action to submit draft
-async function submitDraftAction(prevState: any, formData: FormData) {
-  const draftId = parseInt(formData.get('draftId') as string, 10)
-  
-  try {
-    // Here we need to import the required functions
-    const { updateClaimStatus } = await import('@/lib/actions')
-    
-    const result = await updateClaimStatus(draftId, 'submitted')
-    
-    if (result.success) {
-      return {
-        success: true,
-        message: '草稿已成功提交！'
-      }
-    } else {
-      return {
-        success: false,
-        error: result.error || '提交失败'
-      }
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: '提交失败'
-    }
-  }
-}
-
-export default function SubmitDraftForm({ draftId }: SubmitDraftFormProps) {
+export default function SubmitDraftForm({ draftId, submitDraftAction }: SubmitDraftFormProps) {
   const router = useRouter()
   const [state, formAction] = useActionState(submitDraftAction, { success: false, error: '' })
 
