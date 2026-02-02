@@ -94,10 +94,6 @@ export default function CurrentItems({
   existingAttachments = [],
   isEditMode = false,
 }: CurrentItemsProps) {
-  if (items.length === 0) {
-    return null
-  }
-
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<ExpenseItem | null>(null)
   const [formState, setFormState] = useState<EditFormState | null>(null)
@@ -280,6 +276,10 @@ export default function CurrentItems({
 
       return next
     })
+  }
+
+  if (items.length === 0) {
+    return null
   }
 
   return (
