@@ -6,7 +6,8 @@ import { useActionState, useEffect, useMemo, useState, useTransition } from 'rea
 import { toast } from "sonner"
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { saveDraft, submitClaim, updateClaim, uploadClaimFiles, uploadItemAttachments } from '@/lib/actions'
+import { saveDraft, submitClaim, updateClaim, saveAttachmentRecords } from '@/lib/actions'
+import { uploadClaimFile, uploadItemFile } from '@/lib/upload'
 import { formatClaimId } from '@/lib/utils'
 import { generateTempId } from '@/lib/idGenerator'
 import type { ClaimAttachment, ExpenseItem } from '../page'
@@ -102,58 +103,61 @@ export default function ClaimForm({
     if (currentState.success && currentState.data?.claimId && currentState.data?.insertedItems) {
       const handleFileUpload = async () => {
         try {
-          // 1. 上传claim级别的附件（如果有）
+          const claimId = currentState.data.claimId
+          const allRecords: Array<{
+            claimId?: number | null
+            claimItemId?: number | null
+            fileName: string
+            url: string
+            fileSize: string
+            fileType: string
+          }> = []
+
+          // 1. 客户端直传 claim 级别附件到 Supabase Storage
           if (attachedFiles.length > 0) {
-            const uploadResult = await uploadClaimFiles(currentState.data.claimId, attachedFiles)
-            if (!uploadResult.success) {
-              toast.error(`申请文件上传失败: ${uploadResult.error}`)
-            }
+            const results = await Promise.all(
+              attachedFiles.map((file) => uploadClaimFile(claimId, file))
+            )
+            allRecords.push(...results.map((r) => ({ ...r, claimId, claimItemId: null })))
           }
 
-          // 2. 上传item级别的附件
+          // 2. 客户端直传 item 级别附件
           const insertedItems = Array.isArray(currentState.data.insertedItems)
             ? currentState.data.insertedItems as Array<{ id: number }>
             : []
 
-          console.log('[ClaimForm] insertedItems:', insertedItems)
-          console.log('[ClaimForm] expenseItems length:', expenseItems.length)
+          for (const [index, insertedItem] of insertedItems.entries()) {
+            const itemFiles = (expenseItems[index]?.attachments || []).filter(
+              (a): a is File => a instanceof File
+            )
+            if (itemFiles.length === 0) continue
 
-          const itemsWithAttachments = insertedItems
-            .map((insertedItem, index) => {
-              const itemAttachments = (expenseItems[index]?.attachments || []).filter(
-                (attachment): attachment is File => attachment instanceof File
-              )
-              console.log(`[ClaimForm] Mapping item ${index}: insertedItem.id=${insertedItem.id}, attachments=${itemAttachments.length}`)
-              return {
-                id: insertedItem.id,
-                attachments: itemAttachments
-              }
-            })
-            .filter(item => item.attachments.length > 0)
+            const results = await Promise.all(
+              itemFiles.map((file) => uploadItemFile(insertedItem.id, file))
+            )
+            allRecords.push(
+              ...results.map((r) => ({ ...r, claimId: null, claimItemId: insertedItem.id }))
+            )
+          }
 
-          console.log('[ClaimForm] itemsWithAttachments:', itemsWithAttachments.map(i => ({ id: i.id, count: i.attachments.length })))
-
-          if (itemsWithAttachments.length > 0) {
-            const itemUploadResult = await uploadItemAttachments(itemsWithAttachments)
-            if (!itemUploadResult.success) {
-              toast.error(`项目附件上传失败: ${itemUploadResult.error}`)
+          // 3. 批量保存附件元数据到数据库
+          if (allRecords.length > 0) {
+            const saveResult = await saveAttachmentRecords(allRecords)
+            if (!saveResult.success) {
+              toast.error(`附件记录保存失败: ${saveResult.error}`)
             }
           }
 
-          // 清空表单
           setExpenseItems([])
           setAttachedFiles([])
 
-          // 根据操作类型显示不同的成功消息
           if (actionType === 'submit') {
             toast.success(`费用申请提交成功！申请ID: ${currentState.data?.claimId}`)
-            // 可以重定向到claims页面
             setTimeout(() => {
               window.location.href = '/claims'
             }, 1000)
           } else if (actionType === 'draft') {
             toast.success(`草稿保存成功！草稿ID: ${currentState.data?.claimId}`)
-            // 保存草稿后也跳转到claims页面
             setTimeout(() => {
               router.push('/claims')
             }, 1000)
@@ -178,52 +182,51 @@ export default function ClaimForm({
     if (updateState.success && updateState.data?.claimId) {
       const handlePostUpdate = async () => {
         try {
-          // 1. 上传claim级别的附件（如果有）
+          const claimId = updateState.data.claimId
+          const allRecords: Array<{
+            claimId?: number | null
+            claimItemId?: number | null
+            fileName: string
+            url: string
+            fileSize: string
+            fileType: string
+          }> = []
+
+          // 1. 客户端直传 claim 级别附件
           if (attachedFiles.length > 0) {
-            const claimUploadResult = await uploadClaimFiles(updateState.data.claimId, attachedFiles)
-            if (!claimUploadResult.success) {
-              toast.error(`申请文件上传失败: ${claimUploadResult.error}`)
-            }
+            const results = await Promise.all(
+              attachedFiles.map((file) => uploadClaimFile(claimId, file))
+            )
+            allRecords.push(...results.map((r) => ({ ...r, claimId, claimItemId: null })))
           }
 
-          // 2. 上传item级别的新附件
+          // 2. 客户端直传 item 级别新附件
           const insertedItems = Array.isArray(updateState.data.insertedItems)
             ? updateState.data.insertedItems as Array<{ id: number }>
             : []
 
-          console.log('[ClaimForm Update] insertedItems:', insertedItems)
-          console.log('[ClaimForm Update] expenseItems:', expenseItems.length)
+          for (const [index, insertedItem] of insertedItems.entries()) {
+            const expenseItem = expenseItems[index]
+            if (!expenseItem) continue
 
-          const itemsWithAttachments = insertedItems
-            .map((insertedItem, index) => {
-              const expenseItem = expenseItems[index]
-              if (!expenseItem) {
-                console.warn(`[ClaimForm Update] No expenseItem at index ${index}`)
-                return null
-              }
-
-              // 只获取新上传的文件（File对象），不包括已存在的附件
-              const newFileAttachments = (expenseItem.attachments || []).filter(
-                (attachment): attachment is File => attachment instanceof File
-              )
-
-              console.log(`[ClaimForm Update] Item ${index}: insertedId=${insertedItem.id}, newFiles=${newFileAttachments.length}`)
-
-              return {
-                id: insertedItem.id,
-                attachments: newFileAttachments
-              }
-            })
-            .filter((item): item is { id: number; attachments: File[] } =>
-              item !== null && item.attachments.length > 0
+            const newFiles = (expenseItem.attachments || []).filter(
+              (a): a is File => a instanceof File
             )
+            if (newFiles.length === 0) continue
 
-          console.log('[ClaimForm Update] itemsWithAttachments:', itemsWithAttachments.map(i => ({ id: i.id, count: i.attachments.length })))
+            const results = await Promise.all(
+              newFiles.map((file) => uploadItemFile(insertedItem.id, file))
+            )
+            allRecords.push(
+              ...results.map((r) => ({ ...r, claimId: null, claimItemId: insertedItem.id }))
+            )
+          }
 
-          if (itemsWithAttachments.length > 0) {
-            const itemUploadResult = await uploadItemAttachments(itemsWithAttachments)
-            if (!itemUploadResult.success) {
-              toast.error(`项目附件上传失败: ${itemUploadResult.error}`)
+          // 3. 批量保存附件元数据
+          if (allRecords.length > 0) {
+            const saveResult = await saveAttachmentRecords(allRecords)
+            if (!saveResult.success) {
+              toast.error(`附件记录保存失败: ${saveResult.error}`)
             }
           }
 

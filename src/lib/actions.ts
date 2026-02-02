@@ -979,6 +979,41 @@ export async function uploadClaimFiles(claimId: number, files: File[]) {
   }
 }
 
+// 保存附件元数据到数据库（文件已从客户端直传 Supabase Storage）
+export async function saveAttachmentRecords(
+  records: Array<{
+    claimId?: number | null
+    claimItemId?: number | null
+    fileName: string
+    url: string
+    fileSize: string
+    fileType: string
+  }>
+) {
+  try {
+    if (records.length === 0) return { success: true, data: [] }
+
+    const inserted = await db
+      .insert(attachment)
+      .values(
+        records.map((r) => ({
+          claimId: r.claimId ?? null,
+          claimItemId: r.claimItemId ?? null,
+          fileName: r.fileName,
+          url: r.url,
+          fileSize: r.fileSize,
+          fileType: r.fileType,
+        }))
+      )
+      .returning()
+
+    return { success: true, data: inserted }
+  } catch (error) {
+    console.error('saveAttachmentRecords error:', error)
+    return { success: false, error: '附件记录保存失败' }
+  }
+}
+
 // 删除文件
 export async function deleteClaimFile(attachmentId: number) {
   try {
