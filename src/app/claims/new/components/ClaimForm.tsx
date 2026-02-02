@@ -91,6 +91,14 @@ export default function ClaimForm({
     if (isEditMode) return
     const currentState = actionType === 'submit' ? submitState : draftState
 
+    // 处理 server action 错误 - 重置 loading 状态
+    if (currentState.error) {
+      toast.error(currentState.error)
+      setIsLoading(false)
+      setActionType(null)
+      return
+    }
+
     if (currentState.success && currentState.data?.claimId && currentState.data?.insertedItems) {
       const handleFileUpload = async () => {
         try {
@@ -151,18 +159,18 @@ export default function ClaimForm({
             }, 1000)
           }
 
-          setActionType(null)
-          setIsLoading(false)
         } catch (error) {
           console.error('File upload error:', error)
           toast.error('文件上传失败')
+        } finally {
+          setActionType(null)
           setIsLoading(false)
         }
       }
 
       handleFileUpload()
     }
-  }, [submitState.success, draftState.success, actionType, isEditMode])
+  }, [submitState.success, submitState.error, draftState.success, draftState.error, actionType, isEditMode])
 
   useEffect(() => {
     if (!isEditMode) return
