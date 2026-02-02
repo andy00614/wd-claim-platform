@@ -17,8 +17,8 @@ import {
 import { toast } from 'sonner'
 
 const MAX_ATTACHMENT_COUNT_SINGLE = 1
-const MAX_ATTACHMENT_COUNT_BATCH = 20
-const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+const MAX_ATTACHMENT_COUNT_BATCH = 100
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -221,7 +221,7 @@ export default function SmartFileUpload({
       const isPdf = file.type === 'application/pdf'
 
       if (file.size > maxSize) {
-        toast.error(`File "${file.name}" exceeds the 2MB limit. Please compress and upload again.`)
+        toast.error(`File "${file.name}" exceeds the 10MB limit. Please compress and upload again.`)
         return false
       }
 
@@ -436,7 +436,7 @@ export default function SmartFileUpload({
                   {mode === 'batch' ? 'Drag or paste receipts here' : 'Drag or paste a receipt here'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Supports JPG / PNG / HEIC / PDF (≤2MB){mode === 'batch' && `, up to ${maxAttachmentCount} files`}
+                  Supports JPG / PNG / HEIC / PDF (≤10MB){mode === 'batch' && `, up to ${maxAttachmentCount} files`}
                 </p>
               </div>
             </div>
