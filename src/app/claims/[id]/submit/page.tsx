@@ -1,7 +1,6 @@
 import { loadDraft } from '@/lib/actions'
-import { formatClaimId } from '@/lib/utils'
+import { formatClaimDate, formatClaimDateTime, formatClaimId } from '@/lib/utils'
 import { redirect } from 'next/navigation'
-import dayjs from 'dayjs'
 import SubmitDraftForm from './components/SubmitDraftForm'
 import { submitDraftAction } from './actions'
 
@@ -35,8 +34,8 @@ export default async function SubmitDraftPage({ params }: SubmitDraftPageProps) 
           <h3 className="text-lg font-semibold mb-4">Draft Information</h3>
           <div className="text-sm space-y-2">
             <div><strong>Draft ID:</strong> {formatClaimId(draft.id)}</div>
-            <div><strong>Created:</strong> {draft.createdAt ? dayjs(draft.createdAt).format('YYYY-MM-DD HH:mm') : 'N/A'}</div>
-            <div><strong>Last Updated:</strong> {draft.updatedAt ? dayjs(draft.updatedAt).format('YYYY-MM-DD HH:mm') : 'N/A'}</div>
+            <div><strong>Created:</strong> {formatClaimDateTime(draft.createdAt)}</div>
+            <div><strong>Last Updated:</strong> {formatClaimDateTime(draft.updatedAt)}</div>
             <div><strong>Total Amount:</strong> SGD {parseFloat(draft.totalAmount).toFixed(2)}</div>
             <div><strong>Items Count:</strong> {items.length}</div>
           </div>
@@ -63,7 +62,7 @@ export default async function SubmitDraftPage({ params }: SubmitDraftPageProps) 
                   <tbody>
                     {items.map((item) => (
                       <tr key={item.id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="p-3">{item.date ? dayjs(item.date).format('YYYY-MM-DD HH:mm') : 'N/A'}</td>
+                        <td className="p-3">{formatClaimDate(item.date)}</td>
                         <td className="p-3">{item.itemTypeNo}</td>
                         <td className="p-3">{item.note}</td>
                         <td className="p-3">{item.currencyCode}</td>

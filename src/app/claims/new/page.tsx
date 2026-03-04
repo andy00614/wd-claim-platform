@@ -1,4 +1,5 @@
 import { getClaimDetails, getCurrentEmployee, getFormInitData } from '@/lib/actions'
+import { formatClaimMonthDay } from '@/lib/utils'
 import ClaimForm from './components/ClaimForm'
 
 export interface ClaimAttachment {
@@ -85,10 +86,9 @@ export default async function NewClaimPage({ searchParams }: NewClaimPageProps) 
 
     // 使用数据库的真实 ID，保持数据稳定性
     initialItems = claimDetails.data.items.map((item) => {
-      const itemDate = item.date ? new Date(item.date) : new Date()
       return {
         id: item.id, // 使用数据库 ID，不是临时 ID
-        date: `${(itemDate.getMonth() + 1).toString().padStart(2, '0')}/${itemDate.getDate().toString().padStart(2, '0')}`,
+        date: formatClaimMonthDay(item.date),
         itemNo: item.itemTypeNo,
         details: item.details || '',
         currency: item.currencyCode,

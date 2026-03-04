@@ -8,9 +8,24 @@ import { eq, inArray, and, desc, sql } from 'drizzle-orm'
 
 const STORAGE_BUCKET = 'wd-attachments'
 
-// 智能日期解析函数 - 支持 MM/dd/yyyy 和 MM/dd 格式
+// 智能日期解析函数 - 支持 YYYY-MM-DD、MM/dd/yyyy 和 MM/dd 格式
 function parseSmartDate(dateStr: string): Date {
   try {
+    // ISO 格式: YYYY-MM-DD
+    if (dateStr.includes('-')) {
+      const parts = dateStr.split('-')
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10)
+        const month = parseInt(parts[1], 10)
+        const day = parseInt(parts[2], 10)
+        if (!Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)
+          && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          return new Date(year, month - 1, day)
+        }
+      }
+    }
+
+    // 兼容旧的 MM/dd 或 MM/dd/yyyy 格式
     const parts = dateStr.split('/')
     if (parts.length < 2) {
       throw new Error(`Invalid date format: ${dateStr}`)
@@ -26,7 +41,6 @@ function parseSmartDate(dateStr: string): Date {
       throw new Error(`Date components out of range: ${dateStr}`)
     }
 
-    // 如果有年份，直接使用
     if (parts.length === 3 && parts[2]) {
       const year = parseInt(parts[2], 10)
       if (!Number.isNaN(year)) {
@@ -37,26 +51,33 @@ function parseSmartDate(dateStr: string): Date {
     // 只有 MM/dd 格式，需要智能推断年份
     const today = new Date()
     const currentYear = today.getFullYear()
-
-    // 先尝试当前年份
     let candidateDate = new Date(currentYear, month - 1, day)
 
-    // 如果日期在未来超过30天，可能是去年的
     const daysDiff = (candidateDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
     if (daysDiff > 30) {
       candidateDate = new Date(currentYear - 1, month - 1, day)
-    }
-    // 如果日期在过去超过335天（约11个月），可能是明年的
-    else if (daysDiff < -335) {
+    } else if (daysDiff < -335) {
       candidateDate = new Date(currentYear + 1, month - 1, day)
     }
 
     return candidateDate
   } catch (error) {
     console.error('Failed to parse date:', dateStr, error)
-    // 如果解析失败，返回当前日期作为 fallback
     return new Date()
   }
+}
+
+function toDateOnlyValue(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function toClaimItemTimestampValue(dateStr: string) {
+  const parsedDate = parseSmartDate(dateStr)
+  const dateOnly = toDateOnlyValue(parsedDate)
+  return sql`(${dateOnly}::date)::timestamp`
 }
 
 function getStoragePathFromPublicUrl(urlString: string) {
@@ -114,14 +135,10 @@ export async function saveDraft(prevState: any, formData: FormData) {
         const currencyMap = Object.fromEntries(currencies.map(c => [c.code, c.id]))
 
         const claimItemsData = expenseItems.map((item: any) => {
-          const [month, day] = item.date.split('/')
-          const currentYear = new Date().getFullYear()
-          const itemDate = new Date(currentYear, parseInt(month) - 1, parseInt(day))
-
           return {
             claimId: newClaim.id,
             employeeId,
-            date: itemDate,
+            date: toClaimItemTimestampValue(item.date),
             type: itemTypeMap[item.itemNo],
             note: item.note,
             details: item.details,
@@ -200,12 +217,10 @@ export async function submitClaim(prevState: any, formData: FormData) {
 
       // 3. 创建申请项目记录
       const claimItemsData = expenseItems.map((item: any) => {
-        const itemDate = parseSmartDate(item.date)
-
         return {
           claimId: newClaim.id,
           employeeId,
-          date: itemDate,
+          date: toClaimItemTimestampValue(item.date),
           type: itemTypeMap[item.itemNo],
           note: item.note,
           details: item.details,
@@ -706,12 +721,6 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
 
       // 4. 插入新的申请项目
       const claimItemsData = expenseItems.map((item: any, index: number) => {
-        const [month = '0', day = '0'] = (item.date || '').split('/').map((part: string) => part.trim())
-        const currentYear = new Date().getFullYear()
-        const parsedMonth = parseInt(month, 10)
-        const parsedDay = parseInt(day, 10)
-        const itemDate = new Date(currentYear, Number.isNaN(parsedMonth) ? 0 : parsedMonth - 1, Number.isNaN(parsedDay) ? 1 : parsedDay)
-
         const rawItemNo = (item.itemNo || '').split('–')[0].split('-')[0].trim()
         const itemTypeId = itemTypeMap[rawItemNo]
         if (!itemTypeId) {
@@ -741,7 +750,7 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
         return {
           claimId,
           employeeId,
-          date: itemDate,
+          date: toClaimItemTimestampValue(item.date || ''),
           type: itemTypeId,
           note: item.note ?? null,
           details: item.details ?? null,

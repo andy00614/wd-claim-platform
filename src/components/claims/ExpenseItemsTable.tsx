@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react"
 import { FileText, Info, Paperclip, Pencil, Trash2 } from "lucide-react"
-import dayjs from "dayjs"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -14,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
+import { cn, formatClaimDate } from "@/lib/utils"
 
 export interface ExpenseItemsTableAttachment {
   id: number | string
@@ -97,20 +96,7 @@ const formatDate = (value: ExpenseItemsTableItemBase["date"]) => {
   if (!value) {
     return "N/A"
   }
-
-  if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) {
-      return "N/A"
-    }
-    return dayjs(value).format('YYYY-MM-DD HH:mm')
-  }
-
-  if (typeof value === 'string') {
-    const parsed = dayjs(value)
-    return parsed.isValid() ? parsed.format('YYYY-MM-DD HH:mm') : value
-  }
-
-  return value
+  return formatClaimDate(value)
 }
 
 export default function ExpenseItemsTable<

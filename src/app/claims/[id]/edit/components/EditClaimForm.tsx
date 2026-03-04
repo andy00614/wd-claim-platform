@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useActionState } from 'react'
 import { updateClaim } from '@/lib/actions'
-import { formatClaimId } from '@/lib/utils'
+import { formatClaimId, formatClaimMonthDay } from '@/lib/utils'
 import { generateTempId } from '@/lib/idGenerator'
 import ExpenseForm from '@/app/claims/new/components/ExpenseForm'
 import CurrentItems from '@/app/claims/new/components/CurrentItems'
@@ -85,10 +85,9 @@ export default function EditClaimForm({
   // 将现有项目转换为表单格式
   // 使用数据库的真实 ID，保持数据稳定性
   const convertedItems: ExpenseItem[] = existingItems.map((item) => {
-    const itemDate = item.date ? new Date(item.date) : new Date()
     return {
       id: item.id, // 使用数据库 ID，不是临时 ID
-      date: `${(itemDate.getMonth() + 1).toString().padStart(2, '0')}/${itemDate.getDate().toString().padStart(2, '0')}`,
+      date: formatClaimMonthDay(item.date),
       itemNo: item.itemTypeNo,
       details: item.details || '',
       currency: item.currencyCode,
