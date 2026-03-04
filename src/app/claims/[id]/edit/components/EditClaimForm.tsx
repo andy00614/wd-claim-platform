@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useActionState } from 'react'
 import { updateClaim } from '@/lib/actions'
-import { formatClaimId, formatClaimMonthDay } from '@/lib/utils'
+import { formatClaimDate, formatClaimId } from '@/lib/utils'
 import { generateTempId } from '@/lib/idGenerator'
 import ExpenseForm from '@/app/claims/new/components/ExpenseForm'
 import CurrentItems from '@/app/claims/new/components/CurrentItems'
@@ -87,7 +87,7 @@ export default function EditClaimForm({
   const convertedItems: ExpenseItem[] = existingItems.map((item) => {
     return {
       id: item.id, // 使用数据库 ID，不是临时 ID
-      date: formatClaimMonthDay(item.date),
+      date: formatClaimDate(item.date),
       itemNo: item.itemTypeNo,
       details: item.details || '',
       currency: item.currencyCode,

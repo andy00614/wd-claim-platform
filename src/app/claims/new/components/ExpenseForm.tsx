@@ -121,9 +121,22 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     }))
   }
 
-  // 智能日期解析函数 - 支持 MM/dd/yyyy 和 MM/dd 格式
+  // 智能日期解析函数 - 支持 YYYY-MM-DD、MM/dd/yyyy 和 MM/dd 格式
   const parseSmartDate = (dateStr: string): Date | null => {
     try {
+      if (dateStr.includes('-')) {
+        const parts = dateStr.split('-')
+        if (parts.length === 3) {
+          const year = Number.parseInt(parts[0], 10)
+          const month = Number.parseInt(parts[1], 10)
+          const day = Number.parseInt(parts[2], 10)
+
+          if (!Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+            return new Date(year, month - 1, day)
+          }
+        }
+      }
+
       const parts = dateStr.split('/')
       if (parts.length < 2) return null
 
@@ -254,7 +267,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
 
         // 创建新的expense item
         const newItem: Omit<ExpenseItem, 'id'> = {
-          date: itemDate ? format(itemDate, 'MM/dd') : format(new Date(), 'MM/dd'),
+          date: itemDate ? format(itemDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
           itemNo: aiData.itemNo || 'C2',
           details: aiData.details || '',
           currency: aiData.currency || 'SGD',
@@ -291,7 +304,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     }
 
     const item = {
-      date: format(date, 'MM/dd'),
+      date: format(date, 'yyyy-MM-dd'),
       itemNo: formData.itemNo,
       details: formData.details,
       currency: formData.currency,

@@ -75,7 +75,19 @@ const calculateForexRate = (sgdAmount: string, amount: string) => {
 const parseDateString = (value: string) => {
   if (!value) return new Date()
   try {
-    // Parse MM/dd format with current year
+    // ISO 格式: YYYY-MM-DD
+    if (value.includes('-')) {
+      const parts = value.split('-')
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10)
+        const month = parseInt(parts[1], 10)
+        const day = parseInt(parts[2], 10)
+        if (!Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+          return new Date(year, month - 1, day)
+        }
+      }
+    }
+    // 兼容旧的 MM/dd 格式
     const currentYear = new Date().getFullYear()
     return parse(value, 'MM/dd', new Date(currentYear, 0, 1))
   } catch (error) {
@@ -327,7 +339,7 @@ export default function CurrentItems({
               date={editingDate}
               dateDisplay={formState.date}
               onDateChange={(date) =>
-                handleFieldUpdate({ date: date ? format(date, 'MM/dd') : formState.date })
+                handleFieldUpdate({ date: date ? format(date, 'yyyy-MM-dd') : formState.date })
               }
               itemNo={formState.itemNo}
               onItemNoChange={(value) => handleFieldUpdate({ itemNo: value })}
