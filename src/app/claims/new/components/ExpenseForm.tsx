@@ -242,6 +242,14 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
     results.forEach((result) => {
       if (result.data) {
         const aiData = result.data
+
+        // 跳过金额为空或为 0 的 AI 分析结果，避免创建空记录
+        const parsedAmount = parseFloat(aiData.amount || '0')
+        if (!aiData.amount || parsedAmount <= 0) {
+          failCount++
+          return
+        }
+
         const itemDate = aiData.date ? parseSmartDate(aiData.date) : new Date()
 
         // 计算汇率和SGD金额
@@ -258,12 +266,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           forexRate = aiData.forexRate
         }
 
-        if (aiData.amount) {
-          sgdAmount = calculateSgdAmount(aiData.amount, forexRate)
-        } else if (aiData.sgdAmount) {
-          // 只有在没有金额时才使用 AI 提供的 SGD 金额
-          sgdAmount = aiData.sgdAmount
-        }
+        sgdAmount = calculateSgdAmount(aiData.amount, forexRate)
 
         // 创建新的expense item
         const newItem: Omit<ExpenseItem, 'id'> = {
@@ -271,7 +274,7 @@ export default function ExpenseForm({ itemTypes, currencies, exchangeRates, onAd
           itemNo: aiData.itemNo || 'C2',
           details: aiData.details || '',
           currency: aiData.currency || 'SGD',
-          amount: parseFloat(aiData.amount || '0'),
+          amount: parsedAmount,
           rate: parseFloat(forexRate),
           sgdAmount: parseFloat(sgdAmount),
           attachments: [result.file],

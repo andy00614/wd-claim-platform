@@ -2,7 +2,7 @@
 
 import { Loader2, Save } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useMemo, useState, useTransition } from 'react'
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from "sonner"
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -176,6 +176,12 @@ export default function ClaimForm({
     }
   }, [submitState.success, submitState.error, draftState.success, draftState.error, actionType, isEditMode])
 
+  // 用 ref 捕获最新的 expenseItems 和 attachedFiles，避免放入 useEffect 依赖导致重复触发
+  const expenseItemsRef = useRef(expenseItems)
+  expenseItemsRef.current = expenseItems
+  const attachedFilesRef = useRef(attachedFiles)
+  attachedFilesRef.current = attachedFiles
+
   useEffect(() => {
     if (!isEditMode) return
 
@@ -183,6 +189,8 @@ export default function ClaimForm({
       const handlePostUpdate = async () => {
         try {
           const claimId = updateState.data.claimId
+          const currentAttachedFiles = attachedFilesRef.current
+          const currentExpenseItems = expenseItemsRef.current
           const allRecords: Array<{
             claimId?: number | null
             claimItemId?: number | null
@@ -193,9 +201,9 @@ export default function ClaimForm({
           }> = []
 
           // 1. 客户端直传 claim 级别附件
-          if (attachedFiles.length > 0) {
+          if (currentAttachedFiles.length > 0) {
             const results = await Promise.all(
-              attachedFiles.map((file) => uploadClaimFile(claimId, file))
+              currentAttachedFiles.map((file) => uploadClaimFile(claimId, file))
             )
             allRecords.push(...results.map((r) => ({ ...r, claimId, claimItemId: null })))
           }
@@ -206,7 +214,7 @@ export default function ClaimForm({
             : []
 
           for (const [index, insertedItem] of insertedItems.entries()) {
-            const expenseItem = expenseItems[index]
+            const expenseItem = currentExpenseItems[index]
             if (!expenseItem) continue
 
             const newFiles = (expenseItem.attachments || []).filter(
@@ -256,8 +264,6 @@ export default function ClaimForm({
     updateState.data?.claimId,
     updateState.data?.insertedItems,
     updateState.error,
-    attachedFiles,
-    expenseItems,
     router
   ])
 

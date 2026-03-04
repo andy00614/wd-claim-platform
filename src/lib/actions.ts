@@ -5,6 +5,7 @@ import { claims, claimItems, itemType, currency, employees, userEmployeeBind, at
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { eq, inArray, and, desc, sql } from 'drizzle-orm'
+import { revalidatePath } from 'next/cache'
 
 const STORAGE_BUCKET = 'wd-attachments'
 
@@ -168,6 +169,8 @@ export async function saveDraft(prevState: any, formData: FormData) {
       }
     })
 
+    revalidatePath('/claims')
+
     return {
       success: true,
       message: '草稿保存成功',
@@ -241,6 +244,8 @@ export async function submitClaim(prevState: any, formData: FormData) {
         insertedItems
       }
     })
+
+    revalidatePath('/claims')
 
     return {
       success: true,
@@ -800,6 +805,9 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
         insertedItems
       }
     })
+
+    revalidatePath('/claims')
+    revalidatePath(`/claims/${claimId}`)
 
     return {
       success: true,
