@@ -81,6 +81,14 @@ function toClaimItemTimestampValue(dateStr: string) {
   return sql`(${dateOnly}::date)::timestamp`
 }
 
+function normalizeClientItemId(value: unknown, fallbackIndex: number) {
+  const parsed = typeof value === 'number' ? value : Number(value)
+  if (Number.isFinite(parsed)) {
+    return parsed
+  }
+  return -(fallbackIndex + 1)
+}
+
 function getStoragePathFromPublicUrl(urlString: string) {
   try {
     const parsedUrl = new URL(urlString)
@@ -151,13 +159,18 @@ export async function saveDraft(prevState: any, formData: FormData) {
           }
         })
 
-        const insertedItems = await tx.insert(claimItems).values(claimItemsData).returning()
+        const insertedItems = await tx.insert(claimItems).values(claimItemsData).returning({ id: claimItems.id })
+
+        const insertedItemMappings = insertedItems.map((insertedItem, index) => ({
+          id: insertedItem.id,
+          clientItemId: normalizeClientItemId(expenseItems[index]?.clientItemId, index),
+        }))
 
         return {
           claimId: newClaim.id,
           itemsCount: insertedItems.length,
           totalAmount,
-          insertedItems
+          insertedItems: insertedItemMappings
         }
       } else {
         return {
@@ -235,14 +248,19 @@ export async function submitClaim(prevState: any, formData: FormData) {
         }
       })
 
-      const insertedItems = await tx.insert(claimItems).values(claimItemsData).returning()
+        const insertedItems = await tx.insert(claimItems).values(claimItemsData).returning({ id: claimItems.id })
 
-      return {
-        claimId: newClaim.id,
-        itemsCount: insertedItems.length,
-        totalAmount,
-        insertedItems
-      }
+        const insertedItemMappings = insertedItems.map((insertedItem, index) => ({
+          id: insertedItem.id,
+          clientItemId: normalizeClientItemId(expenseItems[index]?.clientItemId, index),
+        }))
+
+        return {
+          claimId: newClaim.id,
+          itemsCount: insertedItems.length,
+          totalAmount,
+          insertedItems: insertedItemMappings
+        }
     })
 
     revalidatePath('/claims')
@@ -802,7 +820,10 @@ export async function updateClaim(claimId: number, _prevState: any, formData: Fo
         claimId,
         itemsCount: claimItemsData.length,
         totalAmount,
-        insertedItems
+        insertedItems: insertedItems.map((insertedItem, index) => ({
+          id: insertedItem.id,
+          clientItemId: normalizeClientItemId(expenseItems[index]?.clientItemId, index),
+        }))
       }
     })
 
@@ -1010,6 +1031,19 @@ export async function saveAttachmentRecords(
   try {
     if (records.length === 0) return { success: true, data: [] }
 
+    const claimItemIds = records
+      .map((record) => record.claimItemId)
+      .filter((claimItemId): claimItemId is number => typeof claimItemId === 'number')
+
+    if (claimItemIds.length > 0) {
+      console.log('saveAttachmentRecords payload:', records.map((record) => ({
+        claimId: record.claimId ?? null,
+        claimItemId: record.claimItemId ?? null,
+        fileName: record.fileName,
+        fileType: record.fileType,
+      })))
+    }
+
     const inserted = await db
       .insert(attachment)
       .values(
@@ -1026,7 +1060,17 @@ export async function saveAttachmentRecords(
 
     return { success: true, data: inserted }
   } catch (error) {
-    console.error('saveAttachmentRecords error:', error)
+    console.error('saveAttachmentRecords error:', {
+      error,
+      records: records.map((record) => ({
+        claimId: record.claimId ?? null,
+        claimItemId: record.claimItemId ?? null,
+        fileName: record.fileName,
+        url: record.url,
+        fileSize: record.fileSize,
+        fileType: record.fileType,
+      })),
+    })
     return { success: false, error: '附件记录保存失败' }
   }
 }

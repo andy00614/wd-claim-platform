@@ -59,6 +59,13 @@ export default function ClaimForm({
   const [updateState, updateFormAction] = useActionState(updateActionHandler, { success: false, error: '' })
   const router = useRouter()
 
+  const buildInsertedItemIdMap = (items: Array<{ id: number, clientItemId?: number | null }>) =>
+    new Map(
+      items
+        .filter((item) => typeof item.clientItemId === 'number')
+        .map((item) => [item.clientItemId as number, item.id])
+    )
+
   const addExpenseItem = (item: Omit<ExpenseItem, 'id'>) => {
     const newItem = {
       ...item,
@@ -123,20 +130,24 @@ export default function ClaimForm({
 
           // 2. 客户端直传 item 级别附件
           const insertedItems = Array.isArray(currentState.data.insertedItems)
-            ? currentState.data.insertedItems as Array<{ id: number }>
+            ? currentState.data.insertedItems as Array<{ id: number, clientItemId?: number | null }>
             : []
+          const insertedItemIdMap = buildInsertedItemIdMap(insertedItems)
 
-          for (const [index, insertedItem] of insertedItems.entries()) {
-            const itemFiles = (expenseItems[index]?.attachments || []).filter(
+          for (const expenseItem of expenseItems) {
+            const insertedItemId = insertedItemIdMap.get(expenseItem.id)
+            if (!insertedItemId) continue
+
+            const itemFiles = (expenseItem.attachments || []).filter(
               (a): a is File => a instanceof File
             )
             if (itemFiles.length === 0) continue
 
             const results = await Promise.all(
-              itemFiles.map((file) => uploadItemFile(insertedItem.id, file))
+              itemFiles.map((file) => uploadItemFile(insertedItemId, file))
             )
             allRecords.push(
-              ...results.map((r) => ({ ...r, claimId: null, claimItemId: insertedItem.id }))
+              ...results.map((r) => ({ ...r, claimId: null, claimItemId: insertedItemId }))
             )
           }
 
@@ -210,12 +221,13 @@ export default function ClaimForm({
 
           // 2. 客户端直传 item 级别新附件
           const insertedItems = Array.isArray(updateState.data.insertedItems)
-            ? updateState.data.insertedItems as Array<{ id: number }>
+            ? updateState.data.insertedItems as Array<{ id: number, clientItemId?: number | null }>
             : []
+          const insertedItemIdMap = buildInsertedItemIdMap(insertedItems)
 
-          for (const [index, insertedItem] of insertedItems.entries()) {
-            const expenseItem = currentExpenseItems[index]
-            if (!expenseItem) continue
+          for (const expenseItem of currentExpenseItems) {
+            const insertedItemId = insertedItemIdMap.get(expenseItem.id)
+            if (!insertedItemId) continue
 
             const newFiles = (expenseItem.attachments || []).filter(
               (a): a is File => a instanceof File
@@ -223,10 +235,10 @@ export default function ClaimForm({
             if (newFiles.length === 0) continue
 
             const results = await Promise.all(
-              newFiles.map((file) => uploadItemFile(insertedItem.id, file))
+              newFiles.map((file) => uploadItemFile(insertedItemId, file))
             )
             allRecords.push(
-              ...results.map((r) => ({ ...r, claimId: null, claimItemId: insertedItem.id }))
+              ...results.map((r) => ({ ...r, claimId: null, claimItemId: insertedItemId }))
             )
           }
 
@@ -311,6 +323,7 @@ export default function ClaimForm({
   const expenseItemsPayload = useMemo(() => (
     JSON.stringify(
       expenseItems.map(item => ({
+        clientItemId: item.id,
         date: item.date,
         itemNo: item.itemNo,
         details: item.details,
