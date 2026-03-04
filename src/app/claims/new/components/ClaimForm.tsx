@@ -2,7 +2,7 @@
 
 import { Loader2, Save } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useActionState, useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from "sonner"
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -52,11 +52,10 @@ export default function ClaimForm({
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [actionType, setActionType] = useState<'submit' | 'draft' | 'update' | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [updateError, setUpdateError] = useState('')
   const [submitState, submitFormAction] = useActionState(submitClaim, { success: false, error: '' })
   const [draftState, draftFormAction] = useActionState(saveDraft, { success: false, error: '' })
   const [isDraftPending, startDraftTransition] = useTransition()
-  const updateActionHandler = updateClaim.bind(null, claimId ?? 0)
-  const [updateState, updateFormAction] = useActionState(updateActionHandler, { success: false, error: '' })
   const router = useRouter()
 
   const buildInsertedItemIdMap = (items: Array<{ id: number, clientItemId?: number | null }>) =>
@@ -69,7 +68,7 @@ export default function ClaimForm({
   const addExpenseItem = (item: Omit<ExpenseItem, 'id'>) => {
     const newItem = {
       ...item,
-      id: generateTempId() // 使用负数临时 ID
+      id: generateTempId()
     }
     setExpenseItems(prev => [...prev, newItem])
   }
@@ -81,7 +80,6 @@ export default function ClaimForm({
   useEffect(() => {
     if (isEditMode && initialItems.length > 0) {
       setExpenseItems(prev => {
-        // 只有当数据真正不同时才更新
         if (JSON.stringify(prev) !== JSON.stringify(initialItems)) {
           return initialItems
         }
@@ -94,12 +92,11 @@ export default function ClaimForm({
     setExpenseItems(prev => prev.filter(item => item.id !== id))
   }
 
-  // 处理提交成功后的逻辑
+  // ===== Create/Draft 流程（保留 useActionState） =====
   useEffect(() => {
     if (isEditMode) return
     const currentState = actionType === 'submit' ? submitState : draftState
 
-    // 处理 server action 错误 - 重置 loading 状态
     if (currentState.error) {
       toast.error(currentState.error)
       setIsLoading(false)
@@ -110,7 +107,7 @@ export default function ClaimForm({
     if (currentState.success && currentState.data?.claimId && currentState.data?.insertedItems) {
       const handleFileUpload = async () => {
         try {
-          const claimId = currentState.data.claimId
+          const newClaimId = currentState.data.claimId
           const allRecords: Array<{
             claimId?: number | null
             claimItemId?: number | null
@@ -120,15 +117,13 @@ export default function ClaimForm({
             fileType: string
           }> = []
 
-          // 1. 客户端直传 claim 级别附件到 Supabase Storage
           if (attachedFiles.length > 0) {
             const results = await Promise.all(
-              attachedFiles.map((file) => uploadClaimFile(claimId, file))
+              attachedFiles.map((file) => uploadClaimFile(newClaimId, file))
             )
-            allRecords.push(...results.map((r) => ({ ...r, claimId, claimItemId: null })))
+            allRecords.push(...results.map((r) => ({ ...r, claimId: newClaimId, claimItemId: null })))
           }
 
-          // 2. 客户端直传 item 级别附件
           const insertedItems = Array.isArray(currentState.data.insertedItems)
             ? currentState.data.insertedItems as Array<{ id: number, clientItemId?: number | null }>
             : []
@@ -151,7 +146,6 @@ export default function ClaimForm({
             )
           }
 
-          // 3. 批量保存附件元数据到数据库
           if (allRecords.length > 0) {
             const saveResult = await saveAttachmentRecords(allRecords)
             if (!saveResult.success) {
@@ -187,108 +181,118 @@ export default function ClaimForm({
     }
   }, [submitState.success, submitState.error, draftState.success, draftState.error, actionType, isEditMode])
 
-  // 用 ref 捕获最新的 expenseItems 和 attachedFiles，避免放入 useEffect 依赖导致重复触发
-  const expenseItemsRef = useRef(expenseItems)
-  expenseItemsRef.current = expenseItems
-  const attachedFilesRef = useRef(attachedFiles)
-  attachedFilesRef.current = attachedFiles
+  // ===== Update 流程（直接调用 server action，不走 useActionState） =====
+  const handleUpdateClick = async () => {
+    if (!isEditMode || !claimId || expenseItems.length === 0 || isLoading) return
 
-  useEffect(() => {
-    if (!isEditMode) return
+    setActionType('update')
+    setIsLoading(true)
+    setUpdateError('')
 
-    if (updateState.success && updateState.data?.claimId) {
-      const handlePostUpdate = async () => {
-        try {
-          const claimId = updateState.data.claimId
-          const currentAttachedFiles = attachedFilesRef.current
-          const currentExpenseItems = expenseItemsRef.current
-          const allRecords: Array<{
-            claimId?: number | null
-            claimItemId?: number | null
-            fileName: string
-            url: string
-            fileSize: string
-            fileType: string
-          }> = []
+    try {
+      // 1. 构建 payload
+      const payload = JSON.stringify(
+        expenseItems.map(item => ({
+          clientItemId: item.id,
+          date: item.date,
+          itemNo: item.itemNo,
+          details: item.details,
+          currency: item.currency,
+          amount: item.amount,
+          rate: item.rate,
+          sgdAmount: item.sgdAmount,
+          existingAttachments: (item.existingAttachments || []).map(att => ({
+            fileName: att.fileName,
+            url: att.url,
+            fileSize: att.fileSize,
+            fileType: att.fileType,
+          })),
+        }))
+      )
 
-          // 1. 客户端直传 claim 级别附件
-          if (currentAttachedFiles.length > 0) {
-            const results = await Promise.all(
-              currentAttachedFiles.map((file) => uploadClaimFile(claimId, file))
-            )
-            allRecords.push(...results.map((r) => ({ ...r, claimId, claimItemId: null })))
-          }
+      // 2. 直接调用 server action
+      const formData = new FormData()
+      formData.append('expenseItems', payload)
 
-          // 2. 客户端直传 item 级别新附件
-          const insertedItems = Array.isArray(updateState.data.insertedItems)
-            ? updateState.data.insertedItems as Array<{ id: number, clientItemId?: number | null }>
-            : []
-          const insertedItemIdMap = buildInsertedItemIdMap(insertedItems)
+      const result = await updateClaim(claimId, null, formData)
 
-          for (const expenseItem of currentExpenseItems) {
-            const insertedItemId = insertedItemIdMap.get(expenseItem.id)
-            if (!insertedItemId) continue
+      if (!result.success) {
+        toast.error(result.error || '更新失败')
+        setUpdateError(result.error || '更新失败')
+        return
+      }
 
-            const newFiles = (expenseItem.attachments || []).filter(
-              (a): a is File => a instanceof File
-            )
-            if (newFiles.length === 0) continue
+      // 3. 上传新附件（server action 已成功，DB 已更新）
+      const insertedItems = Array.isArray(result.data?.insertedItems)
+        ? result.data.insertedItems as Array<{ id: number, clientItemId?: number | null }>
+        : []
+      const insertedItemIdMap = buildInsertedItemIdMap(insertedItems)
 
-            const results = await Promise.all(
-              newFiles.map((file) => uploadItemFile(insertedItemId, file))
-            )
-            allRecords.push(
-              ...results.map((r) => ({ ...r, claimId: null, claimItemId: insertedItemId }))
-            )
-          }
+      const allRecords: Array<{
+        claimId?: number | null
+        claimItemId?: number | null
+        fileName: string
+        url: string
+        fileSize: string
+        fileType: string
+      }> = []
 
-          // 3. 批量保存附件元数据
-          if (allRecords.length > 0) {
-            const saveResult = await saveAttachmentRecords(allRecords)
-            if (!saveResult.success) {
-              toast.error(`附件记录保存失败: ${saveResult.error}`)
-            }
-          }
+      // claim 级别附件
+      if (attachedFiles.length > 0) {
+        const results = await Promise.all(
+          attachedFiles.map((file) => uploadClaimFile(claimId, file))
+        )
+        allRecords.push(...results.map((r) => ({ ...r, claimId, claimItemId: null })))
+      }
 
-          toast.success(`Claim updated! ID: ${formatClaimId(updateState.data.claimId)}`)
-          router.push(`/claims/${updateState.data.claimId}`)
-        } catch (error) {
-          console.error('Update uploads failed:', error)
-          toast.error('文件上传失败')
-        } finally {
-          setIsLoading(false)
-          setActionType(null)
+      // item 级别新附件
+      for (const expenseItem of expenseItems) {
+        const insertedItemId = insertedItemIdMap.get(expenseItem.id)
+        if (!insertedItemId) continue
+
+        const newFiles = (expenseItem.attachments || []).filter(
+          (a): a is File => a instanceof File
+        )
+        if (newFiles.length === 0) continue
+
+        const results = await Promise.all(
+          newFiles.map((file) => uploadItemFile(insertedItemId, file))
+        )
+        allRecords.push(
+          ...results.map((r) => ({ ...r, claimId: null, claimItemId: insertedItemId }))
+        )
+      }
+
+      // 保存附件记录
+      if (allRecords.length > 0) {
+        const saveResult = await saveAttachmentRecords(allRecords)
+        if (!saveResult.success) {
+          toast.error(`附件记录保存失败: ${saveResult.error}`)
         }
       }
 
-      void handlePostUpdate()
-      return
-    }
-
-    if (updateState.error) {
-      toast.error(updateState.error)
+      // 4. 成功 → 跳转（用 window.location 强制刷新，绕过 Router Cache）
+      toast.success(`Claim updated! ID: ${formatClaimId(claimId)}`)
+      window.location.href = `/claims/${claimId}`
+    } catch (error) {
+      console.error('Update failed:', error)
+      const msg = error instanceof Error ? error.message : '更新失败'
+      toast.error(msg)
+      setUpdateError(msg)
+    } finally {
       setIsLoading(false)
       setActionType(null)
     }
-  }, [
-    isEditMode,
-    updateState.success,
-    updateState.data?.claimId,
-    updateState.data?.insertedItems,
-    updateState.error,
-    router
-  ])
+  }
 
   const totalSGD = expenseItems.reduce((sum, item) => sum + item.sgdAmount, 0)
 
-  // 处理提交申请
   const handleSubmit = async (formData: FormData) => {
     setActionType('submit')
     setIsLoading(true)
     submitFormAction(formData)
   }
 
-  // 处理保存草稿
   const handleSaveDraft = async (formData: FormData) => {
     setActionType('draft')
     setIsLoading(true)
@@ -297,28 +301,14 @@ export default function ClaimForm({
     })
   }
 
-  // 处理按钮点击
   const handleSubmitClick = () => {
     if (isEditMode) {
-      setActionType('update')
-      setIsLoading(true)
-      ;(document.getElementById('update-form') as HTMLFormElement)?.requestSubmit()
+      void handleUpdateClick()
       return
     }
-
     setIsLoading(true)
     ;(document.getElementById('submit-form') as HTMLFormElement)?.requestSubmit()
   }
-
-  const handleDraftClick = () => {
-    if (isEditMode || expenseItems.length === 0 || isLoading) return
-    const formData = new FormData()
-    formData.append('employeeId', String(employeeId))
-    formData.append('expenseItems', expenseItemsPayload)
-    void handleSaveDraft(formData)
-  }
-
-  const currentError = isEditMode ? updateState.error : (submitState.error || draftState.error)
 
   const expenseItemsPayload = useMemo(() => (
     JSON.stringify(
@@ -341,39 +331,36 @@ export default function ClaimForm({
     )
   ), [expenseItems])
 
+  const handleDraftClick = () => {
+    if (isEditMode || expenseItems.length === 0 || isLoading) return
+    const formData = new FormData()
+    formData.append('employeeId', String(employeeId))
+    formData.append('expenseItems', expenseItemsPayload)
+    void handleSaveDraft(formData)
+  }
+
+  const currentError = isEditMode ? updateError : (submitState.error || draftState.error)
+
   return (
     <div>
-      {/* Hidden forms for server actions */}
+      {/* Hidden form only for create/draft (NOT for update) */}
       {!isEditMode && (
-        <>
-          <form id="submit-form" action={handleSubmit} className="hidden">
-            <input type="hidden" name="employeeId" value={employeeId} />
-            <input 
-              type="hidden" 
-              name="expenseItems" 
-              value={expenseItemsPayload} 
-            />
-          </form>
-
-        </>
-      )}
-
-      {isEditMode && (
-        <form id="update-form" action={updateFormAction} className="hidden">
-          <input 
-            type="hidden" 
-            name="expenseItems" 
-            value={expenseItemsPayload} 
+        <form id="submit-form" action={handleSubmit} className="hidden">
+          <input type="hidden" name="employeeId" value={employeeId} />
+          <input
+            type="hidden"
+            name="expenseItems"
+            value={expenseItemsPayload}
           />
         </form>
       )}
 
       {/* 费用详情表单 */}
-      <ExpenseForm 
+      <ExpenseForm
         itemTypes={itemTypes}
         currencies={currencies}
         exchangeRates={exchangeRates}
-        onAddItem={addExpenseItem} 
+        onAddItem={addExpenseItem}
       />
 
       {/* 当前项目列表 */}
@@ -400,7 +387,7 @@ export default function ClaimForm({
 
       {/* 操作按钮 */}
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6">
-        <Button 
+        <Button
           type="button"
           variant="outline"
           size="lg"
@@ -415,7 +402,7 @@ export default function ClaimForm({
         </Button>
 
         {!isEditMode && (
-          <Button 
+          <Button
             type="button"
             variant="outline"
             size="lg"
@@ -436,8 +423,8 @@ export default function ClaimForm({
             )}
           </Button>
         )}
-        
-        <Button 
+
+        <Button
           type="button"
           size="lg"
           onClick={handleSubmitClick}

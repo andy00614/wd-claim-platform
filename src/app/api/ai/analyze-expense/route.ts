@@ -10,7 +10,7 @@ const openai = createOpenAI({
 
 // 定义返回的数据结构，匹配ExpenseForm的formData结构
 const ExpenseAnalysisSchema = z.object({
-  date: z.string().optional().describe('Date in MM/dd/yyyy format from the expense document. If year is not visible, use MM/dd format.'),
+  date: z.string().optional().describe('Date in YYYY-MM-DD (ISO 8601) format from the expense document. If year is not visible, use the most likely recent year. Example: "2025-03-02" for March 2nd, 2025.'),
   itemNo: z.string().optional().describe('Expense category code like A1, A2, B1, C1, C2, etc.'),
   details: z.string().optional().describe('Expense description including vendor/restaurant name'),
   currency: z.string().optional().describe('Currency code like SGD, USD, EUR, CNY, etc.'),
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
               type: 'text',
               text: `Please analyze this expense receipt/invoice image and extract the following information:
 
-              - date: Date in MM/dd/yyyy format if year is visible (e.g., "12/25/2024"), otherwise MM/dd format (e.g., "12/25")
+              - date: Date in YYYY-MM-DD (ISO 8601) format. IMPORTANT: many receipts use dd/MM/yyyy format (day first), be careful to distinguish day vs month. Example: "2024-12-25" for December 25th, 2024. If the year is not visible on the receipt, infer the most likely recent year.
               - itemNo: Expense category code based on content:
                 * A1 = Entertainment
                 * A2 = IT Services

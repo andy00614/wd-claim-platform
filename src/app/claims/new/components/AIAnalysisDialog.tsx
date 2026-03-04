@@ -43,6 +43,21 @@ export default function AIAnalysisDialog({
   const parseDateString = (value?: string | null) => {
     if (!value) return null
     try {
+      // ISO 格式: YYYY-MM-DD
+      if (value.includes('-')) {
+        const parts = value.split('-')
+        if (parts.length === 3) {
+          const year = parseInt(parts[0], 10)
+          const month = parseInt(parts[1], 10)
+          const day = parseInt(parts[2], 10)
+          if (!Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)
+            && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            return new Date(year, month - 1, day)
+          }
+        }
+      }
+
+      // 兼容旧的 MM/dd 或 MM/dd/yyyy 格式
       const parts = value.split('/')
       if (parts.length < 2) return null
 
@@ -52,7 +67,6 @@ export default function AIAnalysisDialog({
       if (Number.isNaN(month) || Number.isNaN(day)) return null
       if (month < 1 || month > 12 || day < 1 || day > 31) return null
 
-      // 如果有年份，直接使用
       if (parts.length === 3 && parts[2]) {
         const year = parseInt(parts[2], 10)
         if (!Number.isNaN(year)) {
@@ -63,17 +77,12 @@ export default function AIAnalysisDialog({
       // 只有 MM/dd 格式，需要智能推断年份
       const today = new Date()
       const currentYear = today.getFullYear()
-
-      // 先尝试当前年份
       let candidateDate = new Date(currentYear, month - 1, day)
 
-      // 如果日期在未来超过30天，可能是去年的
       const daysDiff = (candidateDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
       if (daysDiff > 30) {
         candidateDate = new Date(currentYear - 1, month - 1, day)
-      }
-      // 如果日期在过去超过335天（约11个月），可能是明年的
-      else if (daysDiff < -335) {
+      } else if (daysDiff < -335) {
         candidateDate = new Date(currentYear + 1, month - 1, day)
       }
 
@@ -86,7 +95,7 @@ export default function AIAnalysisDialog({
 
   const formatDateForData = (date: Date | null) => {
     if (!date) return ''
-    return format(date, 'MM/dd')
+    return format(date, 'yyyy-MM-dd')
   }
 
   const calculateSgdAmount = (amount: string | undefined, rate: string | undefined) => {
